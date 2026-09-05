@@ -633,6 +633,8 @@ function asegurarTablaCobranza() {
         ['recibo6_tipificacion_llamada', 'VARCHAR(40) NULL'],
         ['recibo6_fecha_llamada', 'DATETIME NULL'],
         ['gestionado_en', 'DATETIME NULL'],
+        ['monto_adeudado', 'DECIMAL(10,2) NULL'],
+        ['monto_pagado_en', 'DATETIME NULL'],
       ];
       for (const [columna, definicion] of nuevasCobranza) {
         if (!existentesCobranza.has(columna)) await db.query(`ALTER TABLE cobranza_gestiones ADD COLUMN ${columna} ${definicion}`);
@@ -705,6 +707,8 @@ router.get('/cobranzas-listado', auth(['cobranzas','calidad','supcalidad','jefat
              cb.recibo6_fecha_llamada AS cobranza_recibo6_fecha_llamada,
              cb.actualizado_por_nombre AS cobranza_actualizado_por_nombre,
              cb.gestionado_en AS cobranza_gestionado_en,
+             cb.monto_adeudado AS cobranza_monto_adeudado,
+             cb.monto_pagado_en AS cobranza_monto_pagado_en,
              cb.updated_at AS cobranza_updated_at` : '';
     const joinCalidad = incluyeCalidad ? 'LEFT JOIN calidad_gestiones cg ON cg.venta_id = v.id' : '';
     const joinCobranza = incluyeCobranza ? 'LEFT JOIN cobranza_gestiones cb ON cb.venta_id = v.id' : '';
@@ -934,6 +938,72 @@ router.patch('/cobranza/:id/codigo-pago', auth(['cobranzas']), async (req, res) 
   } catch (e) {
     console.error('[PATCH /ventas/cobranza/:id/codigo-pago]', e.message || e);
     res.status(500).json({ ok:false, mensaje:'Error al guardar el código de pago' });
+  }
+});
+
+router.patch('/cobranza/:id/monto', auth(['cobranzas']), async (req, res) => {
+  try {
+    if (!esEscrituraCobranzaValida(req)) {
+      return res.status(403).json({ ok:false, mensaje:'Esta gestión es exclusiva del área de Cobranza' });
+    }
+    await asegurarTablaCobranza();
+    const ventaId = Number(req.params.id);
+    if (!Number.isInteger(ventaId) || ventaId <= 0) {
+      return res.status(400).json({ ok:false, mensaje:'Cliente no válido' });
+    }
+    const montoRaw = req.body?.monto;
+    const limpiar = montoRaw === null || montoRaw === '' || montoRaw === undefined;
+    const monto = limpiar ? null : Number(montoRaw);
+    if (!limpiar && (!Number.isFinite(monto) || monto < 0)) {
+      return res.status(400).json({ ok:false, mensaje:'El monto debe ser un número mayor o igual a 0' });
+    }
+    const [venta] = await db.query('SELECT v.id, cb.monto_adeudado AS valor_anterior FROM ventas v LEFT JOIN cobranza_gestiones cb ON cb.venta_id=v.id WHERE v.id=? LIMIT 1', [ventaId]);
+    if (!venta.length) return res.status(404).json({ ok:false, mensaje:'Cliente no encontrado' });
+    // Cargar un monto nuevo es una deuda nueva: limpia la marca de "pagado" si
+    // habia una anterior. Limpiar el monto a mano (sin marcar pagado) no toca
+    // esa marca, para no fabricar un "pagado" que nadie confirmo.
+    await db.query(`
+      INSERT INTO cobranza_gestiones (venta_id, monto_adeudado, monto_pagado_en, actualizado_por_id, actualizado_por_nombre, gestionado_en)
+      VALUES (?, ?, NULL, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE monto_adeudado=VALUES(monto_adeudado),
+        monto_pagado_en=IF(VALUES(monto_adeudado) IS NULL, monto_pagado_en, NULL),
+        actualizado_por_id=VALUES(actualizado_por_id), actualizado_por_nombre=VALUES(actualizado_por_nombre), gestionado_en=NOW(), updated_at=CURRENT_TIMESTAMP
+    `, [ventaId, monto, req.user.id, req.user.nombre || req.user.usuario || 'Cobranza']);
+    await db.query(`INSERT INTO cobranza_historial (venta_id,campo,valor_anterior,valor_nuevo,usuario_id,usuario_nombre) VALUES (?,?,?,?,?,?)`,
+      [ventaId, 'monto_adeudado', venta[0].valor_anterior != null ? String(venta[0].valor_anterior) : '—', monto != null ? String(monto) : '—', req.user.id, req.user.nombre || req.user.usuario || 'Cobranza']);
+    res.json({ ok:true, monto });
+  } catch (e) {
+    console.error('[PATCH /ventas/cobranza/:id/monto]', e.message || e);
+    res.status(500).json({ ok:false, mensaje:'Error al guardar el monto adeudado' });
+  }
+});
+
+router.patch('/cobranza/:id/marcar-pagado', auth(['cobranzas']), async (req, res) => {
+  try {
+    if (!esEscrituraCobranzaValida(req)) {
+      return res.status(403).json({ ok:false, mensaje:'Esta gestión es exclusiva del área de Cobranza' });
+    }
+    await asegurarTablaCobranza();
+    const ventaId = Number(req.params.id);
+    if (!Number.isInteger(ventaId) || ventaId <= 0) {
+      return res.status(400).json({ ok:false, mensaje:'Cliente no válido' });
+    }
+    const [venta] = await db.query('SELECT v.id, cb.monto_adeudado AS monto_actual FROM ventas v LEFT JOIN cobranza_gestiones cb ON cb.venta_id=v.id WHERE v.id=? LIMIT 1', [ventaId]);
+    if (!venta.length) return res.status(404).json({ ok:false, mensaje:'Cliente no encontrado' });
+    if (venta[0].monto_actual == null) {
+      return res.status(400).json({ ok:false, mensaje:'No hay ningún monto adeudado registrado para marcar como pagado' });
+    }
+    await db.query(`
+      UPDATE cobranza_gestiones SET monto_adeudado=NULL, monto_pagado_en=NOW(),
+        actualizado_por_id=?, actualizado_por_nombre=?, gestionado_en=NOW(), updated_at=CURRENT_TIMESTAMP
+      WHERE venta_id=?
+    `, [req.user.id, req.user.nombre || req.user.usuario || 'Cobranza', ventaId]);
+    await db.query(`INSERT INTO cobranza_historial (venta_id,campo,valor_anterior,valor_nuevo,usuario_id,usuario_nombre) VALUES (?,?,?,?,?,?)`,
+      [ventaId, 'monto_adeudado', String(venta[0].monto_actual), 'PAGADO', req.user.id, req.user.nombre || req.user.usuario || 'Cobranza']);
+    res.json({ ok:true });
+  } catch (e) {
+    console.error('[PATCH /ventas/cobranza/:id/marcar-pagado]', e.message || e);
+    res.status(500).json({ ok:false, mensaje:'Error al marcar como pagado' });
   }
 });
 
