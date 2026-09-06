@@ -261,63 +261,92 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
       // pisandose la asignacion y la tipificacion una a la otra. REGEXP_REPLACE
       // compara solo digitos para no fallar por espacios/guiones en registros
       // antiguos que se guardaron sin normalizar.
-      if (n1Normalizado && !l.importacion_legacy) {
-        const [dupRows] = await db.query(
-          "SELECT id, campana, asesor_nombre, fecha FROM leads_reclutamiento WHERE REGEXP_REPLACE(n1, '[^0-9]', '') = ? LIMIT 1",
-          [n1Normalizado]
-        );
-        if (dupRows.length) {
-          const dup = dupRows[0];
-          const asesorTxt = dup.asesor_nombre ? ('asesor ' + dup.asesor_nombre) : 'sin asesor';
-          const mensajeError = 'Este número ya existe (candidato #' + dup.id + ', campaña ' + (dup.campana || 'sin campaña') + ', ' + asesorTxt + ', ' + dup.fecha + '). Trabaja ese registro en vez de crear uno nuevo.';
-          if (!esLote) return res.status(400).json({ ok: false, mensaje: mensajeError });
-          omitidos++; erroresDetalle.push(mensajeError);
-          continue;
-        }
-      }
-
-      const fechaLead = l.fecha || fechaHoy;
-      let asesorId = null;
-      let asesorNombre = '';
-      const nombreOriginal = String(l.asesor_nombre || l.asesor || '').trim();
-      if (nombreOriginal) {
-        if (l.importacion_legacy) {
-          const encontrado = await resolverAsesorReclutamientoPorNombreCorto(nombreOriginal);
-          if (encontrado) { asesorId = encontrado.id; asesorNombre = encontrado.nombre; }
-          else asesorNombre = nombreOriginal; // se conserva el nombre historico sin cuenta activa
-        } else {
-          const [uRows] = await db.query(`SELECT id, nombre FROM usuarios WHERE nombre = ?`, [nombreOriginal]);
-          if (uRows.length && await esAsesorReclutamientoValido(uRows[0].id)) {
-            asesorId = uRows[0].id; asesorNombre = uRows[0].nombre;
+      //
+      // El SELECT de este chequeo y el INSERT de mas abajo NO son atomicos:
+      // dos requests casi simultaneas para el mismo numero (doble clic en
+      // "+ Agregar", o dos personas cargando el mismo contacto a la vez)
+      // pueden pasar ambas el SELECT antes de que cualquiera confirme su
+      // INSERT, y las dos terminan creando una fila -- exactamente el
+      // problema reportado ("se carga por 2 o por 3 veces"), confirmado con
+      // 442 numeros duplicados ya existentes en la tabla (uno hasta 8 veces).
+      // GET_LOCK/RELEASE_LOCK sobre el mismo numero, en una conexion propia,
+      // serializa esas requests para que la segunda SI vea el registro que
+      // la primera acaba de insertar.
+      const lockKey = (n1Normalizado && !l.importacion_legacy) ? `leads_reclutamiento_n1_${n1Normalizado}` : null;
+      const lockConn = lockKey ? await db.getConnection() : null;
+      try {
+        if (lockConn) {
+          const [lockRows] = await lockConn.query('SELECT GET_LOCK(?, 5) adquirido', [lockKey]);
+          if (Number(lockRows[0]?.adquirido) !== 1) {
+            throw new Error('No se pudo asegurar el registro del número. Intenta nuevamente.');
           }
         }
-      }
-      // hora_asig/historial: si vienen explicitos (ej. importacion Legacy con
-      // fecha/hora reales del sistema anterior) se respetan tal cual, en vez de
-      // sobreescribirlos con la hora actual como hacia el alta normal.
-      const horaFinal = l.hora_asig || (asesorId ? horaAhora : '');
-      const historial = Array.isArray(l.historial) && l.historial.length
-        ? JSON.stringify(l.historial)
-        : (asesorId
-            ? JSON.stringify([{ asesor: asesorNombre, hora: horaFinal, fecha: fechaHoy, motivo: 'Asignacion inicial' }])
-            : '[]');
+        const consulta = lockConn || db;
 
-      try {
-        const [result] = await db.query(`
-          INSERT INTO leads_reclutamiento
-            (campana, departamento, provincia, distrito, n1, n2, usuario_whatsapp, tipif_back, tipif_vend, tipif_hora,
-             obs_asesor, asesor_id, asesor_nombre, fecha, hora_asig, sin_asignar, historial, rotaciones, usuario_back_id)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        `, [
-          l.campana||'', l.departamento||'', l.provincia||'', l.distrito||'', n1Normalizado||null, l.n2||null, usuarioWhatsapp||null,
-          l.tipif_back||null, l.tipif_vend||null, l.tipif_hora||null, l.obs_asesor||null,
-          asesorId, asesorNombre, fechaLead, horaFinal, asesorId?0:1, historial, Math.max(0, parseInt(l.rotaciones, 10) || 0), req.user.id,
-        ]);        ids.push(result.insertId);
-        creados++;
-      } catch (errFila) {
-        if (!esLote) throw errFila;
-        console.error('[LEADS-RECLUTAMIENTO] Fila de lote omitida por error:', errFila.message);
-        omitidos++; erroresDetalle.push(errFila.message);
+        if (n1Normalizado && !l.importacion_legacy) {
+          const [dupRows] = await consulta.query(
+            "SELECT id, campana, asesor_nombre, fecha FROM leads_reclutamiento WHERE REGEXP_REPLACE(n1, '[^0-9]', '') = ? LIMIT 1",
+            [n1Normalizado]
+          );
+          if (dupRows.length) {
+            const dup = dupRows[0];
+            const asesorTxt = dup.asesor_nombre ? ('asesor ' + dup.asesor_nombre) : 'sin asesor';
+            const mensajeError = 'Este número ya existe (candidato #' + dup.id + ', campaña ' + (dup.campana || 'sin campaña') + ', ' + asesorTxt + ', ' + dup.fecha + '). Trabaja ese registro en vez de crear uno nuevo.';
+            if (!esLote) return res.status(400).json({ ok: false, mensaje: mensajeError });
+            omitidos++; erroresDetalle.push(mensajeError);
+            continue;
+          }
+        }
+
+        const fechaLead = l.fecha || fechaHoy;
+        let asesorId = null;
+        let asesorNombre = '';
+        const nombreOriginal = String(l.asesor_nombre || l.asesor || '').trim();
+        if (nombreOriginal) {
+          if (l.importacion_legacy) {
+            const encontrado = await resolverAsesorReclutamientoPorNombreCorto(nombreOriginal);
+            if (encontrado) { asesorId = encontrado.id; asesorNombre = encontrado.nombre; }
+            else asesorNombre = nombreOriginal; // se conserva el nombre historico sin cuenta activa
+          } else {
+            const [uRows] = await consulta.query(`SELECT id, nombre FROM usuarios WHERE nombre = ?`, [nombreOriginal]);
+            if (uRows.length && await esAsesorReclutamientoValido(uRows[0].id)) {
+              asesorId = uRows[0].id; asesorNombre = uRows[0].nombre;
+            }
+          }
+        }
+        // hora_asig/historial: si vienen explicitos (ej. importacion Legacy con
+        // fecha/hora reales del sistema anterior) se respetan tal cual, en vez de
+        // sobreescribirlos con la hora actual como hacia el alta normal.
+        const horaFinal = l.hora_asig || (asesorId ? horaAhora : '');
+        const historial = Array.isArray(l.historial) && l.historial.length
+          ? JSON.stringify(l.historial)
+          : (asesorId
+              ? JSON.stringify([{ asesor: asesorNombre, hora: horaFinal, fecha: fechaHoy, motivo: 'Asignacion inicial' }])
+              : '[]');
+
+        try {
+          const [result] = await consulta.query(`
+            INSERT INTO leads_reclutamiento
+              (campana, departamento, provincia, distrito, n1, n2, usuario_whatsapp, tipif_back, tipif_vend, tipif_hora,
+               obs_asesor, asesor_id, asesor_nombre, fecha, hora_asig, sin_asignar, historial, rotaciones, usuario_back_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+          `, [
+            l.campana||'', l.departamento||'', l.provincia||'', l.distrito||'', n1Normalizado||null, l.n2||null, usuarioWhatsapp||null,
+            l.tipif_back||null, l.tipif_vend||null, l.tipif_hora||null, l.obs_asesor||null,
+            asesorId, asesorNombre, fechaLead, horaFinal, asesorId?0:1, historial, Math.max(0, parseInt(l.rotaciones, 10) || 0), req.user.id,
+          ]);
+          ids.push(result.insertId);
+          creados++;
+        } catch (errFila) {
+          if (!esLote) throw errFila;
+          console.error('[LEADS-RECLUTAMIENTO] Fila de lote omitida por error:', errFila.message);
+          omitidos++; erroresDetalle.push(errFila.message);
+        }
+      } finally {
+        if (lockConn) {
+          await lockConn.query('SELECT RELEASE_LOCK(?)', [lockKey]).catch(() => {});
+          lockConn.release();
+        }
       }
     }
 
