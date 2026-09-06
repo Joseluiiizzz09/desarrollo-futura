@@ -255,12 +255,10 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
         continue;
       }
 
-      // Sin este chequeo, un numero que ya existe (de otra fecha/campana) puede
-      // volver a darse de alta como candidato nuevo sin ningun aviso: dos
-      // personas terminan trabajando el mismo numero en dos filas distintas,
-      // pisandose la asignacion y la tipificacion una a la otra. REGEXP_REPLACE
-      // compara solo digitos para no fallar por espacios/guiones en registros
-      // antiguos que se guardaron sin normalizar.
+      // Un mismo contacto puede volver a trabajarse en otra fecha o campaña.
+      // Solo se considera duplicado el mismo número en la misma fecha y campaña.
+      // REGEXP_REPLACE compara solo dígitos para no fallar por espacios/guiones
+      // en registros antiguos que se guardaron sin normalizar.
       //
       // El SELECT de este chequeo y el INSERT de mas abajo NO son atomicos:
       // dos requests casi simultaneas para el mismo numero (doble clic en
@@ -272,7 +270,11 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
       // GET_LOCK/RELEASE_LOCK sobre el mismo numero, en una conexion propia,
       // serializa esas requests para que la segunda SI vea el registro que
       // la primera acaba de insertar.
-      const lockKey = (n1Normalizado && !l.importacion_legacy) ? `leads_reclutamiento_n1_${n1Normalizado}` : null;
+      const fechaLead = l.fecha || fechaHoy;
+      const campanaLead = String(l.campana || '').trim();
+      const lockKey = (n1Normalizado && !l.importacion_legacy)
+        ? `recluta_${n1Normalizado}_${fechaLead}_${campanaLead}`.slice(0, 64)
+        : null;
       const lockConn = lockKey ? await db.getConnection() : null;
       try {
         if (lockConn) {
@@ -285,8 +287,13 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
 
         if (n1Normalizado && !l.importacion_legacy) {
           const [dupRows] = await consulta.query(
-            "SELECT id, campana, asesor_nombre, fecha FROM leads_reclutamiento WHERE REGEXP_REPLACE(n1, '[^0-9]', '') = ? LIMIT 1",
-            [n1Normalizado]
+            `SELECT id, campana, asesor_nombre, fecha
+             FROM leads_reclutamiento
+             WHERE REGEXP_REPLACE(n1, '[^0-9]', '') = ?
+               AND fecha = ?
+               AND UPPER(TRIM(COALESCE(campana, ''))) = UPPER(?)
+             LIMIT 1`,
+            [n1Normalizado, fechaLead, campanaLead]
           );
           if (dupRows.length) {
             const dup = dupRows[0];
@@ -298,7 +305,6 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
           }
         }
 
-        const fechaLead = l.fecha || fechaHoy;
         let asesorId = null;
         let asesorNombre = '';
         const nombreOriginal = String(l.asesor_nombre || l.asesor || '').trim();
