@@ -1375,7 +1375,11 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                ph_inst.fecha_instalado,
                ph_caida.fecha_caida,
                ph_wa.fecha_whatsapp_enviado,
-               COALESCE(LOWER(cv.estado_validacion), 'venta') AS estado_validacion
+               COALESCE(LOWER(cv.estado_validacion), 'venta') AS estado_validacion,
+               (SELECT l.campana FROM leads l
+                  WHERE l.n1_normalizado = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(v.telefono1, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', '')
+                  ORDER BY ABS(DATEDIFF(l.fecha, DATE(v.created_at))) ASC, l.created_at DESC
+                  LIMIT 1) AS campana
                FROM ventas v
                LEFT JOIN usuarios u ON v.asesor_id = u.id
                LEFT JOIN usuarios g ON v.grabando_por_id = g.id
