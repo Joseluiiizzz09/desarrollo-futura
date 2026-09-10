@@ -221,7 +221,8 @@ router.get('/', auth(ROLES_ALL), async (req, res) => {
 // POST /api/leads-reclutamiento (individual o batch, mismo formato que /api/leads)
 router.post('/', auth(ROLES_BACK), async (req, res) => {
   try {
-    const items = Array.isArray(req.body) ? req.body : [req.body];
+    const esSolicitudLote = Array.isArray(req.body);
+    const items = esSolicitudLote ? req.body : [req.body];
     if (items.length > 500) return res.status(400).json({ ok: false, mensaje: 'No se pueden crear más de 500 registros a la vez' });
 
     const fechaHoy  = fechaPeruHoy();
@@ -229,6 +230,7 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
     const esLote = items.length > 1;
     let creados = 0, omitidos = 0;
     const ids = [];
+    const fechas = [];
     const erroresDetalle = [];
 
     // En un solo alta (no lote), un dato invalido sigue rechazando toda la
@@ -238,8 +240,15 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
     for (const l of items) {
       const n1Normalizado = normalizarN1(l.n1);
       const usuarioWhatsapp = normalizarUsuarioWhatsapp(l.usuario_whatsapp);
+      // Las altas individuales son operaciones del día: nunca deben heredar
+      // por accidente la pestaña histórica que el usuario estaba consultando.
+      // Las cargas masivas y la importación Legacy sí conservan la fecha
+      // explícita porque se usan para ingresar bases históricas.
+      const fechaLead = (esSolicitudLote || l.importacion_legacy)
+        ? (l.fecha || fechaHoy)
+        : fechaHoy;
       const errores = validar([
-        errorFecha(l.fecha || fechaHoy, 'fecha'),
+        errorFecha(fechaLead, 'fecha'),
         errorTexto(l.n1, 'n1', { max: 30 }),
         errorTexto(usuarioWhatsapp, 'usuario_whatsapp', { max: 100 }),
         errorTexto(l.tipif_back, 'tipif_back', { max: 100 }),
@@ -270,7 +279,6 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
       // GET_LOCK/RELEASE_LOCK sobre el mismo numero, en una conexion propia,
       // serializa esas requests para que la segunda SI vea el registro que
       // la primera acaba de insertar.
-      const fechaLead = l.fecha || fechaHoy;
       const campanaLead = String(l.campana || '').trim();
       const lockKey = (n1Normalizado && !l.importacion_legacy)
         ? `recluta_${n1Normalizado}_${fechaLead}_${campanaLead}`.slice(0, 64)
@@ -342,6 +350,7 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
             asesorId, asesorNombre, fechaLead, horaFinal, asesorId?0:1, historial, Math.max(0, parseInt(l.rotaciones, 10) || 0), req.user.id,
           ]);
           ids.push(result.insertId);
+          fechas.push(fechaLead);
           creados++;
         } catch (errFila) {
           if (!esLote) throw errFila;
@@ -357,7 +366,8 @@ router.post('/', auth(ROLES_BACK), async (req, res) => {
     }
 
     res.json({
-      ok: true, creados, omitidos, ids,
+      ok: true, creados, omitidos, ids, fechas,
+      fecha: fechas.length === 1 ? fechas[0] : undefined,
       mensaje: omitidos ? `${creados} candidato(s) creado(s), ${omitidos} omitido(s)` : `${creados} candidato(s) creado(s)`,
       erroresDetalle: erroresDetalle.slice(0, 20),
     });
