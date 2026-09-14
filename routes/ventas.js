@@ -635,6 +635,12 @@ function asegurarTablaCobranza() {
         ['gestionado_en', 'DATETIME NULL'],
         ['monto_adeudado', 'DECIMAL(10,2) NULL'],
         ['monto_pagado_en', 'DATETIME NULL'],
+        ['recibo1_comentario', 'TEXT NULL'],
+        ['recibo2_comentario', 'TEXT NULL'],
+        ['recibo3_comentario', 'TEXT NULL'],
+        ['recibo4_comentario', 'TEXT NULL'],
+        ['recibo5_comentario', 'TEXT NULL'],
+        ['recibo6_comentario', 'TEXT NULL'],
       ];
       for (const [columna, definicion] of nuevasCobranza) {
         if (!existentesCobranza.has(columna)) await db.query(`ALTER TABLE cobranza_gestiones ADD COLUMN ${columna} ${definicion}`);
@@ -709,6 +715,12 @@ router.get('/cobranzas-listado', auth(['cobranzas','calidad','supcalidad','jefat
              cb.gestionado_en AS cobranza_gestionado_en,
              cb.monto_adeudado AS cobranza_monto_adeudado,
              cb.monto_pagado_en AS cobranza_monto_pagado_en,
+             cb.recibo1_comentario AS cobranza_recibo1_comentario,
+             cb.recibo2_comentario AS cobranza_recibo2_comentario,
+             cb.recibo3_comentario AS cobranza_recibo3_comentario,
+             cb.recibo4_comentario AS cobranza_recibo4_comentario,
+             cb.recibo5_comentario AS cobranza_recibo5_comentario,
+             cb.recibo6_comentario AS cobranza_recibo6_comentario,
              cb.updated_at AS cobranza_updated_at` : '';
     const joinCalidad = incluyeCalidad ? 'LEFT JOIN calidad_gestiones cg ON cg.venta_id = v.id' : '';
     const joinCobranza = incluyeCobranza ? 'LEFT JOIN cobranza_gestiones cb ON cb.venta_id = v.id' : '';
@@ -872,7 +884,11 @@ router.get('/calidad/:id/historial', auth(['calidad','supcalidad','jefatura']), 
   }
 });
 
-const COBRANZA_TIPIFICACIONES = ['PAGADO', 'PENDIENTE', 'BAJA', 'SUSPENDIDO', 'VENCIDO'];
+// No se migran valores viejos (VENCIDO/SUSPENDIDO siguen existiendo en
+// filas historicas): esta lista solo controla que se puede ELEGIR de aqui
+// en adelante. El frontend sigue mostrando el valor actual aunque ya no
+// este en esta lista.
+const COBRANZA_TIPIFICACIONES = ['PAGADO', 'PENDIENTE', 'POR VENCER', 'BAJA'];
 
 // Resultado de la llamada de cobranza a un recibo puntual (no del estado de pago).
 const COBRANZA_TIPIFICACIONES_LLAMADA = [
@@ -1145,6 +1161,36 @@ router.patch('/cobranza/:id/recibo-llamada', auth(['cobranzas']), async (req, re
   } catch (e) {
     console.error('[PATCH /ventas/cobranza/:id/recibo-llamada]', e.message || e);
     res.status(500).json({ ok:false, mensaje:'Error al guardar la tipificación de la llamada' });
+  }
+});
+
+router.patch('/cobranza/:id/recibo-comentario', auth(['cobranzas']), async (req, res) => {
+  try {
+    if (!esEscrituraCobranzaValida(req)) {
+      return res.status(403).json({ ok:false, mensaje:'Esta gestión es exclusiva del área de Cobranza' });
+    }
+    await asegurarTablaCobranza();
+    const ventaId = Number(req.params.id);
+    const numero = Number(req.body?.numero);
+    const comentario = String(req.body?.comentario || '').trim();
+    if (!Number.isInteger(ventaId) || ventaId <= 0 || !Number.isInteger(numero) || numero < 1 || numero > 6 || comentario.length > 1500) {
+      return res.status(400).json({ ok:false, mensaje:'Comentario de recibo no válido' });
+    }
+    const columna = `recibo${numero}_comentario`;
+    const [venta] = await db.query(`SELECT v.id, cb.${columna} AS valor_anterior FROM ventas v LEFT JOIN cobranza_gestiones cb ON cb.venta_id=v.id WHERE v.id=? LIMIT 1`, [ventaId]);
+    if (!venta.length) return res.status(404).json({ ok:false, mensaje:'Cliente no encontrado' });
+    await db.query(`
+      INSERT INTO cobranza_gestiones (venta_id, ${columna}, actualizado_por_id, actualizado_por_nombre, gestionado_en)
+      VALUES (?, ?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE ${columna}=VALUES(${columna}),
+        actualizado_por_id=VALUES(actualizado_por_id), actualizado_por_nombre=VALUES(actualizado_por_nombre), gestionado_en=NOW(), updated_at=CURRENT_TIMESTAMP
+    `, [ventaId, comentario || null, req.user.id, req.user.nombre || req.user.usuario || 'Cobranza']);
+    await db.query(`INSERT INTO cobranza_historial (venta_id,campo,valor_anterior,valor_nuevo,usuario_id,usuario_nombre) VALUES (?,?,?,?,?,?)`,
+      [ventaId, columna, venta[0].valor_anterior || '—', comentario || '—', req.user.id, req.user.nombre || req.user.usuario || 'Cobranza']);
+    res.json({ ok:true, numero, comentario });
+  } catch (e) {
+    console.error('[PATCH /ventas/cobranza/:id/recibo-comentario]', e.message || e);
+    res.status(500).json({ ok:false, mensaje:'Error al guardar el comentario del recibo' });
   }
 });
 
