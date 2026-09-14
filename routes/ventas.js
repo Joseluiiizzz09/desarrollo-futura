@@ -21,6 +21,9 @@ function cacheVentasSet(clave, payload) {
   if (cacheVentas.size >= 200) cacheVentas.delete(cacheVentas.keys().next().value);
   cacheVentas.set(clave, { payload, expira: Date.now() + CACHE_VENTAS_TTL });
 }
+function limpiarCacheVentas() {
+  cacheVentas.clear();
+}
 const ESTADOS_GRAB_OK    = ['pendiente','grabando','grabado','observado','revisado','corta_llamada','suplantacion','no_desea','no_contesta','buzon','buzon_voz','esperando_tercero','corregir_sec'];
 const ESTADOS_SUPGRAB_OK = ['sin_revisar','aprobado','rechazado','observado','programado','conforme','no_conforme','audio_subido'];
 const TRAMOS_SEGUIMIENTO_OK = ['AM','PM','PM 3'];
@@ -137,7 +140,9 @@ async function obtenerActor(conn, userId) {
 async function obtenerVentaConAsesor(conn, ventaId, bloquear = false) {
   const [rows] = await conn.query(`
     SELECT v.*,
-           u.nombre AS asesor_actual_nombre, u.sala AS asesor_actual_sala
+           u.nombre AS asesor_actual_nombre,
+           COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS asesor_actual_sala,
+           u.sala AS asesor_sala_usuario
       FROM ventas v
       LEFT JOIN usuarios u ON u.id = v.asesor_id
      WHERE v.id = ?
@@ -179,6 +184,7 @@ const CAMPOS_HISTORIAL = {
   tramo_seguimiento: 'Tramo de Seguimiento',
   motivo_seguimiento: 'Motivo de Seguimiento',
   audio_path: 'Archivo de audio',
+  sala_atribucion: 'Sala atribuida',
   nombre: 'Nombre del cliente',
   tipo_doc: 'Tipo de documento',
   dni: 'Número de documento',
@@ -402,6 +408,7 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
     let cicloVentaAbierto = null;
     let asesorVentaId = Number(req.user.id);
     let nombreAsesor = req.user.nombre || req.user.usuario || 'Asesor';
+    let salaAtribucion = null;
 
     // La vista delegada conserva el token de Jefatura/Backoffice. La venta
     // debe pertenecer al asesor asignado al lead, no al usuario administrador.
@@ -445,8 +452,9 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
     }
 
     if (req.user.cargo === 'asesor') {
-      const [usuarios] = await conn.query(`SELECT nombre FROM usuarios WHERE id = ? LIMIT 1`, [req.user.id]);
+      const [usuarios] = await conn.query(`SELECT nombre, sala FROM usuarios WHERE id = ? LIMIT 1`, [req.user.id]);
       nombreAsesor = usuarios[0]?.nombre || nombreAsesor;
+      salaAtribucion = usuarios[0]?.sala || null;
       if (leadVenta) {
         let historial = [];
         try { historial = JSON.parse(leadVenta.historial || '[]'); } catch { historial = []; }
@@ -476,6 +484,10 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
         return res.status(400).json({ ok: false, mensaje: 'Este número ya fue registrado en otra venta. No puede ser usado nuevamente.' });
       }
     }
+    if (!salaAtribucion) {
+      const [asesoresVenta] = await conn.query(`SELECT sala FROM usuarios WHERE id = ? LIMIT 1`, [asesorVentaId]);
+      salaAtribucion = asesoresVenta[0]?.sala || null;
+    }
 
     const [result] = await conn.query(`
       INSERT INTO ventas (
@@ -484,8 +496,8 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
         direccion, coordenadas, fecha_nac, lugar_nac, padre, madre,
         cuota_inst, claro_hogar, tecnologia, paquete,
         full_claro, cant_decos, cant_mesh, plano, estado, observacion,
-        lead_id, lead_ciclo_id
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        lead_id, lead_ciclo_id, sala_atribucion
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [
       asesorVentaId, nombreAsesor, v.tipoDoc||'DNI', v.dni||null, v.nombre||null, v.email||null,
       v.telefono1||null, v.telefono2||null, v.departamento||null,
@@ -496,7 +508,7 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
       v.paquete||null, v.full||null,
       parseInt(v.cantDecos)||0, parseInt(v.cantMesh)||0,
       v.plano||null, estadoFinal, v.obs||null,
-      leadVenta?.id || null, cicloVentaAbierto?.id || null
+      leadVenta?.id || null, cicloVentaAbierto?.id || null, salaAtribucion
     ]);
 
     if (leadVenta) {
@@ -1414,7 +1426,10 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
     // subconsulta agrupada (no una consulta por fila) para que Super de
     // Grabaciones pueda mostrar "PROGRAMADO: HH:mm / DD/MM/YYYY" cuando el
     // audio todavía no está subido.
-    let sql = `SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) as asesor_nombre, u.sala, COALESCE(g.nombre, v.grabando_por_nombre) as grabando_por_nombre,
+    let sql = `SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) as asesor_nombre,
+               COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS sala,
+               u.sala AS asesor_sala_actual,
+               COALESCE(g.nombre, v.grabando_por_nombre) as grabando_por_nombre,
                ph.fecha_programado,
                ph_prog.estado_prog, ph_prog.usuario_prog, ph_prog.fecha_prog,
                ph_sup.fecha_sup_resultado,
@@ -1513,7 +1528,7 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
       if (!salaNormalizada(actor.sala)) {
         return res.json({ ok: true, data: [] });
       }
-      sql += ` AND UPPER(TRIM(COALESCE(u.sala, ''))) = ?`;
+      sql += ` AND UPPER(TRIM(COALESCE(NULLIF(v.sala_atribucion, ''), u.sala, ''))) = ?`;
       params.push(salaNormalizada(actor.sala));
     }
 
@@ -1609,8 +1624,8 @@ router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res)
 
     const anteriorNombre = venta.asesor_actual_nombre || venta.asesor_nombre || 'Sin asignar';
     await conn.query(
-      `UPDATE ventas SET asesor_id = ?, asesor_nombre = ? WHERE id = ?`,
-      [destino.id, destino.nombre, ventaId]
+      `UPDATE ventas SET asesor_id = ?, asesor_nombre = ?, sala_atribucion = ? WHERE id = ?`,
+      [destino.id, destino.nombre, destino.sala || null, ventaId]
     );
     await conn.query(`
       INSERT INTO venta_asignaciones (
@@ -1623,6 +1638,7 @@ router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res)
       destino.id, destino.nombre, destino.sala || null,
       actor.id, actor.nombre, actor.cargo,
     ]);
+    limpiarCacheVentas();
     await conn.commit();
     res.json({
       ok: true,
@@ -1633,6 +1649,67 @@ router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res)
     await conn.rollback().catch(() => {});
     console.error(e);
     res.status(500).json({ ok: false, mensaje: 'Error al reasignar la venta.' });
+  } finally {
+    conn.release();
+  }
+});
+
+// ===== PATCH /api/ventas/:id/sala-atribucion =====
+router.patch('/:id/sala-atribucion', auth(['jefatura']), async (req, res) => {
+  const ventaId = Number(req.params.id);
+  const salaNueva = String(req.body?.sala || '').trim().toUpperCase();
+  if (!Number.isInteger(ventaId) || ventaId <= 0) {
+    return res.status(400).json({ ok: false, mensaje: 'Venta no válida.' });
+  }
+  if (salaNueva.length > 50) {
+    return res.status(400).json({ ok: false, mensaje: 'La sala no puede superar 50 caracteres.' });
+  }
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const actor = await obtenerActor(conn, req.user.id);
+    if (!actor || !actor.activo || actor.cargo !== 'jefatura') {
+      await conn.rollback();
+      return res.status(403).json({ ok: false, mensaje: 'Solo Jefatura puede cambiar la sala atribuida.' });
+    }
+
+    const venta = await obtenerVentaConAsesor(conn, ventaId, true);
+    if (!venta) {
+      await conn.rollback();
+      return res.status(404).json({ ok: false, mensaje: 'Venta no encontrada.' });
+    }
+
+    const salaAnterior = venta.sala_atribucion || venta.asesor_sala_usuario || venta.asesor_actual_sala || '';
+    const salaPersistida = salaNueva || null;
+    if (salaNormalizada(salaAnterior) === salaNormalizada(salaPersistida || venta.asesor_sala_usuario || '')) {
+      await conn.rollback();
+      return res.status(400).json({ ok: false, mensaje: 'La venta ya figura en esa sala.' });
+    }
+
+    await conn.query(`UPDATE ventas SET sala_atribucion = ? WHERE id = ?`, [salaPersistida, ventaId]);
+    await registrarHistorial(conn, ventaId, actor, {
+      tipo: 'REASIGNACION',
+      modulo: 'Jefatura',
+      campo: 'sala_atribucion',
+      valorAnterior: salaAnterior || null,
+      valorNuevo: salaPersistida || venta.asesor_sala_usuario || null,
+      descripcion: salaPersistida
+        ? 'Jefatura cambió la sala atribuida de esta venta sin cambiar el asesor responsable.'
+        : 'Jefatura quitó la sala atribuida manual y la venta vuelve a usar la sala actual del asesor.',
+    });
+
+    limpiarCacheVentas();
+    await conn.commit();
+    res.json({
+      ok: true,
+      mensaje: salaPersistida ? `Venta atribuida a ${salaPersistida}.` : 'Sala atribuida restablecida.',
+      data: { sala: salaPersistida || venta.asesor_sala_usuario || '', sala_atribucion: salaPersistida || '' },
+    });
+  } catch (e) {
+    await conn.rollback().catch(() => {});
+    console.error(e);
+    res.status(500).json({ ok: false, mensaje: 'Error al cambiar la sala atribuida.' });
   } finally {
     conn.release();
   }
@@ -2418,7 +2495,8 @@ router.get('/:id/historial', auth(['jefatura']), async (req, res) => {
     }
     const [ventas] = await db.query(`
       SELECT v.id, v.estado, v.created_at, v.asesor_id,
-             COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre, u.sala AS asesor_sala
+             COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre,
+             COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS asesor_sala
         FROM ventas v LEFT JOIN usuarios u ON u.id = v.asesor_id
        WHERE v.id = ? LIMIT 1
     `, [ventaId]);

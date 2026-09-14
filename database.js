@@ -77,6 +77,7 @@ async function initDB() {
         obs_supgrab      TEXT,
         estado_supgrab   VARCHAR(50),
         estado_grab      VARCHAR(50)  DEFAULT 'pendiente',
+        sala_atribucion  VARCHAR(50)  NULL,
         audio_path       VARCHAR(255),
         fotos            TEXT,
         created_at       DATETIME     DEFAULT CURRENT_TIMESTAMP,
@@ -447,6 +448,11 @@ async function initDB() {
         .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
     }
 
+    // Sala atribuida a la venta. Permite corregir reportes históricos cuando
+    // un asesor cambia temporalmente de sala sin mover la venta a otro asesor.
+    await conn.query(`ALTER TABLE ventas ADD COLUMN sala_atribucion VARCHAR(50) NULL`)
+      .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
+
     // Columna generada con el mismo criterio de normalizacion que ya usaban
     // las queries de duplicados/blacklist (REPLACE encadenado sobre n1), pero
     // precalculada y con indice propio: antes esas queries no podian usar
@@ -471,6 +477,7 @@ async function initDB() {
       ['idx_ventas_telefono_id', 'ventas', 'telefono1, id'],
       ['idx_ventas_grab', 'ventas', 'estado_grab'],
       ['idx_ventas_supgrab', 'ventas', 'estado_supgrab'],
+      ['idx_ventas_sala_atribucion', 'ventas', 'sala_atribucion'],
       ['idx_leads_fecha', 'leads', 'fecha'],
       ['idx_leads_asesor', 'leads', 'asesor_id'],
       ['idx_leads_created', 'leads', 'created_at'],
