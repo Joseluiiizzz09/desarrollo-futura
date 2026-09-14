@@ -1999,7 +1999,10 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
 
     const areaSolicitada = String(req.query.area || '').trim().toLowerCase();
     const permisosUsuario = Array.isArray(req.user.permisos) ? req.user.permisos : [];
-    if (areaSolicitada && areaSolicitada !== req.user.cargo && !permisosUsuario.includes(areaSolicitada)) {
+    // Jefatura supervisa todas las areas (ver VentaProgramarModal en
+    // Jefatura.jsx): no se le exige tener el cargo exacto ni el permiso
+    // puntual del area que este editando.
+    if (areaSolicitada && areaSolicitada !== req.user.cargo && req.user.cargo !== 'jefatura' && !permisosUsuario.includes(areaSolicitada)) {
       return res.status(403).json({ ok: false, mensaje: 'Sin permiso para operar en esta área' });
     }
     const cargoEfectivo = areaSolicitada || req.user.cargo;
