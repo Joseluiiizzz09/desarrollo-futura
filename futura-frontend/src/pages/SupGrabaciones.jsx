@@ -588,7 +588,7 @@ export default function SupGrabaciones() {
 
             <div className="modal-btns">
               <button className="btn-cancelar-m" onClick={cerrarModalRevisar}>Cancelar</button>
-              <button className="btn-guardar" onClick={guardarRevision} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar revisión'}</button>
+              <button type="button" className="btn-guardar modal-guardar-estable" onClick={guardarRevision} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar revisión'}</button>
             </div>
           </div>
         </div>
