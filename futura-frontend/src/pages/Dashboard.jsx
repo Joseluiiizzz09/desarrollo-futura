@@ -104,11 +104,11 @@ function colorEstado(e) {
 }
 
 const GRAB_TIPIF_BADGE = {
-  corta_llamada: { cls:'vs-badge-cortallamada',  label:'CORTA LLAMADA' },
+  corta_llamada: { cls:'vs-badge-cortallamada',  label:'GRABACIÓN · CORTA LLAMADA' },
   suplantacion:  { cls:'vs-badge-suplantacion',  label:'SUPLANTACIÓN' },
-  no_desea:      { cls:'vs-badge-nodesea',       label:'NO DESEA' },
-  no_contesta:   { cls:'vs-badge-nocontesta',    label:'NO CONTESTA' },
-  buzon_voz:     { cls:'vs-badge-buzonvoz',      label:'BUZÓN DE VOZ' },
+  no_desea:      { cls:'vs-badge-nodesea',       label:'GRABACIÓN · NO DESEA' },
+  no_contesta:   { cls:'vs-badge-nocontesta',    label:'GRABACIÓN · NO CONTESTA' },
+  buzon_voz:     { cls:'vs-badge-buzonvoz',      label:'GRABACIÓN · BUZÓN DE VOZ' },
 }
 
 function BadgeVS({ e, sup, estadoGrab, grabandoPorNombre }) {
@@ -185,10 +185,10 @@ function BadgeVS({ e, sup, estadoGrab, grabandoPorNombre }) {
     'observado':      { cls:'vs-badge-observado',  label:'OBSERVADO' },
     'servicio_activo':{ cls:'vs-badge-servicioactivo', label:'SERVICIO ACTIVO' },
     'fraude':         { cls:'vs-badge-fraude',         label:'FRAUDE' },
-    'no_contesta':    { cls:'vs-badge-nocontesta',     label:'NO CONTESTA' },
-    'buzon_voz':      { cls:'vs-badge-buzonvoz',       label:'BUZÓN DE VOZ' },
-    'corta_llamada':  { cls:'vs-badge-cortallamada',   label:'CORTA LLAMADA' },
-    'no_desea':       { cls:'vs-badge-nodesea',        label:'NO DESEA' },
+    'no_contesta':    { cls:'vs-badge-nocontesta',     label:'VALIDACIÓN · NO CONTESTA' },
+    'buzon_voz':      { cls:'vs-badge-buzonvoz',       label:'VALIDACIÓN · BUZÓN DE VOZ' },
+    'corta_llamada':  { cls:'vs-badge-cortallamada',   label:'VALIDACIÓN · CORTA LLAMADA' },
+    'no_desea':       { cls:'vs-badge-nodesea',        label:'VALIDACIÓN · NO DESEA' },
   }
   const found = map[estado]
   if (!found) return <span className="vs-badge vs-badge-venta">{e ? e.toUpperCase() : '-'}</span>
