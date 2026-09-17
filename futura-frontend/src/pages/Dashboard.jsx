@@ -109,6 +109,7 @@ const GRAB_TIPIF_BADGE = {
   no_desea:      { cls:'vs-badge-nodesea',       label:'GRABACIÓN · NO DESEA' },
   no_contesta:   { cls:'vs-badge-nocontesta',    label:'GRABACIÓN · NO CONTESTA' },
   buzon_voz:     { cls:'vs-badge-buzonvoz',      label:'GRABACIÓN · BUZÓN DE VOZ' },
+  corregir_sec:  { cls:'vs-badge-observado',     label:'GRABACIÓN · CORREGIR SEC' },
 }
 
 function BadgeVS({ e, sup, estadoGrab, grabandoPorNombre }) {
@@ -189,6 +190,7 @@ function BadgeVS({ e, sup, estadoGrab, grabandoPorNombre }) {
     'buzon_voz':      { cls:'vs-badge-buzonvoz',       label:'VALIDACIÓN · BUZÓN DE VOZ' },
     'corta_llamada':  { cls:'vs-badge-cortallamada',   label:'VALIDACIÓN · CORTA LLAMADA' },
     'no_desea':       { cls:'vs-badge-nodesea',        label:'VALIDACIÓN · NO DESEA' },
+    'corregir':       { cls:'vs-badge-observado',      label:'VALIDACIÓN · CORREGIR SEC' },
   }
   const found = map[estado]
   if (!found) return <span className="vs-badge vs-badge-venta">{e ? e.toUpperCase() : '-'}</span>
