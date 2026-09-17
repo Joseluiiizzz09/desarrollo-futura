@@ -666,7 +666,7 @@ export default function Seguimiento() {
                 <col style={{ width: 90 }} />
                 <col style={{ width: 130 }} />
                 <col style={{ width: 110 }} />
-                <col style={{ width: 140 }} />
+                <col style={{ width: 220 }} />
               </colgroup>
               <thead>
                 <tr>
@@ -756,7 +756,7 @@ export default function Seguimiento() {
                       <td style={{ fontFamily: 'monospace', fontSize: '10px' }}>{v.telefonoContacto || '--'}</td>
                       <td>
                         {motCls
-                          ? <span className={`badge-motivo ${motCls}`}>{v._motivoRech}</span>
+                          ? <span className={`badge-motivo ${motCls}`} title={v._motivoRech}>{v._motivoRech}</span>
                           : <span style={{ color: '#9ca3af' }}>--</span>
                         }
                       </td>
