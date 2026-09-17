@@ -737,7 +737,7 @@ export default function Grabaciones() {
             </div>
             <div className="modal-btns">
               <button className="btn-cancelar-m" onClick={()=>setModalEstado({open:false,id:null})}>Cancelar</button>
-              <button className="btn-guardar"    onClick={guardarEstado}>Guardar</button>
+              <button type="button" className="btn-guardar modal-guardar-estable" onClick={guardarEstado}>Guardar</button>
             </div>
           </div>
         </div>

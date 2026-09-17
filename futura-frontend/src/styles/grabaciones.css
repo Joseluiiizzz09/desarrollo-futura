@@ -603,6 +603,10 @@ body{
 .btn-guardar,.btn-guardar-m{padding:8px 18px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .18s var(--sp);box-shadow:0 2px 8px rgba(229,62,62,.3);}
 .btn-guardar:hover,.btn-guardar-m:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 4px 14px rgba(229,62,62,.4);}
 .btn-guardar:active{transform:scale(.96);}
+/* El botón del modal no se desplaza al pasar el cursor: ese movimiento hacía
+   que el cursor entrara y saliera del área activa, dando la impresión de parpadeo. */
+.modal-btns .modal-guardar-estable,.modal-btns .modal-guardar-estable:hover,.modal-btns .modal-guardar-estable:active{transform:none;transition:background-color .18s ease,box-shadow .18s ease;}
+.modal-btns .modal-guardar-estable:hover{box-shadow:0 3px 10px rgba(229,62,62,.35);}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--line);}
 .modal-head-title{font-size:13px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.4px;}
 .modal-close{width:28px;height:28px;border:none;border-radius:8px;background:var(--surf-1);color:var(--ink-3);font-size:14px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .18s var(--sp);}
