@@ -2445,7 +2445,7 @@ router.post('/:id/enviar-seguimiento-whatsapp', auth(['seguimiento', 'jefatura']
     try {
       const resp = await fetch(`${process.env.LEADS_API_URL}/api/interno/enviar-mensaje-personalizado`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Internal-Key': process.env.INTERNAL_KRONO_KEY },
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Key': process.env.INTERNAL_FUTURA_KEY },
         body: JSON.stringify({
           cuenta: 'SEGUIMIENTO',
           telefono: venta.telefono1,

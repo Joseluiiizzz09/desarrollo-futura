@@ -1,0 +1,441 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+html, body { height: auto; overflow-y: auto; margin: 0; }
+#root { min-height: 100vh; }
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f0f0f5;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+
+.btn-fotos {
+  min-height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid #14b8a6;
+  border-radius: 9px;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: .16s ease;
+}
+.btn-fotos:hover {
+  color: #064e3b;
+  background: #99f6e4;
+  border-color: #0f766e;
+  transform: translateY(-1px);
+}
+
+/* Contexto de Jefatura integrado dentro del encabezado de cada módulo. */
+.jefatura-vista { color:#64748b; font-size:10px; font-weight:500; white-space:nowrap; }
+.jefatura-volver {
+  height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:6px;
+  border:1px solid #fca5a5; border-radius:9px; background:#fff7f7;
+  color:#dc2626; font:inherit; font-size:9px; font-weight:800; white-space:nowrap; cursor:pointer;
+  box-shadow:0 2px 7px rgba(220,38,38,.07); transition:.18s ease;
+}
+.jefatura-volver:hover { background:#fee2e2; border-color:#f87171; transform:translateY(-1px); box-shadow:0 4px 12px rgba(220,38,38,.13); }
+.jefatura-volver svg { display:block; flex:0 0 auto; }
+
+/* Identidad visual uniforme para los módulos operativos. */
+.module-topbar-standard {
+  height:72px !important; min-height:72px !important; padding:0 26px !important;
+  display:flex !important; align-items:center !important; justify-content:space-between !important;
+  background:#fff !important; border-bottom:1px solid #fee2e2 !important;
+}
+.module-topbar-standard .brand,
+.module-topbar-standard .topbar-brand { display:flex !important; align-items:center !important; gap:12px !important; }
+.module-topbar-standard .logo-circle {
+  width:52px !important; height:52px !important; flex:0 0 52px !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  border:1px solid #fecaca !important; border-radius:50% !important; background:#fff !important;
+  box-shadow:0 4px 14px rgba(239,68,68,.13) !important; animation:none !important;
+}
+.module-topbar-standard .logo-circle img { width:38px !important; height:38px !important; object-fit:contain !important; }
+.module-topbar-standard .logo-circle,
+.module-topbar-standard .brand-logo,
+.module-topbar-standard .brand-mark,
+.module-topbar-standard .topbar-logo {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  line-height:1 !important;
+}
+.module-topbar-standard .logo-circle img,
+.module-topbar-standard .brand-logo img,
+.module-topbar-standard .brand-mark img,
+.module-topbar-standard .topbar-logo img {
+  display:block !important;
+  margin:auto !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+}
+.module-topbar-standard .brand-text h1,
+.module-topbar-standard .topbar-brand-text h1 {
+  margin:0 !important; color:#111827 !important; font-family:'Archivo Black','DM Sans',sans-serif !important;
+  font-size:16px !important; font-weight:800 !important; line-height:1.05 !important; letter-spacing:-.35px !important;
+}
+.module-topbar-standard .brand-text h1 .red,
+.module-topbar-standard .topbar-brand-text h1 .red { color:#ef4444 !important; font:inherit !important; }
+.module-topbar-standard .brand-text .brand-sub,
+.module-topbar-standard .topbar-brand-text .brand-sub {
+  display:block !important; margin-top:6px !important; color:#94a3b8 !important;
+  font-size:8px !important; font-weight:700 !important; line-height:1 !important; letter-spacing:.75px !important; text-transform:uppercase !important;
+}
+.module-topbar-standard .topbar-right { display:flex !important; align-items:center !important; gap:8px !important; }
+
+@media (max-width:700px) {
+  .jefatura-vista { display:none; }
+  .jefatura-volver { width:34px; padding:0; justify-content:center; }
+  .jefatura-volver span { display:none; }
+  .module-topbar-standard { height:60px !important; min-height:60px !important; padding:0 12px !important; }
+  .module-topbar-standard .logo-circle { width:40px !important; height:40px !important; flex-basis:40px !important; }
+  .module-topbar-standard .logo-circle img { width:29px !important; height:29px !important; }
+  .module-topbar-standard .brand-text h1,
+  .module-topbar-standard .topbar-brand-text h1 { font-size:13px !important; }
+  .module-topbar-standard .brand-text .brand-sub,
+  .module-topbar-standard .topbar-brand-text .brand-sub { margin-top:4px !important; font-size:7px !important; }
+}
+
+/* Visor seguro de fotos, documentos y audios protegidos por token. */
+.media-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, .58);
+  backdrop-filter: blur(7px);
+}
+.media-viewer-box {
+  width: min(840px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, .28);
+}
+.media-viewer-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, .96);
+  border-bottom: 1px solid #edf2f7;
+  backdrop-filter: blur(10px);
+}
+.media-viewer-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -.3px;
+}
+.media-viewer-head p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+.media-viewer-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.media-viewer-close:hover { background: #fee2e2; border-color: #fecaca; color: #dc2626; }
+.media-viewer-error-box,
+.media-viewer-error {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.media-viewer-error-box { margin: 16px 20px 0; }
+.media-viewer-audio {
+  margin: 16px 20px 0;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eff6ff, #fff);
+}
+.media-viewer-audio strong {
+  display: block;
+  color: #0f172a;
+  font-size: 13px;
+}
+.media-viewer-audio span {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+  word-break: break-all;
+}
+.media-viewer-audio audio {
+  width: 100%;
+  min-width: 240px;
+}
+.media-viewer-audio-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.media-viewer-audio-actions button,
+.media-viewer-audio-actions a,
+.media-viewer-preview-actions button,
+.media-viewer-preview-actions a {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.media-viewer-audio-actions button:hover,
+.media-viewer-audio-actions a:hover,
+.media-viewer-preview-actions button:hover,
+.media-viewer-preview-actions a:hover {
+  border-color: #ef4444;
+  color: #dc2626;
+  background: #fff7f7;
+}
+.media-viewer-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 20px 10px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 900;
+}
+.media-viewer-section-title b {
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.media-viewer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 220px));
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+.media-viewer-thumb {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: .18s ease;
+}
+.media-viewer-thumb:hover {
+  transform: translateY(-2px);
+  border-color: #fca5a5;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, .10);
+}
+.media-viewer-thumb-preview {
+  height: 142px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+.media-viewer-thumb-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.media-viewer-thumb-name,
+.media-viewer-thumb-error {
+  display: block;
+  padding: 8px 10px 0;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.media-viewer-thumb-error {
+  padding-top: 3px;
+  padding-bottom: 8px;
+  color: #dc2626;
+  font-weight: 700;
+}
+.media-viewer-file-icon,
+.media-viewer-loader,
+.media-viewer-muted {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+.media-viewer-empty,
+.media-viewer-preview-empty {
+  margin: 0 20px 20px;
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 13px;
+}
+.media-viewer-preview-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, .72);
+}
+.media-viewer-preview-card {
+  position: relative;
+  width: min(920px, 94vw);
+  max-height: 90vh;
+}
+.media-viewer-close.preview {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .18);
+}
+.media-viewer-preview {
+  overflow: hidden;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+}
+.media-viewer-preview img,
+.media-viewer-preview iframe {
+  display: block;
+  width: 100%;
+  height: min(72vh, 680px);
+  object-fit: contain;
+  border: 0;
+  background: #0f172a;
+}
+.media-viewer-preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+.media-viewer-preview-actions span {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-viewer-preview-actions div {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .media-viewer-overlay { padding: 10px; }
+  .media-viewer-box { max-height: 94vh; border-radius: 16px; }
+  .media-viewer-audio { grid-template-columns: 1fr; }
+  .media-viewer-audio audio { min-width: 0; }
+  .media-viewer-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+
+/* Logo del topbar en todos los modulos: sin circulo blanco ni aro, solo la esfera */
+.module-topbar-standard .logo-circle,
+.logo-circle {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* El isotipo se muestra limpio en todos los encabezados, como en Back Data. */
+body .module-topbar-standard .logo-circle,
+body .dash-root .logo-circle,
+body .jef-root .logo-circle,
+body .usu-root .logo-circle,
+body .bo-root .logo-circle {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+body .module-topbar-standard .logo-circle:hover,
+body .dash-root .logo-circle:hover,
+body .jef-root .logo-circle:hover,
+body .usu-root .logo-circle:hover,
+body .bo-root .logo-circle:hover {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+/* Rendimiento: las cabeceras y barras laterales permanecen estáticas, por lo
+   que el desenfoque continuo solo añade trabajo de GPU en todas las pantallas. */
+.topbar,.sidebar,.bo-sidebar{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+/* Evita animaciones permanentes por cada fila en tablas con cientos de datos. */
+.tabla-scroll .badge-seg,
+.tabla-scroll .badge-estado,
+.base-tabla-wrap .badge-seg,
+.base-tabla-wrap .badge-estado,
+.base-tabla-wrap .bs-caida,
+.base-tabla-wrap .bs-noval{
+  animation:none!important;
+}

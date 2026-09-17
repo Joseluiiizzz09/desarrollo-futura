@@ -1,7 +1,7 @@
 {
-  "name": "netcontact-backend",
+  "name": "desarrollo-futura-backend",
   "version": "1.0.0",
-  "description": "Backend CRM Netcontact",
+  "description": "Backend de la plataforma FUTURA",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

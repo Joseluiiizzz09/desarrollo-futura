@@ -2227,7 +2227,7 @@ router.delete('/:id', auth(ROLES_BO), async (req, res) => {
       await conn.rollback();
       return res.status(403).json({
         ok: false,
-        mensaje: 'Número protegido: solo Jefatura puede eliminar un teléfono válido. El registro permanece en KRONO.',
+        mensaje: 'Número protegido: solo Jefatura puede eliminar un teléfono válido. El registro permanece en FUTURA.',
       });
     }
     await conn.query(`DELETE FROM leads WHERE id = ?`, [req.params.id]);

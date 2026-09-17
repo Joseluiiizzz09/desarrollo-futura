@@ -1,0 +1,377 @@
+/* ===== PAGE (split en dos paneles) ===== */
+.page {
+  font-family: 'Inter', -apple-system, sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== PANEL IZQUIERDO (marca) ===== */
+.leftPanel {
+  flex: 1 1 46%;
+  min-width: 0;
+  background: #0a0a0c;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 64px;
+  overflow: hidden;
+}
+.leftGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 30% 45%, rgba(0,0,0,.9), transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 30% 45%, rgba(0,0,0,.9), transparent 75%);
+}
+.leftGlow {
+  position: absolute;
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(37,150,230,.18), transparent 70%);
+  bottom: -160px; left: -120px;
+  animation: glowMove 11s infinite alternate ease-in-out;
+}
+@keyframes glowMove { 0% { transform: translate(0,0) } 100% { transform: translate(40px,-30px) } }
+
+.brandBlock { position: relative; z-index: 1; max-width: 440px; text-align: center; }
+.brandLogoRow { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 22px; }
+.brandLogo { width: 46px; height: auto; object-fit: contain; }
+.brandName {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -.5px;
+  color: #fff;
+}
+.brandTagline {
+  color: rgba(255,255,255,.62);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 40px;
+}
+
+.featureRow {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 28px;
+  justify-content: center;
+}
+.featureItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,.78);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+.featureIcon {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  color: #fff;
+}
+
+/* ===== PANEL DERECHO (acceso) ===== */
+.rightPanel {
+  flex: 1 1 54%;
+  min-width: 0;
+  background: #f7f7f9;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: hidden;
+}
+
+/* ===== PARTICULAS ===== */
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.particles span {
+  position: absolute;
+  width: 5px; height: 5px;
+  background: rgba(37,150,230,.25);
+  border-radius: 50%;
+  animation: moveP linear infinite;
+}
+@keyframes moveP {
+  from { transform: translateY(100vh); opacity: 0 }
+  50% { opacity: .8 }
+  to { transform: translateY(-10vh); opacity: 0 }
+}
+
+/* ===== FORM CARD ===== */
+.formCard {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  opacity: 0;
+  animation: cardIn .55s cubic-bezier(.34,1.2,.64,1) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== TEXTOS ===== */
+.saludo {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 6px;
+  letter-spacing: -.3px;
+}
+.saludo strong { font-weight: 900; }
+.formSubtitle {
+  margin: 0 0 22px;
+  color: #6b7280;
+  font-size: 13px;
+}
+.nombreUsuario {
+  margin: -14px 0 16px;
+  display: inline-block;
+  padding: 5px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  color: #2596e6;
+  background: rgba(37,150,230,.09);
+  font-size: 12px;
+}
+
+/* ===== INPUTS ===== */
+.inputGroup {
+  width: 100%;
+  margin-bottom: 16px;
+  text-align: left;
+}
+.inputGroup label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+}
+.inputGroup input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  outline: none;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all .25s ease;
+  color: #111827;
+  box-sizing: border-box;
+}
+.inputGroup input::placeholder { color: #9ca3af; }
+.inputGroup input:focus {
+  border-color: rgba(37,150,230,.55);
+  box-shadow: 0 0 0 3px rgba(37,150,230,.12);
+}
+.inputGroup input.error { border-color: rgba(220,38,38,.7) !important; }
+
+.passWrap { position: relative; }
+.passWrap input { padding-right: 42px; }
+.eye {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: .2s;
+  user-select: none;
+  color: #9ca3af;
+  display: flex;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.eye:hover { color: #374151; transform: translateY(-50%) scale(1.12); }
+
+.rememberRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 4px 0 20px;
+  cursor: pointer;
+  user-select: none;
+}
+.rememberRow input { accent-color: #2596e6; width: 14px; height: 14px; cursor: pointer; }
+
+/* ===== BOTON ===== */
+.submitBtn {
+  width: 100%;
+  height: 46px;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s cubic-bezier(.34,1.2,.64,1);
+  font-size: 14px;
+  font-family: inherit;
+  letter-spacing: .1px;
+}
+.submitBtn:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.15); }
+.submitBtn:active { transform: scale(.98); }
+.submitBtn:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+
+.formFooter {
+  margin-top: 26px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.formFooter p { margin: 0; }
+
+/* ===== SELECCIÓN DE CARGO ===== */
+.roleSubtitle {
+  margin: 8px 0 18px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.roleList { display: grid; gap: 10px; }
+.roleButton {
+  width: 100%;
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 13px;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+  background: #fff;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: .2s ease;
+}
+.roleButton:hover {
+  border-color: rgba(37,150,230,.5);
+  box-shadow: 0 7px 18px rgba(17,24,39,.08);
+  transform: translateY(-1px);
+}
+.roleButton:disabled { opacity: .6; cursor: wait; }
+.roleButton strong { display: block; font-size: 13px; }
+.roleButton small { display: block; margin-top: 3px; color: #9ca3af; font-size: 10px; }
+.roleButton b { color: #2596e6; font-size: 17px; }
+.roleIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(37,150,230,.1);
+  color: #2596e6;
+  font-size: 14px;
+  font-weight: 800;
+}
+.backButton {
+  margin-top: 14px;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  font: 600 11px inherit;
+  cursor: pointer;
+}
+.backButton:hover { color: #dc2626; }
+
+/* ===== ERROR ===== */
+.errorMsg {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 600;
+  margin-bottom: 14px;
+  text-align: left;
+  animation: shake .3s ease;
+}
+@keyframes shake {
+  0% { transform: translateX(0) }
+  25% { transform: translateX(-6px) }
+  50% { transform: translateX(6px) }
+  75% { transform: translateX(-3px) }
+  100% { transform: translateX(0) }
+}
+
+/* ===== TRANSICIÓN (fondo blanco) ===== */
+.transition {
+  position: fixed; inset: 0; z-index: 9999; background: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  animation: fadeIn .4s ease;
+}
+.transition::before {
+  content: ""; position: absolute; width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(37,150,230,.12), transparent 70%);
+  animation: pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: .55 } 50% { transform: scale(1.18); opacity: 1 } }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.transLogo {
+  position: relative; z-index: 2;
+  width: 112px; height: 112px;
+  border-radius: 50%; background: #fff;
+  box-shadow: 0 10px 34px rgba(37,150,230,.22);
+  display: flex; align-items: center; justify-content: center;
+}
+.transLogo img { width: 72px; height: 72px; object-fit: contain; }
+.transGreet { z-index: 1; margin-top: 34px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #9ca3af; font-weight: 600; }
+.transName { z-index: 1; font-size: 40px; font-weight: 900; color: #111827; letter-spacing: -1px; margin-top: 4px; }
+.transAccent { color: #2596e6; }
+.transCargo { z-index: 1; margin-top: 12px; padding: 6px 18px; border-radius: 99px; background: rgba(37,150,230,.09); color: #2596e6; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.transLabel { z-index: 1; margin-top: 26px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #9ca3af; display: flex; align-items: center; gap: 7px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: #2596e6; animation: blink 1.4s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: .2s }
+.dot:nth-child(3) { animation-delay: .4s }
+@keyframes blink { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 860px) {
+  .page { flex-direction: column; }
+  .leftPanel {
+    flex: 0 0 auto;
+    padding: 36px 28px;
+    min-height: 220px;
+  }
+  .brandTagline { margin-bottom: 24px; }
+  .featureRow { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .featureItem { font-size: 9px; }
+  .featureIcon { width: 34px; height: 34px; }
+  .rightPanel { flex: 1 1 auto; padding: 32px 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formCard, .leftGlow, .particles span {
+    animation: none !important;
+  }
+  .formCard { opacity: 1 !important; transform: none !important; }
+}

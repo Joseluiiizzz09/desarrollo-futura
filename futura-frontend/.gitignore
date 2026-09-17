@@ -1,0 +1,31 @@
+# Variables de entorno
+.env
+*.env
+.env.*
+!.env.example
+
+# Credenciales y llaves
+credentials*.json
+*service-account*.json
+*service_account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencias
+node_modules/
+
+# Build de Vite
+dist/
+
+# pnpm temporal
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

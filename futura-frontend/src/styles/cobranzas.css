@@ -1,0 +1,1093 @@
+/* Diseño remoto integrado con uniformidad visual entre roles. */
+/* ============================================================
+   Cobranzas / Calidad — shell compartido
+   Rediseño visual (SaaS moderno, navy/blanco). Sin cambios de
+   markup, clases, comportamiento ni datos: solo CSS.
+   ============================================================ */
+
+.cobranzas-shell {
+  --cz-navy: #0f172a;
+  --cz-navy-2: #1e293b;
+  --cz-ink: #0f172a;
+  --cz-muted: #64748b;
+  --cz-faint: #94a3b8;
+  --cz-border: #e6eaf0;
+  --cz-border-soft: #eef1f6;
+  --cz-bg: #f4f6fa;
+  --cz-card: #ffffff;
+  --cz-teal: #0f766e;
+  --cz-teal-soft: #ecfdf9;
+  --cz-shadow-xs: 0 1px 2px rgba(15, 23, 42, .05);
+  --cz-shadow-sm: 0 2px 8px rgba(15, 23, 42, .06);
+  --cz-shadow-md: 0 8px 24px rgba(15, 23, 42, .08);
+  --cz-shadow-lg: 0 24px 60px rgba(15, 23, 42, .16);
+  --cz-radius-lg: 18px;
+  --cz-radius-md: 13px;
+  --cz-radius-sm: 10px;
+
+  min-height: 100vh;
+  background: var(--cz-bg);
+  font-family: 'DM Sans', Inter, -apple-system, sans-serif;
+  color: var(--cz-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Header ---------- */
+
+.cobranzas-topbar {
+  height: 76px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--cz-border);
+  box-shadow: var(--cz-shadow-xs);
+}
+
+.cobranzas-brand { display: flex; align-items: center; gap: 14px; }
+
+.cobranzas-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.cobranzas-wordmark {
+  display: block;
+  width: 142px;
+  height: auto;
+}
+
+.cobranzas-brand span {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--cz-navy);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.cobranzas-top-actions { display: flex; align-items: center; gap: 10px; }
+
+.cobranzas-area-badge {
+  padding: 8px 15px;
+  border-radius: 999px;
+  background: var(--cz-navy);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+.cobranzas-user {
+  padding: 8px 15px;
+  border: 1px solid var(--cz-border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--cz-navy-2);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cobranzas-exit {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #fecaca;
+  border-radius: var(--cz-radius-sm);
+  background: #fff;
+  color: #dc2626;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.cobranzas-exit:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, .12);
+}
+
+/* ---------- Layout general ---------- */
+
+.cobranzas-main {
+  padding: 26px 28px 40px;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Título ---------- */
+
+.cobranzas-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cobranzas-heading h1 {
+  margin: 0;
+  color: var(--cz-navy);
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+}
+
+.cobranzas-heading p {
+  margin: 6px 0 0;
+  color: var(--cz-faint);
+  font-size: 12.5px;
+}
+
+.cobranzas-heading button {
+  height: 40px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--cz-radius-sm);
+  background: var(--cz-navy);
+  color: #fff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, .18);
+  transition: .15s ease;
+}
+.cobranzas-heading button:hover:not(:disabled) { background: var(--cz-navy-2); transform: translateY(-1px); }
+.cobranzas-heading button:disabled { opacity: .6; cursor: default; box-shadow: none; }
+
+/* ---------- KPIs ---------- */
+
+.cobranzas-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.cobranzas-kpis.kpis-calidad {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.kpis-calidad-dia {
+  display: flex;
+  align-items: flex-end;
+}
+.kpis-calidad-dia label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.kpis-calidad-dia label span {
+  color: var(--cz-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+.kpis-calidad-dia input {
+  height: 39px;
+  padding: 0 13px;
+  border: 1px solid var(--cz-border);
+  border-radius: var(--cz-radius-sm);
+  background: #f8fafc;
+  color: var(--cz-ink);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: .15s ease;
+}
+.kpis-calidad-dia input:focus { border-color: var(--cz-teal); background:#fff; }
+
+.cobranzas-kpis article {
+  padding: 20px 22px;
+  background: var(--cz-card);
+  border: 1px solid var(--cz-border-soft);
+  border-radius: var(--cz-radius-lg);
+  box-shadow: var(--cz-shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: .18s ease;
+}
+.cobranzas-kpis article::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--cz-teal);
+}
+.cobranzas-kpis article:hover { box-shadow: var(--cz-shadow-md); transform: translateY(-2px); }
+.cobranzas-kpis article:nth-child(2)::before { background: #2563eb; }
+.cobranzas-kpis article.kpi-conforme::before { background: #16a34a; }
+.cobranzas-kpis article:nth-child(3)::before { background: #7c3aed; }
+
+.cobranzas-kpis strong {
+  display: block;
+  color: var(--cz-navy);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  line-height: 1.1;
+}
+
+.cobranzas-kpis span {
+  display: block;
+  margin-top: 8px;
+  color: var(--cz-faint);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .6px;
+}
+
+/* ---------- Filtros ---------- */
+
+.cobranzas-filtros {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 180px 180px auto;
+  gap: 12px;
+  align-items: end;
+  padding: 18px 20px;
+  background: var(--cz-card);
+  border: 1px solid var(--cz-border-soft);
+  border-radius: var(--cz-radius-lg);
+  box-shadow: var(--cz-shadow-sm);
+}
+
+.cobranzas-filtros label span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--cz-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+.cobranzas-filtros input,
+.cobranzas-filtros select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 39px;
+  padding: 0 13px;
+  border: 1px solid var(--cz-border);
+  border-radius: var(--cz-radius-sm);
+  background: #f8fafc;
+  color: var(--cz-ink);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: .15s ease;
+}
+.cobranzas-filtros input::placeholder { color: #a8b3c2; }
+.cobranzas-filtros input:focus,
+.cobranzas-filtros select:focus {
+  border-color: var(--cz-navy);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, .08);
+}
+
+.cobranzas-filtros > button {
+  height: 39px;
+  padding: 0 20px;
+  border: 1px solid var(--cz-border);
+  border-radius: var(--cz-radius-sm);
+  background: #fff;
+  color: var(--cz-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.cobranzas-filtros > button:hover { background: #f1f5f9; color: var(--cz-navy); border-color: #cbd5e1; }
+
+/* ---------- Tabla ---------- */
+
+.cobranzas-table-card {
+  overflow: hidden;
+  background: var(--cz-card);
+  border: 1px solid var(--cz-border-soft);
+  border-radius: var(--cz-radius-lg);
+  box-shadow: var(--cz-shadow-sm);
+}
+
+.cobranzas-table-title {
+  padding: 17px 20px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid var(--cz-border-soft);
+  font-size: 14px;
+  color: var(--cz-navy);
+}
+
+.cobranzas-table-title span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--cz-teal-soft);
+  color: var(--cz-teal);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.cobranzas-table-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.cobranzas-table-card table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+}
+
+.cobranzas-table-card th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 13px 15px;
+  background: var(--cz-navy);
+  color: #cbd5e1;
+  text-align: left;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset;
+}
+
+.cobranzas-table-card td {
+  padding: 14px 15px;
+  border-bottom: 1px solid var(--cz-border-soft);
+  color: #475569;
+  font-size: 11.5px;
+  vertical-align: middle;
+}
+
+.cobranzas-table-card tbody tr { transition: background-color .12s ease; }
+.cobranzas-table-card tr:hover td { background: #f6faf9; }
+
+.cobranzas-table-card th:first-child,
+.cobranzas-table-card td:first-child {
+  width: 44px;
+  text-align: center;
+  color: var(--cz-faint);
+  font-weight: 700;
+}
+
+.cobranzas-name { min-width: 220px; color: var(--cz-navy) !important; font-weight: 800; }
+.cobranzas-date { color: var(--cz-teal) !important; font-weight: 800; }
+
+.cobranzas-empty { padding: 60px !important; text-align: center !important; color: var(--cz-faint) !important; font-size: 12.5px !important; }
+
+.cobranzas-error {
+  padding: 12px 20px;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.cobranzas-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-top: 1px solid var(--cz-border-soft);
+  color: var(--cz-faint);
+  font-size: 11.5px;
+}
+.cobranzas-pagination div { display: flex; align-items: center; gap: 10px; }
+.cobranzas-pagination b { color: var(--cz-navy-2); font-weight: 700; }
+.cobranzas-pagination button {
+  width: 32px;
+  height: 30px;
+  border: 1px solid var(--cz-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cz-teal);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.cobranzas-pagination button:hover:not(:disabled) { background: var(--cz-teal-soft); border-color: var(--cz-teal); }
+.cobranzas-pagination button:disabled { opacity: .35; cursor: default; }
+
+@media (max-width: 850px) {
+  .cobranzas-topbar { padding: 0 14px; }
+  .cobranzas-user { display: none; }
+  .cobranzas-main { padding: 16px; }
+  .cobranzas-kpis { grid-template-columns: 1fr; }
+  .cobranzas-filtros { grid-template-columns: 1fr 1fr; }
+  .cobranzas-search { grid-column: 1 / -1; }
+}
+@media (max-width: 520px) {
+  .cobranzas-wordmark { width: 115px; }
+  .cobranzas-area-badge { display: none; }
+  .cobranzas-filtros { grid-template-columns: 1fr; }
+  .cobranzas-search { grid-column: auto; }
+  .cobranzas-pagination { align-items: flex-start; gap: 10px; flex-direction: column; }
+}
+
+/* ============================================================
+   Gestión de Calidad — badges, botones y modales (exclusivo del
+   área Calidad; la ficha completa vive en un modal por cliente).
+   ============================================================ */
+
+.calidad-responsable { min-width: 170px; color: #334155 !important; font-size: 10.5px !important; font-weight: 800; }
+
+.calidad-gestion-cell { min-width: 155px; }
+.calidad-gestion-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 138px;
+  padding: 9px 12px;
+  border: 1px solid #fde68a;
+  border-radius: var(--cz-radius-sm);
+  background: #fffbeb;
+  color: #92400e;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.calidad-gestion-btn:hover { box-shadow: 0 4px 12px rgba(180, 83, 9, .14); transform: translateY(-1px); }
+.calidad-gestion-btn small { font-size: 8.5px; letter-spacing: .2px; opacity: .75; }
+.calidad-gestion-btn.completo { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
+.calidad-gestion-btn.completo:hover { box-shadow: 0 4px 12px rgba(4, 120, 87, .14); }
+
+.calidad-historial-btn {
+  height: 35px;
+  padding: 0 13px;
+  border: 1px solid #ddd6fe;
+  border-radius: var(--cz-radius-sm);
+  background: #f5f3ff;
+  color: #6d28d9;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.calidad-historial-btn:hover { background: #ede9fe; border-color: #c4b5fd; transform: translateY(-1px); }
+
+.calidad-estado-final {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 175px;
+  padding: 6px 10px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  white-space: normal;
+}
+.calidad-estado-final::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+.calidad-estado-final.pendiente { border-color: #fde68a; background: #fffbeb; color: #b45309; }
+.calidad-estado-final.positivo { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
+.calidad-estado-final.negativo { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+.calidad-estado-final.alerta { border-color: #fed7aa; background: #fff7ed; color: #c2410c; }
+.calidad-estado-final.informativo { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+
+.calidad-fecha { min-width: 128px; color: var(--cz-teal) !important; font-weight: 800; }
+.calidad-comentario-col { max-width: 210px; min-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64748b; }
+
+/* ---------- Modales ---------- */
+
+.calidad-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .6);
+  backdrop-filter: blur(4px);
+}
+
+.calidad-modal {
+  width: min(780px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--cz-shadow-lg);
+}
+
+.calidad-modal > header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--cz-border-soft);
+  background: #fff;
+}
+.calidad-modal > header span {
+  color: var(--cz-teal);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+.calidad-modal > header h2 { margin: 5px 0; color: var(--cz-navy); font-size: 20px; font-weight: 800; }
+.calidad-modal > header p { margin: 0; color: var(--cz-faint); font-size: 11.5px; }
+.calidad-modal > header > button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid var(--cz-border);
+  border-radius: var(--cz-radius-sm);
+  background: #fff;
+  color: var(--cz-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.calidad-modal > header > button:hover { background: #f1f5f9; color: var(--cz-navy); }
+
+.calidad-responsable-box {
+  padding: 18px 24px;
+  background: var(--cz-teal-soft);
+  border-bottom: 1px solid #d3f3ec;
+}
+
+.calidad-responsable-box label span,
+.calidad-modal-grid label span {
+  display: block;
+  margin-bottom: 8px;
+  color: #475569;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.calidad-responsable-box select,
+.calidad-modal-grid select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 41px;
+  padding: 0 34px 0 13px;
+  border: 1px solid #99e0d3;
+  border-radius: var(--cz-radius-sm);
+  background: #fff;
+  color: #0f766e;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  outline: none;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.calidad-responsable-box select:focus,
+.calidad-modal-grid select:focus {
+  border-color: var(--cz-teal);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, .14);
+}
+
+.calidad-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  padding: 22px 24px;
+}
+.calidad-modal-grid label:last-child { grid-column: 1 / -1; }
+
+.calidad-modal-grid select.pendiente { border-color: #fde68a; background: #fffbeb; color: #b45309; }
+.calidad-modal-grid select.positivo { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
+.calidad-modal-grid select.negativo { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+.calidad-modal-grid select.alerta { border-color: #fed7aa; background: #fff7ed; color: #c2410c; }
+.calidad-modal-grid select.informativo { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+
+.calidad-modal select:disabled { cursor: default; opacity: .7; }
+
+.calidad-modal > footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--cz-border-soft);
+  background: #fff;
+}
+.calidad-modal > footer span { color: var(--cz-muted); font-size: 10.5px; font-weight: 700; }
+.calidad-modal > footer button {
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--cz-radius-sm);
+  background: var(--cz-navy);
+  color: #fff;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.calidad-modal > footer button:hover { background: var(--cz-navy-2); }
+
+.calidad-comentario-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 0 24px 22px;
+}
+.calidad-comentario-box label { flex: 1; }
+.calidad-comentario-box label span {
+  display: block;
+  margin-bottom: 8px;
+  color: #475569;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+.calidad-comentario-box textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 84px;
+  padding: 12px;
+  border: 1px solid var(--cz-border);
+  border-radius: var(--cz-radius-sm);
+  background: #f8fafc;
+  color: var(--cz-ink);
+  font: inherit;
+  font-size: 11.5px;
+  resize: vertical;
+  outline: none;
+  transition: .15s ease;
+}
+.calidad-comentario-box textarea:focus {
+  border-color: var(--cz-teal);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, .1);
+}
+.calidad-comentario-box > button {
+  height: 39px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: var(--cz-radius-sm);
+  background: var(--cz-teal);
+  color: #fff;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.calidad-comentario-box > button:hover:not(:disabled) { background: #0d5f58; }
+.calidad-comentario-box > button:disabled { opacity: .6; cursor: default; }
+
+.calidad-historial-modal { width: min(690px, calc(100vw - 32px)); }
+.calidad-historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px;
+}
+.calidad-historial-lista > p { text-align: center; color: var(--cz-faint); font-size: 12.5px; padding: 10px 0; }
+.calidad-historial-lista article {
+  padding: 13px 15px;
+  border: 1px solid var(--cz-border-soft);
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: .15s ease;
+}
+.calidad-historial-lista article:hover { border-color: var(--cz-border); background: #f4f7fa; }
+.calidad-historial-lista article > div { display: flex; justify-content: space-between; gap: 15px; }
+.calidad-historial-lista strong { color: #334155; font-size: 10.5px; font-weight: 800; }
+.calidad-historial-lista time { color: var(--cz-faint); font-size: 9.5px; }
+.calidad-historial-lista p { display: flex; align-items: center; gap: 8px; margin: 9px 0; color: #475569; font-size: 11.5px; }
+.calidad-historial-lista p span { padding: 4px 8px; border-radius: 7px; background: #fff; border: 1px solid var(--cz-border-soft); }
+.calidad-historial-lista p b { color: var(--cz-teal); }
+.calidad-historial-lista small { color: var(--cz-muted); font-size: 9.5px; }
+
+@media (max-width: 620px) {
+  .calidad-modal-grid { grid-template-columns: 1fr; }
+  .calidad-modal-grid label:last-child { grid-column: auto; }
+  .calidad-modal > footer { align-items: stretch; flex-direction: column; }
+  .calidad-modal > footer button { width: 100%; }
+  .calidad-comentario-box { align-items: stretch; flex-direction: column; }
+  .calidad-comentario-box > button { width: 100%; }
+}
+/*
+.cobranzas-shell{min-height:100vh;background:linear-gradient(120deg,#f8edef 0%,#eef3f8 55%,#f7f9fb 100%);font-family:'DM Sans',Inter,sans-serif;color:#111827}.cobranzas-topbar{height:80px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #fecaca}.cobranzas-brand{display:flex;align-items:center;gap:12px}.cobranzas-logo{width:38px;height:38px;object-fit:contain}.cobranzas-wordmark{display:block;width:148px;height:auto}.cobranzas-brand span{display:block;margin-top:2px;font-size:9px;font-weight:800;letter-spacing:.9px;color:#94a3b8}.cobranzas-top-actions{display:flex;align-items:center;gap:10px}.cobranzas-area-badge{padding:8px 14px;border-radius:20px;background:#0f766e;color:#fff;font-size:10px;font-weight:900}.cobranzas-user{padding:8px 14px;border:1px solid #e2e8f0;border-radius:20px;font-size:11px;font-weight:700}.cobranzas-exit{height:34px;padding:0 16px;border:1px solid #fca5a5;border-radius:9px;background:#fff;color:#dc2626;font-weight:700;cursor:pointer}.cobranzas-main{padding:22px;max-width:1800px;margin:auto}.cobranzas-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.cobranzas-heading h1{margin:0;font-size:21px}.cobranzas-heading p{margin:5px 0 0;color:#8da0bd;font-size:12px}.cobranzas-heading button{height:38px;padding:0 20px;border:0;border-radius:9px;background:#0f172a;color:#fff;font-weight:800;cursor:pointer}.cobranzas-heading button:disabled{opacity:.6}.cobranzas-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}.cobranzas-kpis article{padding:18px 20px;background:#fff;border-radius:13px;border-top:4px solid #14b8a6;box-shadow:0 2px 5px rgba(15,23,42,.07)}.cobranzas-kpis article:nth-child(2){border-color:#2563eb}.cobranzas-kpis article:nth-child(3){border-color:#8b5cf6}.cobranzas-kpis strong{display:block;font-size:26px}.cobranzas-kpis span{display:block;margin-top:5px;color:#94a3b8;font-size:10px;font-weight:800}.cobranzas-filtros{display:grid;grid-template-columns:minmax(300px,1fr) 180px 180px auto;gap:12px;align-items:end;padding:15px 17px;margin-bottom:16px;background:#fff;border-radius:13px;box-shadow:0 2px 5px rgba(15,23,42,.07)}.cobranzas-filtros label span{display:block;margin-bottom:6px;color:#64748b;font-size:9px;font-weight:900}.cobranzas-filtros input{box-sizing:border-box;width:100%;height:37px;padding:0 12px;border:1px solid #dbe2ea;border-radius:9px;background:#f8fafc;font:inherit;font-size:12px;outline:none}.cobranzas-filtros input:focus{border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.1)}.cobranzas-filtros>button{height:37px;padding:0 18px;border:1px solid #dbe2ea;border-radius:9px;background:#fff;color:#64748b;cursor:pointer}.cobranzas-table-card{overflow:hidden;background:#fff;border-radius:13px;box-shadow:0 2px 6px rgba(15,23,42,.08)}.cobranzas-table-title{padding:15px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eef2f7;font-size:13px}.cobranzas-table-title span{padding:4px 9px;border-radius:20px;background:#0f766e;color:#fff;font-size:10px;font-weight:800}.cobranzas-table-scroll{overflow:auto;max-height:calc(100vh - 390px)}.cobranzas-table-card table{width:100%;min-width:1100px;border-collapse:collapse}.cobranzas-table-card th{position:sticky;top:0;z-index:1;padding:12px 14px;background:#111827;color:#cbd5e1;text-align:left;font-size:9px;letter-spacing:.3px}.cobranzas-table-card td{padding:13px 14px;border-bottom:1px solid #edf0f4;color:#475569;font-size:11px}.cobranzas-table-card tr:hover td{background:#f8fffe}.cobranzas-table-card th:first-child,.cobranzas-table-card td:first-child{width:44px;text-align:center;color:#94a3b8}.cobranzas-name{min-width:220px;color:#111827!important;font-weight:800}.cobranzas-date{color:#0f766e!important;font-weight:800}.cobranzas-empty{padding:55px!important;text-align:center!important;color:#94a3b8!important}.cobranzas-error{padding:12px 18px;background:#fef2f2;color:#b91c1c;font-size:12px}.cobranzas-pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#94a3b8;font-size:11px}.cobranzas-pagination div{display:flex;align-items:center;gap:10px}.cobranzas-pagination b{color:#64748b}.cobranzas-pagination button{width:32px;height:30px;border:1px solid #dbe2ea;border-radius:8px;background:#fff;color:#0f766e;font-size:18px;cursor:pointer}.cobranzas-pagination button:disabled{opacity:.35;cursor:default}@media(max-width:850px){.cobranzas-topbar{padding:0 14px}.cobranzas-user{display:none}.cobranzas-main{padding:14px}.cobranzas-kpis{grid-template-columns:1fr}.cobranzas-filtros{grid-template-columns:1fr 1fr}.cobranzas-search{grid-column:1/-1}}@media(max-width:520px){.cobranzas-wordmark{width:115px}.cobranzas-area-badge{display:none}.cobranzas-filtros{grid-template-columns:1fr}.cobranzas-search{grid-column:auto}.cobranzas-pagination{align-items:flex-start;gap:10px;flex-direction:column}}
+Gestión de Calidad compacta: ficha anterior descartada durante la integración.
+.calidad-responsable{min-width:170px;color:#334155!important;font-size:10px!important;font-weight:800}.calidad-gestion-cell{min-width:150px}.calidad-gestion-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:135px;padding:8px 11px;border:1px solid #f5c67b;border-radius:9px;background:#fff8e7;color:#9a4d05;font:inherit;font-size:10px;font-weight:900;cursor:pointer}.calidad-gestion-btn small{font-size:8px;letter-spacing:.2px;opacity:.75}.calidad-gestion-btn.completo{border-color:#6ee7b7;background:#ecfdf5;color:#047857}.calidad-modal-overlay{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.58);backdrop-filter:blur(3px)}.calidad-modal{width:min(780px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;border-radius:18px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.3)}.calidad-modal>header{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:18px;padding:20px 22px 17px;border-bottom:1px solid #e5e7eb;background:#fff}.calidad-modal>header span{color:#0f766e;font-size:9px;font-weight:900;letter-spacing:.8px}.calidad-modal>header h2{margin:4px 0;font-size:19px}.calidad-modal>header p{margin:0;color:#94a3b8;font-size:11px}.calidad-modal>header>button{width:34px;height:34px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#64748b;font-size:22px;cursor:pointer}.calidad-responsable-box{padding:17px 22px;background:#f0fdfa;border-bottom:1px solid #ccfbf1}.calidad-responsable-box label span,.calidad-modal-grid label span{display:block;margin-bottom:7px;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.3px}.calidad-responsable-box select,.calidad-modal-grid select{box-sizing:border-box;width:100%;height:40px;padding:0 34px 0 12px;border:1px solid #99e6d7;border-radius:9px;background:#ecfdf8;color:#047857;font:inherit;font-size:11px;font-weight:800;outline:none}.calidad-responsable-box select:focus,.calidad-modal-grid select:focus{border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.13)}.calidad-modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:20px 22px}.calidad-modal-grid label:last-child{grid-column:1/-1}.calidad-modal-grid select.pendiente{border-color:#f5c67b;background:#fff8e7;color:#b45309}.calidad-modal select:disabled{cursor:default;opacity:1;-webkit-text-fill-color:currentColor}.calidad-modal textarea:disabled{cursor:default;opacity:1;color:#475569;background:#f8fafc}.calidad-modal>footer{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 22px;border-top:1px solid #e5e7eb;background:#fff}.calidad-modal>footer span{color:#64748b;font-size:10px;font-weight:700}.calidad-modal>footer button{height:37px;padding:0 17px;border:0;border-radius:9px;background:#0f766e;color:#fff;font-weight:800;cursor:pointer}@media(max-width:620px){.calidad-modal-grid{grid-template-columns:1fr}.calidad-modal-grid label:last-child{grid-column:auto}.calidad-modal>footer{align-items:stretch;flex-direction:column}.calidad-modal>footer button{width:100%}}
+.calidad-modal-grid select.positivo{border-color:#6ee7b7;background:#ecfdf5;color:#047857}.calidad-modal-grid select.negativo{border-color:#fca5a5;background:#fef2f2;color:#b91c1c}.calidad-modal-grid select.alerta{border-color:#fdba74;background:#fff7ed;color:#c2410c}.calidad-modal-grid select.informativo{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}.calidad-estado-final{display:inline-flex;max-width:170px;padding:6px 9px;border:1px solid;border-radius:8px;font-size:9px;font-weight:900;white-space:normal}.calidad-estado-final.pendiente{border-color:#f5c67b;background:#fff8e7;color:#b45309}.calidad-estado-final.positivo{border-color:#6ee7b7;background:#ecfdf5;color:#047857}.calidad-estado-final.negativo{border-color:#fca5a5;background:#fef2f2;color:#b91c1c}.calidad-estado-final.alerta{border-color:#fdba74;background:#fff7ed;color:#c2410c}.calidad-estado-final.informativo{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}.calidad-fecha{min-width:125px;color:#0f766e!important;font-weight:800}.calidad-comentario-col{max-width:210px;min-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.calidad-historial-btn{height:34px;padding:0 12px;border:1px solid #c4b5fd;border-radius:8px;background:#f5f3ff;color:#6d28d9;font:inherit;font-size:10px;font-weight:900;cursor:pointer}.calidad-comentario-box{display:flex;align-items:flex-end;gap:12px;padding:0 22px 20px}.calidad-comentario-box label{flex:1}.calidad-comentario-box label span{display:block;margin-bottom:7px;color:#475569;font-size:9px;font-weight:900}.calidad-comentario-box textarea{box-sizing:border-box;width:100%;min-height:82px;padding:11px;border:1px solid #dbe2ea;border-radius:9px;background:#f8fafc;font:inherit;font-size:11px;resize:vertical;outline:none}.calidad-comentario-box textarea:focus{border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.1)}.calidad-comentario-box>button{height:38px;padding:0 14px;border:0;border-radius:9px;background:#0f766e;color:#fff;font:inherit;font-size:10px;font-weight:900;cursor:pointer}.calidad-comentario-box>button:disabled{opacity:.6}.calidad-historial-modal{width:min(690px,calc(100vw - 32px))}.calidad-historial-lista{display:flex;flex-direction:column;gap:10px;padding:18px 22px}.calidad-historial-lista>p{text-align:center;color:#94a3b8;font-size:12px}.calidad-historial-lista article{padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}.calidad-historial-lista article>div{display:flex;justify-content:space-between;gap:15px}.calidad-historial-lista strong{color:#334155;font-size:10px}.calidad-historial-lista time{color:#94a3b8;font-size:9px}.calidad-historial-lista p{display:flex;align-items:center;gap:8px;margin:8px 0;color:#475569;font-size:11px}.calidad-historial-lista p span{padding:4px 7px;border-radius:6px;background:#fff}.calidad-historial-lista p b{color:#0f766e}.calidad-historial-lista small{color:#64748b;font-size:9px}@media(max-width:620px){.calidad-comentario-box{align-items:stretch;flex-direction:column}.calidad-comentario-box>button{width:100%}}
+*/
+
+/* Supervisión y Calidad comparten exactamente la misma apariencia; solo cambia el permiso de escritura. */
+.calidad-modal select:disabled{cursor:default;opacity:1;-webkit-text-fill-color:currentColor}
+.calidad-modal textarea:disabled{cursor:default;opacity:1;color:#475569;background:#f8fafc}
+.cobranzas-vendedor{min-width:165px;color:#334155!important;font-weight:800}
+
+/* Anchos fijos en px + scroll horizontal cuando no entra todo: los porcentajes
+   se rompían cada vez que se agregaba una columna (todo lo posterior se corría
+   de posición y el ancho que le tocaba a cada una dejaba de tener sentido —
+   así se comprimieron "Gestionar calidad" y "Estado final" al agregar Canal). */
+.cobranzas-table-scroll{overflow-x:auto;overflow-y:auto}
+.cobranzas-table-card table{width:100%;min-width:1100px;table-layout:fixed}
+.calidad-tabla-flat table{min-width:1800px}
+.cobranza-tabla-flat table{min-width:1666px}
+.cobranza-tabla-flat th:nth-child(1){width:36px}
+.cobranza-tabla-flat th:nth-child(2){width:180px}
+.cobranza-tabla-flat th:nth-child(3){width:90px}
+.cobranza-tabla-flat th:nth-child(4){width:80px}
+.cobranza-tabla-flat th:nth-child(5),.cobranza-tabla-flat th:nth-child(6){width:90px}
+.cobranza-tabla-flat th:nth-child(7){width:160px}
+.cobranza-tabla-flat th:nth-child(8){width:100px}
+.cobranza-tabla-flat th:nth-child(9){width:170px}
+.cobranza-tabla-flat th:nth-child(10){width:130px}
+.cobranza-tabla-flat th:nth-child(11){width:120px}
+.cobranza-tabla-flat th:nth-child(12){width:110px}
+.cobranza-tabla-flat th:nth-child(13){width:150px}
+.cobranza-tabla-flat th:nth-child(14){width:160px}
+.cobranzas-table-card th,.cobranzas-table-card td{box-sizing:border-box;padding-left:9px;padding-right:9px;overflow-wrap:anywhere;word-break:normal}
+.cobranzas-table-card th{font-size:8.5px;line-height:1.2}
+.cobranzas-table-card td{font-size:10px;line-height:1.35}
+.calidad-tabla-flat th:nth-child(1){width:36px}
+.calidad-tabla-flat th:nth-child(2){width:170px}
+.calidad-tabla-flat th:nth-child(3){width:90px}
+.calidad-tabla-flat th:nth-child(4){width:80px}
+.calidad-tabla-flat th:nth-child(5),.calidad-tabla-flat th:nth-child(6){width:90px}
+.calidad-tabla-flat th:nth-child(7){width:150px}
+.calidad-tabla-flat th:nth-child(8){width:100px}
+.calidad-tabla-flat th:nth-child(9){width:140px}
+.calidad-tabla-flat th:nth-child(10){width:90px}
+.calidad-tabla-flat th:nth-child(11){width:140px}
+.calidad-tabla-flat th:nth-child(12){width:110px}
+.calidad-tabla-flat th:nth-child(13){width:110px}
+.calidad-tabla-flat th:nth-child(14){width:150px}
+.calidad-tabla-flat th:nth-child(15){width:90px}
+.calidad-tabla-flat th:nth-child(16){width:160px}
+.cobranzas-name,.cobranzas-vendedor,.calidad-responsable,.calidad-gestion-cell,.calidad-comentario-col{min-width:0;max-width:none}
+.calidad-gestion-btn{width:100%;min-width:0;padding:8px 9px}
+.calidad-estado-final{white-space:nowrap}
+.calidad-historial-btn{width:100%;padding-left:5px;padding-right:5px}
+.calidad-estado-final{max-width:100%;padding:5px 7px;font-size:8px}
+.cobranzas-table-card th:has(.calidad-filtro-columna){z-index:10;overflow:visible}
+.calidad-filtro-columna{position:static}
+.calidad-filtro-columna>button{display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer}
+.calidad-filtro-columna>button span{font-size:7px;color:#94a3b8}
+.calidad-filtro-columna>button.activo{color:#fbbf24}
+.calidad-filtro-menu{position:absolute;top:calc(100% + 8px);left:-6px;z-index:100;width:245px;padding:10px;border:1px solid #dbe2ea;border-radius:12px;background:#fff;box-shadow:0 18px 45px rgba(15,23,42,.24),0 2px 8px rgba(15,23,42,.08);color:#334155;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none}
+.calidad-filtro-menu::before{content:"";position:absolute;top:-5px;left:22px;width:9px;height:9px;border-top:1px solid #dbe2ea;border-left:1px solid #dbe2ea;background:#fff;transform:rotate(45deg)}
+.calidad-filtro-menu>input{box-sizing:border-box;width:100%;height:34px;margin-bottom:8px;padding:0 10px;border:1px solid #dbe2ea;border-radius:8px;background:#f8fafc;color:#334155;font:inherit;outline:none}
+.calidad-filtro-menu>input:focus{border-color:#14b8a6;box-shadow:0 0 0 2px rgba(20,184,166,.12)}
+.calidad-filtro-menu label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.calidad-filtro-menu input[type="checkbox"]{width:14px;height:14px;margin:0;accent-color:#2563eb}
+.calidad-filtro-todos{padding:5px 3px 9px;border-bottom:1px solid #e5e7eb;color:#334155;font-weight:900}
+.calidad-filtro-opciones{display:flex;max-height:230px;margin-top:6px;overflow-y:auto;flex-direction:column;gap:0}
+.calidad-filtro-opciones label{padding:6px 3px;border-radius:5px}
+.calidad-filtro-opciones label:hover{background:#f1f5f9}
+.calidad-filtro-opciones small{padding:12px;text-align:center;color:#94a3b8}
+.cobranzas-brand span{display:block;margin-top:2px;padding:0;border-radius:0;background:transparent;color:#94a3b8;font-size:8px;font-weight:800;letter-spacing:.8px}
+
+/* ============================================================
+   Super de Calidad — panel de rendimiento del equipo.
+   Dashboard SaaS: mismos tokens --cz-* del shell compartido.
+   ============================================================ */
+
+/* ---------- Toolbar: pestañas + controles del dashboard ---------- */
+.sup-calidad-toolbar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  padding:12px 16px;background:var(--cz-card);border:1px solid var(--cz-border-soft);
+  border-radius:var(--cz-radius-lg);box-shadow:var(--cz-shadow-sm);
+}
+.sup-calidad-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:var(--cz-bg)}
+.sup-calidad-tabs button{min-width:120px;height:38px;padding:0 18px;border:0;border-radius:9px;background:transparent;color:var(--cz-muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:.16s ease}
+.sup-calidad-tabs button:hover{color:var(--cz-navy)}
+.sup-calidad-tabs button.activo{background:#fff;color:var(--cz-navy);box-shadow:var(--cz-shadow-sm);font-weight:900}
+.sup-calidad-toolbar-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sup-calidad-menu{position:relative}
+.sup-calidad-hamburguesa{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;border:1px solid var(--cz-line,#e2e8f0);border-radius:9px;background:#fff;color:var(--cz-navy);font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.sup-calidad-hamburguesa-icono{font-size:14px;line-height:1}
+.sup-calidad-menu-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:20;display:flex;flex-direction:column;min-width:160px;padding:6px;border-radius:10px;background:#fff;box-shadow:0 12px 32px rgba(15,23,42,.16);border:1px solid #eef2f7}
+.sup-calidad-menu-panel button{text-align:left;height:36px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:var(--cz-muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.sup-calidad-menu-panel button:hover{background:var(--cz-bg)}
+.sup-calidad-menu-panel button.activo{background:var(--cz-bg);color:var(--cz-navy);font-weight:900}
+.sup-calidad-fecha{display:flex;align-items:center;gap:9px}
+.sup-calidad-fecha span{color:var(--cz-muted);font-size:9.5px;font-weight:800;letter-spacing:.5px}
+.sup-calidad-fecha input{height:38px;padding:0 12px;border:1px solid var(--cz-border);border-radius:9px;background:#f8fafc;color:var(--cz-ink);font:inherit;font-size:12px;outline:none;transition:.15s ease}
+.sup-calidad-fecha input:focus{border-color:var(--cz-navy);background:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+.sup-calidad-encargado{display:flex;align-items:center;gap:9px}
+.sup-calidad-encargado span{color:var(--cz-muted);font-size:9.5px;font-weight:800;letter-spacing:.5px}
+.sup-calidad-encargado select{height:38px;min-width:190px;padding:0 12px;border:1px solid var(--cz-border);border-radius:9px;background:#f8fafc;color:var(--cz-ink);font:inherit;font-size:12px;font-weight:700;outline:none;cursor:pointer;transition:.15s ease}
+.sup-calidad-encargado select:focus{border-color:var(--cz-navy);background:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+.sup-calidad-actualizar{height:40px;padding:0 22px;border:0;border-radius:10px;background:var(--cz-navy);color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(15,23,42,.18);transition:.15s ease}
+.sup-calidad-actualizar:hover:not(:disabled){background:var(--cz-navy-2);transform:translateY(-1px)}
+.sup-calidad-actualizar:disabled{opacity:.6;cursor:default;box-shadow:none}
+
+/* ---------- Encabezado del panel ---------- */
+.sup-calidad-rendimiento{overflow:hidden;border:1px solid var(--cz-border-soft);border-radius:var(--cz-radius-lg);background:var(--cz-card);box-shadow:var(--cz-shadow-sm)}
+.sup-calidad-rendimiento>header{position:relative;padding:22px 130px 18px 24px;border-bottom:1px solid var(--cz-border-soft)}
+.sup-calidad-eyebrow{display:block;color:#7c3aed;font-size:9.5px;font-weight:900;letter-spacing:.7px}
+.sup-calidad-rendimiento>header h2{margin:6px 0 4px;color:var(--cz-navy);font-size:21px;font-weight:800;letter-spacing:-.3px}
+.sup-calidad-rendimiento>header p{margin:0;max-width:640px;color:var(--cz-faint);font-size:12px}
+.sup-rend-volver{position:absolute;right:24px;top:22px;height:34px;padding:0 16px;border:1px solid var(--cz-border);border-radius:999px;background:#fff;color:var(--cz-navy-2);font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;transition:.15s ease}
+.sup-rend-volver:hover{background:var(--cz-bg);border-color:#cbd5e1}
+
+/* ---------- KPIs mensuales ---------- */
+.sup-rend-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;padding:20px 24px;background:var(--cz-bg)}
+.sup-rend-kpis article{position:relative;overflow:hidden;padding:14px 15px;border:1px solid var(--cz-border-soft);border-radius:var(--cz-radius-md);background:#fff;box-shadow:var(--cz-shadow-xs);transition:.18s ease}
+.sup-rend-kpis article::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cz-navy)}
+.sup-rend-kpis article:hover{box-shadow:var(--cz-shadow-sm);transform:translateY(-1px)}
+.sup-rend-kpis article:nth-child(2)::before{background:#059669}
+.sup-rend-kpis article:nth-child(3)::before{background:#d97706}
+.sup-rend-kpis article:nth-child(4)::before{background:#dc2626}
+.sup-rend-kpis article:nth-child(5)::before{background:#ca8a04}
+.sup-rend-kpis article:nth-child(6)::before{background:var(--cz-teal)}
+.sup-rend-kpis strong{display:block;color:var(--cz-navy);font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.1}
+.sup-rend-kpis span{display:block;margin-top:5px;color:var(--cz-faint);font-size:9px;font-weight:800;letter-spacing:.4px}
+.sup-rend-kpi-efectividad strong{color:var(--cz-teal)}
+.sup-rend-kpi-efectividad small{display:block;margin-top:4px;color:var(--cz-muted);font-size:8.5px;font-weight:700}
+
+/* ---------- Gráfico de evolución + distribución del mes ---------- */
+.sup-rend-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:20px 24px 0}
+.sup-rend-chart-card,.sup-rend-distribucion-card{padding:17px 19px;border:1px solid var(--cz-border-soft);border-radius:var(--cz-radius-md);background:#fff;box-shadow:var(--cz-shadow-xs)}
+.sup-rend-card-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;color:var(--cz-navy);font-size:12.5px;font-weight:800}
+.sup-rend-card-title span{color:var(--cz-faint);font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase}
+.sup-rend-chart-wrap{position:relative;height:280px}
+
+.sup-rend-dist-bar{display:flex;height:14px;overflow:hidden;border-radius:999px;background:var(--cz-border-soft)}
+.sup-rend-dist-bar span{display:block;height:100%;transition:width .3s ease}
+.sup-rend-dist-bar .seg-pendiente{background:#eab308}
+.sup-rend-dist-bar .seg-satisfecho{background:#10b981}
+.sup-rend-dist-bar .seg-regular{background:#f59e0b}
+.sup-rend-dist-bar .seg-insatisfecho{background:#ef4444}
+.sup-rend-dist-bar .seg-observado{background:#fb923c}
+.sup-rend-dist-bar .seg-no_reconoce_servicio{background:#fda4af}
+.sup-rend-dist-bar .seg-baja{background:#94a3b8}
+.sup-rend-dist-legend{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.sup-rend-dist-legend span{display:flex;align-items:center;gap:7px;color:var(--cz-muted);font-size:11px;font-weight:700}
+.sup-rend-dist-legend span::before{content:'';width:8px;height:8px;flex:0 0 auto;border-radius:50%}
+.sup-rend-dist-legend b{margin-left:auto;color:var(--cz-navy);font-weight:800}
+.sup-rend-dist-legend small{min-width:34px;color:var(--cz-faint);font-size:9.5px;font-weight:700;text-align:right}
+.sup-rend-dist-legend .leg-pendiente::before{background:#eab308}
+.sup-rend-dist-legend .leg-satisfecho::before{background:#10b981}
+.sup-rend-dist-legend .leg-regular::before{background:#f59e0b}
+.sup-rend-dist-legend .leg-insatisfecho::before{background:#ef4444}
+.sup-rend-dist-legend .leg-observado::before{background:#fb923c}
+.sup-rend-dist-legend .leg-no_reconoce_servicio::before{background:#fda4af}
+.sup-rend-dist-legend .leg-baja::before{background:#94a3b8}
+
+/* ---------- Ranking / comparación entre encargados ---------- */
+.sup-rend-ranking-card{margin:16px 24px 0;border:1px solid var(--cz-border-soft);border-radius:var(--cz-radius-md);background:#fff;box-shadow:var(--cz-shadow-xs);overflow:hidden}
+.sup-rend-ranking-card .sup-rend-card-title{margin:0;padding:15px 19px;border-bottom:1px solid var(--cz-border-soft)}
+.sup-rend-ranking-scroll{overflow-x:auto}
+.sup-rend-ranking{width:100%;min-width:520px;border-collapse:collapse}
+.sup-rend-ranking th{position:sticky;top:0;padding:10px 14px;background:var(--cz-navy);color:#cbd5e1;text-align:left;font-size:9px;font-weight:800;letter-spacing:.4px}
+.sup-rend-ranking th:not(:first-child),.sup-rend-ranking td:not(:first-child){text-align:right}
+.sup-rend-ranking td{padding:11px 14px;border-bottom:1px solid var(--cz-border-soft);color:#475569;font-size:12px}
+.sup-rend-ranking tbody tr{cursor:pointer;transition:background-color .12s ease}
+.sup-rend-ranking tbody tr:hover td{background:#f6faf9}
+.sup-rend-ranking-nombre{color:var(--cz-navy);font-weight:800;text-align:left!important}
+.sup-rend-ranking-ef{display:flex;align-items:center;justify-content:flex-end;gap:9px}
+.sup-rend-ranking-ef span{min-width:44px;color:var(--cz-navy);font-weight:800}
+.sup-rend-ranking-ef-track{width:64px;height:6px;border-radius:999px;background:var(--cz-border-soft);overflow:hidden}
+.sup-rend-ranking-ef-track div{height:100%;background:var(--cz-teal);border-radius:999px}
+
+/* ---------- Tarjetas de personal ---------- */
+.sup-calidad-metricas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:20px 24px 26px}
+.sup-calidad-persona{overflow:hidden;border:1px solid var(--cz-border-soft);border-radius:var(--cz-radius-md);background:#fff;box-shadow:var(--cz-shadow-xs);transition:.18s ease;cursor:pointer;text-align:left}
+.sup-calidad-persona:hover{box-shadow:var(--cz-shadow-sm);transform:translateY(-1px);border-color:#cbd5e1}
+.sup-calidad-persona:focus-visible{outline:2px solid var(--cz-teal);outline-offset:2px}
+
+.sup-calidad-persona>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 19px;background:#fafbfd;border-bottom:1px solid var(--cz-border-soft)}
+.sup-calidad-persona>header strong{display:block;color:var(--cz-navy);font-size:15.5px;font-weight:800;letter-spacing:-.2px}
+.sup-calidad-persona>header span{display:inline-block;margin-top:7px;padding:3px 9px;border-radius:999px;background:#f3e8ff;color:#7c3aed;font-size:8.5px;font-weight:800;letter-spacing:.5px}
+.sup-calidad-persona>header>b{display:flex;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:center;min-width:78px;padding:9px 14px;border:1px solid var(--cz-border);border-radius:12px;background:#fff;color:var(--cz-navy);font-size:24px;font-weight:800;line-height:1}
+.sup-calidad-persona>header>b small{margin-top:5px;color:var(--cz-faint);font-size:7.5px;font-weight:800;letter-spacing:.6px}
+
+.sup-rend-persona-efectividad{display:flex;align-items:baseline;gap:8px;padding:11px 19px;background:var(--cz-teal-soft);border-bottom:1px solid var(--cz-border-soft);font-size:10.5px;font-weight:700;color:var(--cz-muted)}
+.sup-rend-persona-efectividad strong{color:var(--cz-teal);font-size:15px;font-weight:800}
+.sup-rend-persona-efectividad small{margin-left:auto;color:var(--cz-faint);font-size:9.5px;font-weight:700}
+
+.sup-calidad-persona>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:4px 10px;padding:15px 18px 17px;border-top:1px solid var(--cz-border-soft)}
+.sup-calidad-persona>div>span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:7px 4px 7px 10px;border-left:2px solid var(--cz-border);text-align:left;font-size:8.5px;font-weight:800;letter-spacing:.3px;color:var(--cz-muted)}
+.sup-calidad-persona>div>span b{font-size:19px;font-weight:800;color:var(--cz-navy);letter-spacing:-.3px}
+.sup-calidad-persona .m-pendiente{border-left-color:#f5c67b}
+.sup-calidad-persona .m-pendiente b{color:#b45309}
+.sup-calidad-persona .m-positivo{border-left-color:#6ee7b7}
+.sup-calidad-persona .m-positivo b{color:#047857}
+.sup-calidad-persona .m-alerta{border-left-color:#fdba74}
+.sup-calidad-persona .m-alerta b{color:#c2410c}
+.sup-calidad-persona .m-negativo{border-left-color:#fca5a5}
+.sup-calidad-persona .m-negativo b{color:#b91c1c}
+
+.sup-calidad-sin-datos{grid-column:1/-1;padding:56px 20px;text-align:center;color:var(--cz-faint);font-size:12.5px}
+
+@media(max-width:1200px){
+  .sup-rend-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sup-rend-grid{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+  .sup-calidad-metricas-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .sup-calidad-toolbar{flex-direction:column;align-items:stretch}
+  .sup-calidad-tabs{width:100%;box-sizing:border-box}
+  .sup-calidad-tabs button{min-width:0;flex:1;padding:0 5px;font-size:10.5px}
+  .sup-calidad-toolbar-controls{width:100%;justify-content:flex-end}
+  .sup-calidad-fecha,.sup-calidad-encargado{flex:1;min-width:130px}
+  .sup-calidad-fecha input,.sup-calidad-encargado select{width:100%;min-width:0}
+  .sup-rend-kpis{grid-template-columns:1fr 1fr;padding:16px}
+  .sup-rend-grid{padding:16px 16px 0}
+  .sup-rend-ranking-card{margin:16px}
+  .sup-calidad-rendimiento>header{padding:20px 20px 16px}
+  .sup-rend-volver{position:static;display:block;margin-top:12px}
+}
+@media(max-width:480px){
+  .sup-calidad-persona>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sup-calidad-persona>header{flex-wrap:wrap}
+  .sup-rend-kpis{grid-template-columns:1fr 1fr}
+}
+
+/* ---------- Cobranza ---------- */
+.cobranza-gestion-cell{min-width:150px}
+.cobranza-gestion-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:135px;padding:8px 11px;border:1px solid #93c5fd;border-radius:9px;background:#eff6ff;color:#1d4ed8;font:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.cobranza-gestion-btn small{font-size:8px;letter-spacing:.2px;opacity:.75}
+.cobranza-gestion-btn:hover{box-shadow:0 4px 12px rgba(29,78,216,.14);transform:translateY(-1px)}
+.cobranza-gestion-btn.completo{border-color:#6ee7b7;background:#ecfdf5;color:#047857}
+.cobranza-gestion-btn.completo:hover{box-shadow:0 4px 12px rgba(4,120,87,.14)}
+.cobranza-gestion-btn.alerta{border-color:#fed7aa;background:#fff7ed;color:#c2410c}
+.cobranza-gestion-btn.alerta:hover{box-shadow:0 4px 12px rgba(194,65,12,.14)}
+.cobranza-datos-box{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:17px 22px;background:#f0fdfa;border-bottom:1px solid #ccfbf1}
+.cobranza-datos-box label span{display:block;margin-bottom:7px;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.3px}
+.cobranza-input-row{display:flex;gap:8px}
+.cobranza-input-row input{box-sizing:border-box;flex:1;height:40px;padding:0 12px;border:1px solid #99e6d7;border-radius:9px;background:#ecfdf8;color:#0f766e;font:inherit;font-size:11px;font-weight:700;outline:none}
+.cobranza-input-row input:focus{border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.13)}
+.cobranza-input-row input:disabled{cursor:default;opacity:1;-webkit-text-fill-color:currentColor}
+.cobranza-input-row button{height:40px;padding:0 14px;border:0;border-radius:9px;background:#0f766e;color:#fff;font:inherit;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap}
+.cobranza-input-row button:disabled{opacity:.6}
+.cobranza-modal-recibos{display:flex;flex-direction:column;gap:8px;padding:18px 22px}
+.cobranza-recibo-row{display:flex;flex-direction:column;gap:8px;padding:10px 13px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+.cobranza-recibo-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cobranza-recibo-info{display:flex;flex-direction:column;gap:2px}
+.cobranza-recibo-info b{font-size:11px;color:#334155;letter-spacing:.3px}
+.cobranza-recibo-info span{font-size:10px;color:#64748b}
+.cobranza-recibo-row select{width:150px;height:36px;padding:0 10px;border:1px solid #e2e8f0;border-radius:8px;font:inherit;font-size:10px;font-weight:800;outline:none;cursor:pointer}
+.cobranza-recibo-row select:disabled{cursor:default;opacity:1;-webkit-text-fill-color:currentColor}
+.cobranza-tipificacion-pagado{border-color:#6ee7b7!important;background:#ecfdf5!important;color:#047857!important}
+.cobranza-tipificacion-pendiente{border-color:#f5c67b!important;background:#fff8e7!important;color:#b45309!important}
+.cobranza-tipificacion-vencido{border-color:#fca5a5!important;background:#fef2f2!important;color:#b91c1c!important}
+.cobranza-tipificacion-suspendido{border-color:#fdba74!important;background:#fff7ed!important;color:#c2410c!important}
+.cobranza-tipificacion-baja{border-color:#cbd5e1!important;background:#f1f5f9!important;color:#475569!important}
+.cobranza-tipificacion-por-vencer{border-color:#93c5fd!important;background:#eff6ff!important;color:#1d4ed8!important}
+.cobranza-recibo-comentario{display:flex;gap:8px}
+.cobranza-recibo-comentario input{flex:1;min-width:0;height:32px;padding:0 10px;border:1px solid #e2e8f0;border-radius:8px;font:inherit;font-size:11px;outline:none}
+.cobranza-recibo-comentario input:disabled{cursor:default;opacity:1;-webkit-text-fill-color:currentColor}
+.cobranza-recibo-comentario button{height:32px;padding:0 12px;border:0;border-radius:8px;background:#0f766e;color:#fff;font:inherit;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap}
+.cobranza-recibo-comentario button:disabled{opacity:.6}
+.cobranza-recibo-historial{list-style:none;margin:0;padding:6px 10px;background:#fff;border:1px solid #eef2f7;border-radius:8px;max-height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.cobranza-recibo-historial li{font-size:10px;color:#475569;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.cobranza-recibo-historial b{color:#334155}
+.cobranza-recibo-historial time{margin-left:auto;color:#94a3b8;font-size:9px;white-space:nowrap}
+.cobranza-ciclo-o-fecha{margin-top:8px;padding-top:8px;border-top:1px dashed #99e6d7}
+.cobranza-ciclo-o-fecha>span{display:block;margin-bottom:4px;font-size:10px;color:#0f766e;font-weight:700}
+.cobranza-sin-ciclo{margin:0;padding:24px 22px;text-align:center;color:#94a3b8;font-size:12px}
+@media(max-width:620px){.cobranza-datos-box{grid-template-columns:1fr}.cobranza-input-row{flex-direction:column}.cobranza-input-row button{width:100%}.cobranza-recibo-row{flex-direction:column;align-items:stretch}.cobranza-recibo-row select{width:100%}}
+.cobranza-recibo-info{gap:2px}
+.cobranza-recibo-ultima-llamada{color:#94a3b8;font-size:9px;font-style:italic}
+.cobranza-recibo-selects{display:flex;gap:8px;flex-wrap:wrap}
+.cobranza-select-llamada{width:190px;height:36px;padding:0 10px;border:1px solid #e2e8f0;border-radius:8px;font:inherit;font-size:10px;font-weight:800;outline:none;cursor:pointer;background:#f8fafc;color:#475569}
+.cobranza-select-llamada:disabled{cursor:default;opacity:1;-webkit-text-fill-color:currentColor}
+.cobranza-select-llamada.positivo{border-color:#6ee7b7;background:#ecfdf5;color:#047857}
+.cobranza-select-llamada.negativo{border-color:#fca5a5;background:#fef2f2;color:#b91c1c}
+.cobranza-select-llamada.alerta{border-color:#fdba74;background:#fff7ed;color:#c2410c}
+.cobranza-select-llamada.informativo{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}
+@media(max-width:620px){.cobranza-select-llamada{width:100%}}
+.calidad-orden-btn{border:1px solid #cbd5e1;background:#fff;color:#64748b;border-radius:6px;width:22px;height:22px;line-height:1;font-size:12px;cursor:pointer;flex-shrink:0}
+.calidad-orden-btn.activo{border-color:#14b8a6;background:#ccfbf1;color:#0f766e}
+/* Tabla mas compacta: mas filas visibles sin necesidad de scroll. */
+.cobranzas-table-card th{padding:8px 14px}
+.cobranzas-table-card td{padding:6px 14px;line-height:1.25}
+/* Menos espacio entre la barra de arriba y la tabla: el listado sube. */
+.cobranzas-filtros{padding:7px 12px;margin-bottom:8px}
+.cobranzas-filtros label span{margin-bottom:3px}
+.cobranzas-filtros input,.cobranzas-filtros select,.cobranzas-filtros .form-control{height:30px}
+.cobranzas-filtros>button{height:30px}
+.cobranzas-filtros-rango{grid-template-columns:minmax(260px,1fr) 230px 170px 170px auto}
+.sup-calidad-toolbar{margin-bottom:10px;padding:8px 14px}
+/* Listado de Cobranzas agrupado por mes (acordeon) */
+.cobranzas-mes-grupo{border-bottom:1px solid #eef2f7}
+.cobranzas-mes-grupo:last-child{border-bottom:0}
+.cobranzas-mes-header{width:100%;display:flex;align-items:center;gap:12px;padding:14px 18px;border:0;background:#fff;cursor:pointer;text-align:left;font:inherit}
+.cobranzas-mes-header:hover{background:#f8fafc}
+.cobranzas-mes-nombre{font-size:14px;font-weight:800;color:#0f172a;text-transform:capitalize}
+.cobranzas-mes-count{margin-left:auto;font-size:11px;font-weight:700;color:#0f766e;background:#f0fdfa;padding:4px 10px;border-radius:20px}
+.cobranzas-mes-flecha{font-size:12px;color:#94a3b8;transition:transform .15s ease}
+.cobranzas-mes-flecha.abierto{transform:rotate(180deg);color:#0f766e}
+/* Tira compacta de KPIs en el topbar (reemplaza las tarjetas grandes) */
+.cobranzas-topbar-stats{display:flex;align-items:center;gap:6px;margin:0 auto 0 18px;min-width:0;overflow:hidden}
+.cobranzas-topbar-stat{height:48px;min-width:74px;padding:5px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border-left:1px solid #f1f5f9;border-right:1px solid #f1f5f9;box-shadow:0 1px 5px rgba(15,23,42,.06);border-radius:6px}
+.cobranzas-topbar-stat strong{font-size:18px;line-height:1;font-weight:800;color:#0f172a}
+.cobranzas-topbar-stat span{font-size:8px;line-height:1.2;margin-top:4px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.35px;white-space:nowrap}
+.cobranzas-topbar-stat.blue strong{color:#2563eb}
+.cobranzas-topbar-stat.purple strong{color:#8b5cf6}
+@media(max-width:850px){.cobranzas-topbar-stats{display:none}}
+/* Panel de secciones de Calidad/Super de Calidad: antes era un menu
+   hamburguesa desplegable, ahora una columna fija a la izquierda. */
+.sup-calidad-layout{display:flex;align-items:stretch;gap:16px;min-height:calc(100vh - 124px)}
+.sup-calidad-sidebar-toggle{width:19px;height:19px;padding:0;border:0;border-radius:4px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:#a8a8a8;transition:all .18s ease;margin-left:8px}
+.sup-calidad-sidebar-toggle:hover{background:#f3f4f6;color:#6b7280;transform:scale(1.06)}
+.sup-calidad-sidebar-toggle svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.25}
+.sup-calidad-sidebar{width:208px;min-width:208px;background:#fff;border:1px solid #e6eaf1;border-radius:12px;padding:14px 12px;display:flex;flex-direction:column;gap:1px;position:sticky;top:16px;overflow:hidden;transition:width .24s ease,min-width .24s ease,padding .24s ease,border-color .24s ease}
+.sup-calidad-sidebar > *{transition:opacity .15s;white-space:nowrap}
+.sup-calidad-sidebar.cerrado{width:0;min-width:0;padding-left:0;padding-right:0;border-color:transparent}
+.sup-calidad-sidebar.cerrado > *{opacity:0;pointer-events:none}
+.sup-calidad-sidebar-sep{padding:13px 12px 6px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+.sup-calidad-nav{display:flex;align-items:center;gap:11px;min-height:42px;padding:9px 12px;border:none;border-radius:8px;background:transparent;color:#111827;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left;width:100%;transition:all .18s ease}
+.sup-calidad-nav-icon{width:20px;height:20px;flex:0 0 20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sup-calidad-nav:hover{background:#fff5f5;color:#c53030}
+.sup-calidad-nav.active{background:linear-gradient(135deg,#e53e3e,#c53030);color:#fff;font-weight:700;box-shadow:0 3px 10px rgba(229,62,62,.35)}
+.sup-calidad-content{flex:1;min-width:0}
+/* Resumen mensual de Llamadas de Calidad: tarjetas por mes en vez de una
+   tabla plana que crece sin límite — clic en una entra al mes filtrado. */
+.calidad-meses-resumen{background:#fff;border-radius:13px;box-shadow:0 2px 6px rgba(15,23,42,.08);overflow:hidden}
+.calidad-meses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:18px}
+.calidad-mes-card{display:flex;flex-direction:column;gap:10px;padding:16px;background:#fff;border:1px solid #e6eaf1;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);cursor:pointer;text-align:left;font:inherit;transition:box-shadow .15s ease,border-color .15s ease,transform .15s ease}
+.calidad-mes-card:hover{border-color:#99f6e4;box-shadow:0 6px 16px rgba(15,23,42,.09);transform:translateY(-1px)}
+.calidad-mes-card-header{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.calidad-mes-nombre{font-size:14px;font-weight:800;color:#0f172a;text-transform:capitalize}
+.calidad-mes-total{font-size:10px;font-weight:700;color:#94a3b8;white-space:nowrap}
+.calidad-mes-barra{height:6px;border-radius:99px;background:#eef2f7;overflow:hidden}
+.calidad-mes-barra i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2dd4bf,#0f766e)}
+.calidad-mes-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.calidad-mes-pct{font-size:11px;font-weight:800;color:#0f766e}
+.calidad-mes-pendientes{font-size:10px;font-weight:700;color:#b45309;background:#fff7ed;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.calidad-volver-meses{margin-left:auto;border:none;background:transparent;color:#0f766e;font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;border-radius:6px}
+.calidad-volver-meses:hover{background:#f0fdfa}
+@media(max-width:850px){
+  .sup-calidad-layout{flex-direction:column}
+  .sup-calidad-sidebar{width:100%;min-width:0;flex-direction:row;position:static;overflow-x:auto}
+}
+.badge-canal{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.3px;white-space:nowrap;}
+.badge-canal-netcontact{background:#eef2ff;color:#4338ca;}
+.badge-canal-kels{background:#fdf4ff;color:#a21caf;}
+.badge-canal-sin{background:#f3f4f6;color:#6b7280;}
