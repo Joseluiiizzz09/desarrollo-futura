@@ -738,9 +738,6 @@ body{
 .seguimiento-ventas-tabla .th-codigo { width: 110px !important; }
 .seguimiento-ventas-tabla .th-motivo { width: 140px !important; }
 
-/* Deja aire despues de la ultima columna para que no quede pegada/cortada
-   contra el borde del área con scroll horizontal. */
-.tabla-scroll { padding-right: 18px; }
 .badge-canal{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.3px;white-space:nowrap;}
 .badge-canal-netcontact{background:#eef2ff;color:#4338ca;}
 .badge-canal-kels{background:#fdf4ff;color:#a21caf;}
