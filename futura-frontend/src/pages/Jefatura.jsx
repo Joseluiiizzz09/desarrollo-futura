@@ -43,7 +43,7 @@ const CARGOS = [
   { id:'capacitador',   label:'Capacitación',  cls:'bc-capacitador'   },
   { id:'marketing',     label:'Marketing',     cls:'bc-marketing'     },
 ]
-const SALAS = ['SALA 1','SALA 2','SALA 3','SALA 4','SALA CHANCAY','SALA 5','SALA 6']
+const SALAS = ['SALA 1','SALA 2','CAMPO']
 const TIPIFICACIONES_ENTREVISTA = ['NO CONTESTA','DESISTE','REPROGRAMA','CORTA LLAMADA','ASISTE','EN CAMINO','FALTA']
 const TURNOS_ENTREVISTA = ['TURNO 1','TURNO 2']
 
@@ -3180,27 +3180,16 @@ export default function Jefatura() {
               <div className={`modal-campo${modErrores.cargo3?' error':''}`}>
                 <label>Segundo cargo adicional (opcional)</label>
                 <select value={modForm.cargo3} onChange={e=>setField('cargo3',e.target.value)} className={modErrores.cargo3?'error':''}>
-                  <option value="">— Sin segundo cargo adicional —</option>
+                  <option value="">— Sin cargo adicional —</option>
                   {CARGOS.filter(c=>c.id!==modForm.cargo && c.id!==modForm.cargo2 && c.id!=='jefatura').map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
               </div>
               <div className="modal-campo">
                 <label>Sala / Equipo</label>
-                <select value={modForm.salaManual ? '__AGREGAR__' : modForm.sala} onChange={e=>{
-                  if (e.target.value === '__AGREGAR__') setModForm(f=>({...f,sala:'',salaManual:true}))
-                  else setModForm(f=>({...f,sala:e.target.value,salaManual:false}))
-                }}>
-                  <option value="__AGREGAR__">— Agregar sala —</option>
+                <select value={modForm.sala} onChange={e=>setField('sala',e.target.value)}>
+                  <option value="">— Seleccionar sala —</option>
                   {SALAS.map(s=><option key={s} value={s}>{s}</option>)}
                 </select>
-                {modForm.salaManual && <input
-                  value={modForm.sala}
-                  onChange={e=>setField('sala',e.target.value.toUpperCase())}
-                  placeholder="Escribir nombre de la sala"
-                  autoFocus
-                  maxLength={80}
-                  style={{marginTop:'8px'}}
-                />}
               </div>
               <div className="modal-sep">Contraseña</div>
               <div className={`modal-campo${modErrores.pass?' error':''}`}>
