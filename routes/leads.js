@@ -134,7 +134,9 @@ const TIPI_INTERNA_VALIDACION = new Map([
   ['VENTA', ['VENTA CERRADA', '#2563eb']],
 ]);
 const TIPI_INTERNA_GRABACION = new Map([
-  ...['PENDIENTE','BUZON DE VOZ','BUZON','CORREGIR SEC','CORTA LLAMADA','ESPERANDO TERCERO','NO CONTESTA','NO DESEA','SUPLANTACION'].map(v => [v, ['VENTA CAIDA', '#a64d79']]),
+  // "PENDIENTE" es el estado inicial de toda venta recién creada: no indica
+  // una caída. Solo resultados reales de la gestión de grabación la cierran.
+  ...['BUZON DE VOZ','BUZON','CORREGIR SEC','CORTA LLAMADA','ESPERANDO TERCERO','NO CONTESTA','NO DESEA','SUPLANTACION'].map(v => [v, ['VENTA CAIDA', '#a64d79']]),
   ['GRABADO', ['VENTA CERRADA', '#2563eb']],
   ['GRABANDO', ['VENTA CERRADA', '#2563eb']],
 ]);
