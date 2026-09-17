@@ -370,7 +370,7 @@ export default function Login() {
                     checked={recordar}
                     onChange={(e) => setRecordar(e.target.checked)}
                   />
-                  Mantener sesión iniciada
+                  Recordar usuario
                 </label>
 
                 <button type="submit" className={styles.submitBtn} disabled={cargando}>
