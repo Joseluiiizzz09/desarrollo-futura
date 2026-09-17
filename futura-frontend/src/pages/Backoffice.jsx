@@ -2917,8 +2917,9 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
 
                             {/* Tipif. Vendedor */}
                             <td>
-                              <div style={{display:'flex',alignItems:'center',gap:2}}>
-                                {r.tipifInterna
+                              <div className="tipif-vendedor-cell">
+                                <div className="tipif-vendedor-principal">
+                                  {r.tipifInterna
                                   ? <span className="tipif-interna-badge" style={estiloInterno} title={tooltipTipificacionInterna(r)}>{r.tipifInterna}</span>
                                   : esSinCoberturaFija
                                   ? <span className="tipif-interna-badge" style={estiloInterno} title="SIN COBERTURA — se mantiene fija hasta que exista una venta real">SIN COBERTURA</span>
@@ -2927,6 +2928,8 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
                                       <option value="" style={{background:'#fff',color:'#111827',fontWeight:400}}>— Pendiente —</option>
                                       {TIPIF_VEND_OPCIONES.map(t=><option key={t} value={t} style={{background:'#fff',color:'#111827',fontWeight:400}}>{t}</option>)}
                                     </select>}
+                                </div>
+                                {(r.ventaCanal || documentoVenta(r) || (tipifEfectiva(r)==='SIN COBERTURA'&&(r.distritoSinCobertura||r.coordenadasSinCobertura))) && <div className="tipif-vendedor-meta">
                                 {r.ventaCanal && <CanalBadge canal={r.ventaCanal} />}
                                 {documentoVenta(r)&&(
                                   <button type="button" className="btn-dni-cuaderno"
@@ -2949,6 +2952,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
                                     <NotebookIcon/>
                                   </button>
                                 )}
+                                </div>}
                               </div>
                               {r._tipifHora&&<span style={{display:'block',fontSize:9,color:'#9ca3af',marginTop:1}}>{r._tipifHora}</span>}
                             </td>

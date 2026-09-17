@@ -436,6 +436,11 @@ body{
 .bo-root .bo-sel-compact:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(229,62,62,.1);}
 .bo-root .bo-sel-compact.sel-asesor-tabla{font-size:10px;}
 .bo-root .bo-sel-compact.sel-tipif-vend{font-size:10px;}
+.bo-root .tipif-vendedor-cell{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.bo-root .tipif-vendedor-principal{min-width:0;}
+.bo-root .tipif-vendedor-principal .bo-sel-compact,.bo-root .tipif-vendedor-principal .tipif-interna-badge{width:100%;}
+.bo-root .tipif-vendedor-meta{display:flex;align-items:center;gap:4px;min-width:0;}
+.bo-root .tipif-vendedor-meta .badge-canal{max-width:100%;overflow:hidden;text-overflow:ellipsis;}
 .bo-root .tipif-back-color{font-weight:800;border-width:1px;}
 .bo-root .tipif-back-VACIA{background:#fff;color:#64748b;}
 .bo-root .tipif-back-DERIVADO{background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;}
