@@ -58,6 +58,16 @@ body {
   transition: all .2s var(--sp);
 }
 .btn-volver:hover { background: var(--bg); color: var(--dark); transform: scale(1.03); }
+.usu-root .jefatura-vista {
+  font-size: 12px; color: #64748b; font-weight: 500; white-space: nowrap;
+}
+.usu-root .jefatura-volver {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 15px; border: 1.5px solid #fca5a5; border-radius: 10px;
+  background: #fff; color: #ef4444; font: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background .2s ease, transform .2s ease;
+}
+.usu-root .jefatura-volver:hover { background: #fff5f5; transform: translateY(-1px); }
 .btn-salir {
   font-size: 12px; color: var(--red); font-weight: 600;
   padding: 6px 14px; border: 1.5px solid #fca5a5; border-radius: 8px;
@@ -512,11 +522,28 @@ body {
   padding: 20px 24px 22px;
 }
 
-.usuarios-modal-body .campo-row {
+.usuarios-modal-subtitulo {
+  margin: -3px 0 16px; color: #94a3b8; font-size: 13px;
+}
+.usuarios-modal-grid {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 20px;
   row-gap: 20px;
-  margin-bottom: 20px;
+}
+.usuarios-modal-grid .campo { min-width: 0; }
+.usuarios-modal-span2,
+.usuarios-modal-sep { grid-column: 1 / -1; }
+.usuarios-modal-sep {
+  padding-top: 14px; border-top: 1px solid #e5e7eb;
+  color: #94a3b8; font-size: 10px; font-weight: 800;
+  letter-spacing: .55px; text-transform: uppercase;
+}
+.usuarios-modal-grid .usuarios-modal-sep:first-child { padding-top: 0; border-top: 0; }
+.usuarios-modal-ayuda {
+  margin-top: 18px; padding: 10px 14px; border: 1px solid #86efac;
+  border-radius: 8px; background: #f0fdf4; color: #14532d;
+  font-size: 12px; line-height: 1.45;
 }
 .usuarios-modal-body .campo { gap: 7px; }
 .usuarios-modal-body .campo label {
@@ -549,5 +576,7 @@ body {
 }
 
 @media (max-width: 700px) {
-  .usuarios-modal-body .campo-row { grid-template-columns: 1fr; }
+  .usuarios-modal-grid { grid-template-columns: 1fr; }
+  .usuarios-modal-span2,
+  .usuarios-modal-sep { grid-column: auto; }
 }

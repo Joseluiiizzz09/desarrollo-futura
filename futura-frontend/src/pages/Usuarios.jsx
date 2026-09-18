@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
+import JefaturaViewControls from '../components/JefaturaViewControls'
 import '../styles/usuarios.css'
 
 const CARGO_CLASE = {
@@ -32,7 +33,6 @@ const CARGOS = [
   { value: 'validacion',     label: 'Validación'       },
   { value: 'grabaciones',    label: 'Grabaciones'      },
   { value: 'seguimiento',    label: 'Seguimiento'      },
-  { value: 'jefatura',       label: 'Jefatura'         },
   { value: 'usuarios',       label: 'Usuarios'         },
   { value: 'programacion',   label: 'Programación'     },
   { value: 'cobranzas',      label: 'Cobranzas'        },
@@ -133,9 +133,6 @@ export default function Usuarios() {
     setErrores(e => ({ ...e, [k]: '' }))
   }
 
-  const [passVisible, setPassVisible]   = useState(false)
-  const [pass2Visible, setPass2Visible] = useState(false)
-
   async function guardarUsuario() {
     const errs = {}
     if (!form.nombre.trim())  errs.nombre  = 'El nombre es obligatorio'
@@ -214,7 +211,12 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="topbar-right">
-          <button onClick={() => navigate(-1)} className="btn-volver">← Volver</button>
+          <JefaturaViewControls>
+            <button type="button" onClick={() => navigate('/jefatura')} className="jefatura-volver">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>
+              <span>Volver a Jefatura</span>
+            </button>
+          </JefaturaViewControls>
           <CambiarAreaMenu />
           <button onClick={salir} className="btn-salir">Salir</button>
         </div>
@@ -333,45 +335,21 @@ export default function Usuarios() {
             </div>
 
             <div className="modal-body usuarios-modal-body">
-              <div className="campo-row">
-                <div className="campo">
-                  <label>Nombre Completo *</label>
-                  <input type="text" value={form.nombre} onChange={e => setField('nombre', e.target.value)} placeholder="Ej: María García López" />
+              <p className="usuarios-modal-subtitulo">{editandoId ? `Editando: ${form.nombre}` : 'Completa todos los campos.'}</p>
+              <div className="usuarios-modal-grid">
+                <div className="usuarios-modal-sep">Datos personales</div>
+                <div className="campo usuarios-modal-span2">
+                  <label>Nombre completo *</label>
+                  <input type="text" value={form.nombre} onChange={e => setField('nombre', e.target.value)} placeholder="Nombre y apellidos" />
                   {errores.nombre && <span className="campo-error">{errores.nombre}</span>}
                 </div>
                 <div className="campo">
                   <label>Usuario (login) *</label>
                   <input type="text" value={form.usuario}
                     onChange={e => setField('usuario', e.target.value.toLowerCase().replace(/\s/g, ''))}
-                    placeholder="Ej: mgarcia" />
+                    placeholder="nombre.apellido" />
                   {errores.usuario && <span className="campo-error">{errores.usuario}</span>}
                 </div>
-              </div>
-
-              <div className="campo-row">
-                <div className="campo">
-                  <label>{editandoId ? 'Nueva contraseña' : 'Contraseña *'}</label>
-                  <div className="pass-wrap">
-                    <input type={passVisible ? 'text' : 'password'} value={form.pass} onChange={e => setField('pass', e.target.value)} placeholder="Mínimo 6 caracteres" />
-                    <button type="button" className="btn-ver" onClick={() => setPassVisible(v => !v)}>{passVisible ? 'Ocultar' : 'Ver'}</button>
-                  </div>
-                  {errores.pass && <span className="campo-error">{errores.pass}</span>}
-                </div>
-                <div className="campo">
-                  <label>Confirmar Contraseña</label>
-                  <div className="pass-wrap">
-                    <input type={pass2Visible ? 'text' : 'password'} value={form.pass2} onChange={e => setField('pass2', e.target.value)} placeholder="Repite la contraseña" />
-                    <button type="button" className="btn-ver" onClick={() => setPass2Visible(v => !v)}>{pass2Visible ? 'Ocultar' : 'Ver'}</button>
-                  </div>
-                  {errores.pass2 && <span className="campo-error">{errores.pass2}</span>}
-                </div>
-              </div>
-
-              {editandoId && (
-                <div className="pass-hint">Deja en blanco para mantener la contraseña actual</div>
-              )}
-
-              <div className="campo-row">
                 <div className="campo">
                   <label>Cargo principal *</label>
                   <select value={form.cargo} onChange={e => {
@@ -388,23 +366,17 @@ export default function Usuarios() {
                   <label>Cargo adicional (opcional)</label>
                   <select value={form.cargo2} onChange={e => setField('cargo2', e.target.value)}>
                     <option value="">— Sin cargo adicional —</option>
-                    {CARGOS.filter(c => c.value !== form.cargo && c.value !== 'jefatura').map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    {CARGOS.filter(c => c.value !== form.cargo).map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                   {errores.cargo2 && <span className="campo-error">{errores.cargo2}</span>}
                 </div>
-              </div>
-
-              <div className="campo-row">
                 <div className="campo">
-                  <label>Sala</label>
+                  <label>Sala / equipo</label>
                   <select value={form.sala} onChange={e => setField('sala', e.target.value)}>
-                    <option value="">— Sin sala —</option>
+                    <option value="">— Seleccionar sala —</option>
                     <option value="SALA 1">Sala 1</option>
                     <option value="SALA 2">Sala 2</option>
-                    <option value="SALA 3">Sala 3</option>
-                    <option value="SALA 4">Sala 4</option>
-                    <option value="SALA CHANCAY">Sala Chancay</option>
-                    <option value="SALA 5">Sala 5</option>
+                    <option value="CAMPO">Campo</option>
                   </select>
                 </div>
                 <div className="campo">
@@ -414,30 +386,27 @@ export default function Usuarios() {
                     <option value="F">Femenino</option>
                   </select>
                 </div>
+                <div className="usuarios-modal-sep">Contraseña</div>
+                <div className="campo">
+                  <label>{editandoId ? 'Nueva contraseña' : 'Contraseña *'}</label>
+                  <input type="password" value={form.pass} onChange={e => setField('pass', e.target.value)} placeholder="Mínimo 6 caracteres" />
+                  {errores.pass && <span className="campo-error">{errores.pass}</span>}
+                </div>
+                <div className="campo">
+                  <label>Confirmar contraseña *</label>
+                  <input type="password" value={form.pass2} onChange={e => setField('pass2', e.target.value)} placeholder="Repite la contraseña" />
+                  {errores.pass2 && <span className="campo-error">{errores.pass2}</span>}
+                </div>
               </div>
 
-              <div className="campo-row">
-                <div className="campo">
-                  <label>Estado</label>
-                  <div className="toggle-wrap">
-                    <label className="toggle-switch">
-                      <input type="checkbox" checked={form.activo} onChange={e => setField('activo', e.target.checked)} />
-                      <span className="toggle-slider"></span>
-                    </label>
-                    <span className="toggle-label">{form.activo ? 'Activo' : 'Inactivo'}</span>
-                  </div>
-                </div>
-                <div className="campo cargo-secundario-ayuda">
-                  <strong>Un usuario, dos funciones</strong>
-                  <span>Al iniciar sesión podrá elegir con qué cargo trabajar.</span>
-                </div>
-              </div>
+              {editandoId && <div className="pass-hint">Deja en blanco para mantener la contraseña actual</div>}
+              <div className="usuarios-modal-ayuda">Al crear un usuario con cargo <strong>Asesor</strong>, estará disponible en Back Data para asignar leads.</div>
             </div>
 
             <div className="modal-footer usuarios-modal-footer">
               <button className="btn-cancel" onClick={cerrarModal}>Cancelar</button>
               <button className="btn-guardar" onClick={guardarUsuario} disabled={guardando}>
-                {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Crear Usuario'}
+                {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Guardar usuario'}
               </button>
             </div>
           </div>
