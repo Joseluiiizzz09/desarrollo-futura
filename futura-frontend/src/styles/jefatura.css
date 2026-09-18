@@ -1348,22 +1348,22 @@ button.export-kpi-card:hover {
   width: max(100%, 1520px);
 }
 .flujo-tabla .tabla th:nth-child(1),  .flujo-tabla .tabla td:nth-child(1)  { width: 40px; text-align: center; }
-.flujo-tabla .tabla th:nth-child(2),  .flujo-tabla .tabla td:nth-child(2)  { width: 95px; }
-.flujo-tabla .tabla th:nth-child(3),  .flujo-tabla .tabla td:nth-child(3)  { width: 140px; }
-.flujo-tabla .tabla th:nth-child(4),  .flujo-tabla .tabla td:nth-child(4)  { width: 95px; }
-.flujo-tabla .tabla th:nth-child(5),  .flujo-tabla .tabla td:nth-child(5)  { width: 95px; }
-.flujo-tabla .tabla th:nth-child(6),  .flujo-tabla .tabla td:nth-child(6)  { width: 80px; }
-.flujo-tabla .tabla th:nth-child(7),  .flujo-tabla .tabla td:nth-child(7)  { width: 100px; }
-.flujo-tabla .tabla th:nth-child(8),  .flujo-tabla .tabla td:nth-child(8)  { width: 130px; }
+.flujo-tabla .tabla th:nth-child(2),  .flujo-tabla .tabla td:nth-child(2)  { width: 105px; }
+.flujo-tabla .tabla th:nth-child(3),  .flujo-tabla .tabla td:nth-child(3)  { width: 180px; }
+.flujo-tabla .tabla th:nth-child(4),  .flujo-tabla .tabla td:nth-child(4)  { width: 110px; }
+.flujo-tabla .tabla th:nth-child(5),  .flujo-tabla .tabla td:nth-child(5)  { width: 110px; }
+.flujo-tabla .tabla th:nth-child(6),  .flujo-tabla .tabla td:nth-child(6)  { width: 90px; }
+.flujo-tabla .tabla th:nth-child(7),  .flujo-tabla .tabla td:nth-child(7)  { width: 120px; }
+.flujo-tabla .tabla th:nth-child(8),  .flujo-tabla .tabla td:nth-child(8)  { width: 140px; }
 .flujo-tabla .tabla th:nth-child(9),  .flujo-tabla .tabla td:nth-child(9)  {
-  width: 155px;
+  width: 140px;
   overflow: visible;
   text-overflow: clip;
 }
-.flujo-tabla .tabla th:nth-child(10), .flujo-tabla .tabla td:nth-child(10) { width: 100px; }
-.flujo-tabla .tabla th:nth-child(11), .flujo-tabla .tabla td:nth-child(11) { width: 138px; }
+.flujo-tabla .tabla th:nth-child(10), .flujo-tabla .tabla td:nth-child(10) { width: 150px; }
+.flujo-tabla .tabla th:nth-child(11), .flujo-tabla .tabla td:nth-child(11) { width: 130px; }
 .flujo-tabla .tabla th:nth-child(12), .flujo-tabla .tabla td:nth-child(12) {
-  width: 300px; overflow: visible; text-overflow: clip;
+  width: 480px; overflow: visible; text-overflow: clip;
 }
 
 /* Botones de Acciones más compactos, solo dentro de Ventas generales —
@@ -1393,7 +1393,7 @@ button.export-kpi-card:hover {
 
 .flujo-tabla-scroll .tabla {
   width: 100%;
-  min-width: 1468px;
+  min-width: 1795px;
 }
 
 .flujo-tabla-scroll::-webkit-scrollbar {
