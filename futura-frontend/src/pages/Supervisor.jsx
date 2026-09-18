@@ -731,17 +731,6 @@ export default function Supervisor() {
               ))}
             </div>
 
-            {/* Estados chips */}
-            <div className="estados-grid">
-              {ESTADOS_VENTA.map(e=>(
-                <div key={e.id} className="estado-chip">
-                  <div className="chip-dot" style={{background:e.dot}} />
-                  <span>{e.label}</span>
-                  <span className="chip-num" style={{color:e.dot}}>{ESTADOS_POR_PROGRAMACION.includes(e.id) ? conteoPorProgramacion[e.id] : dashVentas.filter(v=>v._estado===e.id).length}</span>
-                </div>
-              ))}
-            </div>
-
             {/* Charts */}
             <div className="charts-grid">
               <div className="chart-card"><div className="chart-title">Ventas por asesor</div><div className="chart-wrap"><canvas ref={ch1Ref} /></div></div>
