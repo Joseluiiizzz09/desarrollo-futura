@@ -1392,8 +1392,8 @@ button.export-kpi-card:hover {
 }
 
 .flujo-tabla-scroll .tabla {
-  width: max(100%, 1805px);
-  min-width: 1805px;
+  width: 100%;
+  min-width: 1468px;
 }
 
 .flujo-tabla-scroll::-webkit-scrollbar {
