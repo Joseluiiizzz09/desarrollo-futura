@@ -476,6 +476,8 @@ export default function Jefatura() {
   const [filtroMasivoTipificaciones, setFiltroMasivoTipificaciones] = useState(null)
   const [masivoModoFecha, setMasivoModoFecha] = useState('rango')
   const [masivoCopiando, setMasivoCopiando] = useState(false)
+  const [masivoPagina, setMasivoPagina] = useState(1)
+  const [masivoPorPagina, setMasivoPorPagina] = useState(25)
 
 
   /* filtros persistentes */
@@ -725,6 +727,11 @@ export default function Jefatura() {
     (filtroMasivoCampanas === null || filtroMasivoCampanas.includes(l.campana)) &&
     (filtroMasivoTipificaciones === null || filtroMasivoTipificaciones.includes((l.tipif_vend && l.tipif_vend.trim()) || 'SIN TIPIFICAR'))
   ), [masivoLeads, filtroMasivoCampanas, filtroMasivoTipificaciones])
+
+  const masivoTotalPaginas = Math.max(1, Math.ceil(masivoLeadsFiltrados.length / masivoPorPagina))
+  const masivoPaginaSegura = Math.min(masivoPagina, masivoTotalPaginas)
+  const masivoLeadsPagina = masivoLeadsFiltrados.slice((masivoPaginaSegura - 1) * masivoPorPagina, masivoPaginaSegura * masivoPorPagina)
+  useEffect(() => { setMasivoPagina(1) }, [masivoLeads, filtroMasivoCampanas, filtroMasivoTipificaciones, masivoPorPagina])
 
   function masivoSeleccionarPrimerosN() {
     const n = Number(masivoCantidadInput)
@@ -2454,11 +2461,11 @@ export default function Jefatura() {
               <div className="tabla-header"><span className="tabla-title">Leads elegibles</span><span className="tabla-count">{masivoLeadsFiltrados.length} registros</span></div>
               <div style={{overflowX:'auto'}}><table className="tabla">
                 <thead><tr>
-                  <th><input type="checkbox" checked={masivoLeadsFiltrados.length>0 && masivoSeleccion.size===masivoLeadsFiltrados.length} onChange={e=>setMasivoSeleccion(e.target.checked ? new Set(masivoLeadsFiltrados.map(l=>l.id)) : new Set())} /></th>
+                  <th><input type="checkbox" aria-label="Seleccionar leads de esta página" checked={masivoLeadsPagina.length>0 && masivoLeadsPagina.every(l=>masivoSeleccion.has(l.id))} onChange={e=>setMasivoSeleccion(actual=>{ const nuevo=new Set(actual); masivoLeadsPagina.forEach(l=>e.target.checked?nuevo.add(l.id):nuevo.delete(l.id)); return nuevo })} /></th>
                   <th>N1</th><th>N2</th><th>Campaña</th><th>Distrito</th><th>Asesor</th><th>Fecha</th><th>Estado</th>
                 </tr></thead>
                 <tbody>
-                  {!masivoCargando && masivoLeadsFiltrados.map(l => (
+                  {!masivoCargando && masivoLeadsPagina.map(l => (
                     <tr key={l.id}>
                       <td><input type="checkbox" checked={masivoSeleccion.has(l.id)} onChange={()=>masivoAlternarUno(l.id)} /></td>
                       <td>{l.n1 || (l.usuario_whatsapp ? <span title="Sin número — usuario de WhatsApp">@{l.usuario_whatsapp}</span> : '—')}</td>
@@ -2477,6 +2484,19 @@ export default function Jefatura() {
                   {masivoCargando && <tr><td colSpan="8" className="tabla-empty">Cargando leads…</td></tr>}
                 </tbody>
               </table></div>
+              {!masivoCargando && masivoLeadsFiltrados.length > 0 && (
+                <div className="masivo-paginacion">
+                  <span>Mostrando {(masivoPaginaSegura - 1) * masivoPorPagina + 1}–{Math.min(masivoPaginaSegura * masivoPorPagina, masivoLeadsFiltrados.length)} de {masivoLeadsFiltrados.length}</span>
+                  <div className="masivo-paginacion-controles">
+                    <select aria-label="Leads por página" value={masivoPorPagina} onChange={e=>setMasivoPorPagina(Number(e.target.value))}>
+                      <option value={25}>25 / pág.</option><option value={50}>50 / pág.</option><option value={100}>100 / pág.</option>
+                    </select>
+                    <button type="button" disabled={masivoPaginaSegura===1} onClick={()=>setMasivoPagina(p=>Math.max(1,p-1))}>‹</button>
+                    <strong>Página {masivoPaginaSegura} de {masivoTotalPaginas}</strong>
+                    <button type="button" disabled={masivoPaginaSegura===masivoTotalPaginas} onClick={()=>setMasivoPagina(p=>Math.min(masivoTotalPaginas,p+1))}>›</button>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
