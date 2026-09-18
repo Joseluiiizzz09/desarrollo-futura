@@ -12,6 +12,15 @@ const { desbloquearLogin } = require('../security/loginRateLimit');
 const ROLES = ['jefatura','usuarios'];
 const CARGOS_VALIDOS = ['jefatura','usuarios','supervisor','backoffice','asesor','validacion','grabaciones','seguimiento','programacion','cobranzas','calidad','supcalidad','supgrabaciones','backreclutamiento','entrevistas','capacitador','marketing'];
 
+function normalizarPermisos(permisos) {
+  if (!Array.isArray(permisos)) return [];
+  return [...new Set(permisos.map(p => String(p).trim().toLowerCase()).filter(Boolean))];
+}
+
+function permisosSonValidos(permisos) {
+  return permisos.every(p => CARGOS_VALIDOS.includes(p));
+}
+
 function normalizarNombrePersonal(nombre) {
   return String(nombre || '').trim().replace(/\s+/g, ' ').toUpperCase();
 }
@@ -54,15 +63,23 @@ router.post('/', auth(ROLES), async (req, res) => {
     if (!CARGOS_VALIDOS.includes(cargo))
       return res.status(400).json({ ok: false, mensaje: 'Cargo inválido' });
 
-    // Solo jefatura puede crear usuarios con cargo elevado
-    if (cargo === 'jefatura' && req.user.cargo !== 'jefatura')
+    const permisosFinal = normalizarPermisos(permisos);
+    if (!permisosSonValidos(permisosFinal))
+      return res.status(400).json({ ok: false, mensaje: 'Permiso inválido' });
+    if (permisosFinal.includes(cargo))
+      return res.status(400).json({ ok: false, mensaje: 'El cargo adicional debe ser diferente al principal' });
+
+    // Jefatura no puede entregarse ni como cargo ni como permiso adicional
+    // por una cuenta de Gestión de Usuarios. De otro modo el middleware
+    // autorizaría sus rutas mediante `permisos` y habría escalamiento.
+    if ((cargo === 'jefatura' || permisosFinal.includes('jefatura')) && req.user.cargo !== 'jefatura')
       return res.status(403).json({ ok: false, mensaje: 'Solo jefatura puede crear administradores' });
 
     const [existe] = await db.query(`SELECT id FROM usuarios WHERE usuario = ?`, [usuario.toLowerCase()]);
     if (existe.length) return res.status(409).json({ ok: false, mensaje: 'Ese usuario ya existe' });
 
     const hash = bcrypt.hashSync(password, 10);
-    const permisosJSON = JSON.stringify(permisos || []);
+    const permisosJSON = JSON.stringify(permisosFinal);
     const [result] = await db.query(`
       INSERT INTO usuarios (nombre, usuario, password, cargo, sala, genero, activo, permisos)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -78,7 +95,7 @@ router.post('/', auth(ROLES), async (req, res) => {
 // PATCH editar
 router.patch('/:id', auth(ROLES), async (req, res) => {
   try {
-    const { nombre, usuario, cargo, sala, password, permisos } = req.body;
+    const { nombre, usuario, cargo, sala, genero, password, permisos } = req.body;
     const nombreNormalizado = normalizarNombrePersonal(nombre);
 
     const errores = validar([
@@ -90,8 +107,23 @@ router.patch('/:id', auth(ROLES), async (req, res) => {
     ]);
     if (errores) return res.status(400).json({ ok: false, mensaje: errores[0], errores });
 
-    const [rows] = await db.query(`SELECT id, cargo FROM usuarios WHERE id = ?`, [req.params.id]);
+    const [rows] = await db.query(`SELECT id, cargo, genero FROM usuarios WHERE id = ?`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ ok: false, mensaje: 'Usuario no encontrado' });
+
+    const cargoSolicitado = cargo === undefined ? rows[0].cargo : cargo;
+    if (!CARGOS_VALIDOS.includes(cargoSolicitado))
+      return res.status(400).json({ ok: false, mensaje: 'Cargo inválido' });
+    const generoFinal = genero === undefined ? rows[0].genero : genero;
+    if (errorEnum(generoFinal, 'genero', GENERO_OK))
+      return res.status(400).json({ ok: false, mensaje: 'genero inválido' });
+
+    const permisosFinal = permisos === undefined ? undefined : normalizarPermisos(permisos);
+    if (permisosFinal !== undefined && !permisosSonValidos(permisosFinal))
+      return res.status(400).json({ ok: false, mensaje: 'Permiso inválido' });
+    if (permisosFinal?.includes(cargoSolicitado))
+      return res.status(400).json({ ok: false, mensaje: 'El cargo adicional debe ser diferente al principal' });
+    if ((cargoSolicitado === 'jefatura' || permisosFinal?.includes('jefatura')) && req.user.cargo !== 'jefatura')
+      return res.status(403).json({ ok: false, mensaje: 'Solo jefatura puede asignar Jefatura' });
 
     // Solo jefatura puede cambiar el cargo o los permisos de un usuario
     if ((cargo !== undefined && cargo !== rows[0].cargo) || permisos !== undefined) {
@@ -105,25 +137,25 @@ router.patch('/:id', auth(ROLES), async (req, res) => {
       if (existe.length) return res.status(409).json({ ok: false, mensaje: 'Ese usuario ya existe' });
     }
 
-    const cargofinal    = req.user.cargo === 'jefatura' ? (cargo || rows[0].cargo) : rows[0].cargo;
-    const permisosJSON  = req.user.cargo === 'jefatura' ? JSON.stringify(permisos || []) : undefined;
+    const cargofinal    = req.user.cargo === 'jefatura' ? cargoSolicitado : rows[0].cargo;
+    const permisosJSON  = req.user.cargo === 'jefatura' ? JSON.stringify(permisosFinal || []) : undefined;
 
     if (password) {
       const hash = bcrypt.hashSync(password, 10);
       if (permisosJSON !== undefined) {
-        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, password=?, permisos=? WHERE id=?`,
-          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, hash, permisosJSON, req.params.id]);
+        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, genero=?, password=?, permisos=? WHERE id=?`,
+          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, generoFinal, hash, permisosJSON, req.params.id]);
       } else {
-        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, password=? WHERE id=?`,
-          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, hash, req.params.id]);
+        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, genero=?, password=? WHERE id=?`,
+          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, generoFinal, hash, req.params.id]);
       }
     } else {
       if (permisosJSON !== undefined) {
-        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, permisos=? WHERE id=?`,
-          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, permisosJSON, req.params.id]);
+        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, genero=?, permisos=? WHERE id=?`,
+          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, generoFinal, permisosJSON, req.params.id]);
       } else {
-        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=? WHERE id=?`,
-          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, req.params.id]);
+        await db.query(`UPDATE usuarios SET nombre=?, usuario=?, cargo=?, sala=?, genero=? WHERE id=?`,
+          [nombreNormalizado, usuario.toLowerCase(), cargofinal, sala||null, generoFinal, req.params.id]);
       }
     }
     res.json({ ok: true, mensaje: 'Usuario actualizado' });
