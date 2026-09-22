@@ -7,7 +7,8 @@ const path     = require('path');
 const fs       = require('fs');
 const { validar, errorTexto, errorEmail, errorDni, errorFecha, errorEnteroPositivo, errorId, errorEnum, TIPO_DOC_OK } = require('../middleware/validar');
 
-const ROLES_VENTAS       = ['asesor','supervisor','backoffice','validacion','grabaciones','seguimiento','jefatura','usuarios','programacion','cobranzas','calidad','supcalidad','supgrabaciones'];
+const ROLES_VENTAS       = ['asesor','campo','supervisor','backoffice','validacion','grabaciones','seguimiento','jefatura','usuarios','programacion','cobranzas','calidad','supcalidad','supgrabaciones'];
+const esCargoAsesor = cargo => ['asesor', 'campo'].includes(String(cargo || '').trim().toLowerCase());
 const CACHE_VENTAS_TTL = 5000;
 const cacheVentas = new Map();
 
@@ -352,7 +353,7 @@ async function registrarHistorial(conn, ventaId, actor, evento = {}) {
 }
 
 // ===== POST /api/ventas =====
-router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req, res) => {
+router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), async (req, res) => {
   let conn;
   try {
     const v = req.body;
@@ -396,9 +397,9 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
     if (v.telefono2 && String(v.telefono1).trim() === String(v.telefono2).trim())
       return res.status(400).json({ ok: false, mensaje: 'El telefono de referencia debe ser diferente al telefono principal.' });
 
-    if (req.user.cargo === 'asesor' && !v.telefono1)
+    if (esCargoAsesor(req.user.cargo) && !v.telefono1)
       return res.status(400).json({ ok: false, mensaje: 'El Teléfono Contacto es obligatorio.' });
-    const estadoFinal = req.user.cargo === 'asesor' ? 'VENTA' : (v.estado || 'VENTA').toUpperCase();
+    const estadoFinal = esCargoAsesor(req.user.cargo) ? 'VENTA' : (v.estado || 'VENTA').toUpperCase();
     if (!ESTADOS_VALIDOS_POST.includes(estadoFinal))
       return res.status(400).json({ ok: false, mensaje: `Estado inválido al crear. Solo se permite: ${ESTADOS_VALIDOS_POST.join(', ')}` });
 
@@ -430,7 +431,7 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
       `, [leadVenta.id]);
       cicloVentaAbierto = ciclos[0] || null;
 
-      if (req.user.cargo !== 'asesor') {
+      if (!esCargoAsesor(req.user.cargo)) {
         if (!leadVenta.asesor_id) {
           await conn.rollback();
           return res.status(400).json({ ok: false, mensaje: 'El lead no tiene un asesor asignado.' });
@@ -438,10 +439,10 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
         asesorVentaId = Number(leadVenta.asesor_id);
         nombreAsesor = leadVenta.asesor_nombre || nombreAsesor;
       }
-    } else if (req.user.cargo !== 'asesor' && (v.asesor_id || v.asesorId)) {
+    } else if (!esCargoAsesor(req.user.cargo) && (v.asesor_id || v.asesorId)) {
       const asesorSolicitado = Number(v.asesor_id || v.asesorId);
       const [asesores] = await conn.query(
-        `SELECT id, nombre FROM usuarios WHERE id = ? AND cargo = 'asesor' AND activo = 1 LIMIT 1`,
+        `SELECT id, nombre FROM usuarios WHERE id = ? AND cargo IN ('asesor', 'campo') AND activo = 1 LIMIT 1`,
         [asesorSolicitado]
       );
       if (!asesores.length) {
@@ -452,7 +453,7 @@ router.post('/', auth(['asesor','backoffice','jefatura','usuarios']), async (req
       nombreAsesor = asesores[0].nombre || nombreAsesor;
     }
 
-    if (req.user.cargo === 'asesor') {
+    if (esCargoAsesor(req.user.cargo)) {
       const [usuarios] = await conn.query(`SELECT nombre, sala FROM usuarios WHERE id = ? LIMIT 1`, [req.user.id]);
       nombreAsesor = usuarios[0]?.nombre || nombreAsesor;
       salaAtribucion = usuarios[0]?.sala || null;
@@ -1514,7 +1515,7 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                WHERE 1=1`;
     const params = [];
 
-    if (cargoEfectivo === 'asesor') {
+    if (esCargoAsesor(cargoEfectivo)) {
       sql += ` AND v.asesor_id = ?`; params.push(req.user.id);
     } else if (asesor_id) {
       sql += ` AND v.asesor_id = ?`; params.push(asesor_id);
@@ -1599,7 +1600,7 @@ router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res)
     const [destinos] = await conn.query(`
       SELECT id, nombre, usuario, sala, activo
         FROM usuarios
-       WHERE id = ? AND cargo = 'asesor'
+       WHERE id = ? AND cargo IN ('asesor', 'campo')
        LIMIT 1
     `, [asesorNuevoId]);
     const destino = destinos[0];
@@ -1764,7 +1765,7 @@ router.post('/:id/audio', auth(ROLES_VENTAS), upload.single('audio'), async (req
     }
 
     // Asesor solo puede subir audio de sus propias ventas
-    if (req.user.cargo === 'asesor' && rows[0].asesor_id !== req.user.id) {
+    if (esCargoAsesor(req.user.cargo) && rows[0].asesor_id !== req.user.id) {
       fs.unlinkSync(req.file.path);
       return res.status(403).json({ ok: false, mensaje: 'No puedes subir audio de ventas de otros asesores' });
     }
@@ -2119,12 +2120,12 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     }
 
     // Asesor solo puede modificar sus propias ventas
-    if (req.user.cargo === 'asesor' && rows[0].asesor_id !== req.user.id) {
+    if (esCargoAsesor(req.user.cargo) && rows[0].asesor_id !== req.user.id) {
       return res.status(403).json({ ok: false, mensaje: 'No puedes modificar ventas de otros asesores' });
     }
 
     // Asesor no puede cambiar el estado — eso corresponde a validacion, programacion, etc.
-    if (req.user.cargo === 'asesor' && estado !== undefined) {
+    if (esCargoAsesor(req.user.cargo) && estado !== undefined) {
       return res.status(403).json({ ok: false, mensaje: 'No tienes permiso para cambiar el estado de una venta' });
     }
 
@@ -2544,7 +2545,7 @@ router.get('/:id/fotos', auth(ROLES_VENTAS), async (req, res) => {
     // Mismo control de propiedad que ya exigia el POST: sin esto, cualquier
     // asesor autenticado podia enumerar ventas ajenas (id secuencial) y leer
     // la ruta real de documentos/fotos de clientes que no le pertenecen.
-    if (req.user.cargo === 'asesor') {
+    if (esCargoAsesor(req.user.cargo)) {
       const [rows] = await db.query(`SELECT asesor_id FROM ventas WHERE id = ?`, [req.params.id]);
       if (!rows.length) return res.status(404).json({ ok: false, mensaje: 'Venta no encontrada' });
       if (rows[0].asesor_id !== req.user.id) {
@@ -2566,7 +2567,7 @@ router.post('/:id/fotos', auth(ROLES_VENTAS), uploadFoto.single('foto'), async (
     if (!req.file)    return res.status(400).json({ ok: false, mensaje: 'No se recibió archivo' });
 
     // Asesor solo puede subir fotos de sus propias ventas
-    if (req.user.cargo === 'asesor' && rows[0].asesor_id !== req.user.id) {
+    if (esCargoAsesor(req.user.cargo) && rows[0].asesor_id !== req.user.id) {
       fs.unlinkSync(req.file.path);
       return res.status(403).json({ ok: false, mensaje: 'No puedes subir fotos de ventas de otros asesores' });
     }

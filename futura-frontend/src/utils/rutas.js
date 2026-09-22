@@ -4,6 +4,7 @@
 // ruta navegable — se filtra al construir cualquier selector de área.
 export const RUTAS = {
   asesor:         '/dashboard',
+  campo:          '/campo',
   supervisor:     '/supervisor',
   backoffice:     '/backoffice',
   validacion:     '/validacion',
@@ -23,6 +24,7 @@ export const RUTAS = {
 }
 export const CARGO_LABELS = {
   asesor: 'Asesor',
+  campo: 'Campo',
   supervisor: 'Supervisor',
   backoffice: 'Back Office',
   validacion: 'Validación',

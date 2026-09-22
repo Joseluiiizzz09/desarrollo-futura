@@ -6,6 +6,7 @@ import { RUTAS } from './utils/rutas'
 
 const Login = lazy(() => import('./pages/Login'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Campo = lazy(() => import('./pages/Campo'))
 const Backoffice = lazy(() => import('./pages/Backoffice'))
 const Supervisor = lazy(() => import('./pages/Supervisor'))
 const Validacion = lazy(() => import('./pages/Validacion'))
@@ -61,6 +62,7 @@ export default function App() {
       <Route path="/" element={<InicioAutorizado />} />
 
       <Route path="/dashboard"     element={<PrivateRoute cargo="asesor"><Dashboard /></PrivateRoute>} />
+      <Route path="/campo"         element={<PrivateRoute cargo="campo"><Campo /></PrivateRoute>} />
       <Route path="/backoffice"    element={<PrivateRoute cargo="backoffice"><Backoffice /></PrivateRoute>} />
       <Route path="/supervisor"    element={<PrivateRoute cargo="supervisor"><Supervisor /></PrivateRoute>} />
       <Route path="/validacion"    element={<PrivateRoute cargo="validacion"><Validacion /></PrivateRoute>} />

@@ -154,10 +154,16 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario: u, password: p }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await res.json()
+        : null;
 
-      if (!data.ok) {
-        mostrarError(data.mensaje || "Usuario o contraseña incorrectos.");
+      if (!res.ok || !data?.ok) {
+        mostrarError(
+          data?.mensaje ||
+          `El servidor respondió con el estado ${res.status}. Intenta nuevamente.`
+        );
         setCargando(false);
         return;
       }
@@ -165,7 +171,7 @@ export default function Login() {
       completarLogin(data);
     } catch (err) {
       console.error("Error de conexión:", err);
-      mostrarError("No se pudo conectar al servidor. ¿Está corriendo el backend?");
+      mostrarError("No se pudo conectar al servidor. Revisa tu conexión e inténtalo nuevamente.");
       setCargando(false);
     }
   };

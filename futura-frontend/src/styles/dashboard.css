@@ -649,6 +649,92 @@ h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #111827; }
   z-index: 400 !important;
 }
 
+/* ===== CAMPO: EXPERIENCIA MÓVIL ===== */
+@media (max-width: 720px) {
+  .dash-root .topbar {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 14px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    align-items: center !important;
+    position: relative !important;
+  }
+  .dash-root .brand { min-width: 0 !important; gap: 8px !important; }
+  .dash-root .logo-circle {
+    width: 48px !important; height: 48px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1) !important;
+  }
+  .dash-root .logo-circle img { width: 40px !important; height: 40px !important; }
+  .dash-root .brand-text img { height: 19px !important; max-width: 136px !important; }
+  .dash-root .brand-text .brand-sub { font-size: 11px !important; }
+
+  .dash-root .tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  .dash-root .tabs::-webkit-scrollbar { display: none; }
+  .dash-root .tab { flex: 1 0 auto; padding: 9px 14px; font-size: 12px; }
+  .dash-campo .tab { flex: 1 1 50%; }
+
+  .dash-root .topbar-right {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+    min-width: 0;
+    gap: 6px;
+    justify-content: space-between;
+  }
+  .dash-root .dash-usuario { display: none; }
+  .dash-root .topbar-salir { padding: 6px 9px; font-size: 10px; white-space: nowrap; }
+  .dash-root .topbar-right > :not(.topbar-salir):not(.dash-usuario) { display: none; }
+
+  .dash-root .pantalla { padding: 18px 14px !important; }
+  .dash-root h2 { font-size: 19px; }
+
+  .dash-root .rend-periodo {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+  .dash-root .rend-periodo > span:first-child { grid-column: 1 / -1; }
+  .dash-root .rend-periodo input { min-width: 0; width: 100%; }
+  .dash-root .rend-periodo button { justify-self: start; }
+
+  .dash-campo .rend-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .dash-campo .rend-kpi { min-width: 0; padding: 16px 14px; }
+  .dash-campo .rend-kpi-valor { font-size: 28px; }
+  .dash-campo .rend-kpi-label { font-size: 10px; line-height: 1.25; }
+
+  .dash-root .rend-meta { padding: 13px; gap: 9px; }
+  .dash-root .rend-meta-texto { min-width: 0; font-size: 11px; }
+  .dash-root .rend-meta-texto strong { display: block; margin: 3px 0 0; font-size: 13px; }
+  .dash-root .rend-graficos { grid-template-columns: 1fr; gap: 12px; }
+  .dash-root .rend-card, .dash-root .rend-card-full { grid-column: auto; padding: 15px; }
+  .dash-root .rend-chart-wrap { height: 220px; }
+
+  .dash-root .vs-filtros { padding: 12px; align-items: stretch; gap: 12px; }
+  .dash-root .vs-filtros-grid { width: 100%; }
+  .dash-root .vs-filtro-row { flex-wrap: wrap; gap: 7px; }
+  .dash-root .vs-filtro-row label { width: 100%; }
+  .dash-root .vs-input { width: 100%; }
+  .dash-root .vs-input-fecha { width: calc(50% - 40px); min-width: 110px; }
+  .dash-root .vs-filtros-acciones { flex-direction: row; align-items: stretch; width: 100%; }
+  .dash-root .vs-filtros-acciones .vs-btn { flex: 1; padding: 9px 6px; font-size: 11px; }
+  .dash-root .vs-tabla-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
 
 /* ━━ BADGES ESTADO ASESOR — iOS gradient style ━━ */
 .badge-estado {

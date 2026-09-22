@@ -26,6 +26,7 @@ const JEF_SEG_FILTRO_KEY   = 'nc_jefatura_seg_filtro'
 
 const CARGOS = [
   { id:'asesor',         label:'Asesor',           cls:'bc-asesor'         },
+  { id:'campo',          label:'Campo',            cls:'bc-asesor'         },
   { id:'supervisor',     label:'Supervisor',        cls:'bc-supervisor'     },
   { id:'backoffice',     label:'Back Data',         cls:'bc-backoffice'     },
   { id:'validacion',     label:'Validación',        cls:'bc-validacion'     },
@@ -113,6 +114,7 @@ const ACCESOS_MODS = [
   { nombre:'Seguimiento',      desc:'Seguimiento postventa',         icon:'activity',  path:'/seguimiento',     color:'#0284c7', cargo:'seguimiento' },
   { nombre:'Supervisor',       desc:'Gestión de equipos y salas',    icon:'briefcase', path:'/supervisor',      color:'#7c3aed', cargo:'supervisor' },
   { nombre:'Dashboard CRM',    desc:'Panel individual del asesor',   icon:'chart',     path:'/dashboard',       color:'#2563eb', cargo:'asesor' },
+  { nombre:'Campo',            desc:'Panel individual de campo',    icon:'chart',     path:'/campo',           color:'#0891b2', cargo:'campo' },
   { nombre:'Gestión Usuarios', desc:'Administración de accesos',     icon:'users',     path:'/usuarios',        color:'#be185d', cargo:'usuarios' },
   { nombre:'Programación',     desc:'Agenda de instalaciones',       icon:'calendar',  path:'/programacion',    color:'#c2410c', cargo:'programacion' },
   { nombre:'Cobranzas',        desc:'Clientes instalados y contratos',icon:'wallet',    path:'/cobranzas',       color:'#0f766e', cargo:'cobranzas' },
@@ -1403,7 +1405,7 @@ export default function Jefatura() {
       path: modulo.path,
     }
     sessionStorage.setItem('nc_jefatura_usuario_objetivo', JSON.stringify(objetivo))
-    if (modulo.cargo === 'asesor') {
+    if (['asesor', 'campo'].includes(modulo.cargo)) {
       sessionStorage.setItem('nc_dashboard_asesor_objetivo', JSON.stringify(objetivo))
     } else {
       sessionStorage.removeItem('nc_dashboard_asesor_objetivo')

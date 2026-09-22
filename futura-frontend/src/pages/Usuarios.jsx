@@ -9,6 +9,7 @@ import '../styles/usuarios.css'
 
 const CARGO_CLASE = {
   asesor:        'bc-asesor',
+  campo:         'bc-asesor',
   supervisor:    'bc-supervisor',
   backoffice:    'bc-backoffice',
   validacion:    'bc-validacion',
@@ -28,6 +29,7 @@ const CARGO_CLASE = {
 
 const CARGOS = [
   { value: 'asesor',         label: 'Asesor'           },
+  { value: 'campo',          label: 'Campo'            },
   { value: 'supervisor',     label: 'Supervisor'       },
   { value: 'backoffice',     label: 'Back Office'      },
   { value: 'validacion',     label: 'Validación'       },

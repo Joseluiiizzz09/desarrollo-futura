@@ -8,7 +8,8 @@ const auth    = require('../middleware/auth');
 const { validar, errorTexto, errorFecha, errorHora, errorHistorial } = require('../middleware/validar');
 
 const ROLES_BO  = ['backoffice','jefatura','usuarios'];
-const ROLES_ALL = ['backoffice','jefatura','usuarios','asesor','supervisor','supgrabaciones'];
+const ROLES_ALL = ['backoffice','jefatura','usuarios','asesor','campo','supervisor','supgrabaciones'];
+const esCargoAsesor = cargo => ['asesor', 'campo'].includes(String(cargo || '').trim().toLowerCase());
 // Sólo estos estados cierran definitivamente el flujo de asignación/rotación.
 const TIPIF_PROHIBIDAS_ASIGNACION = new Set(['VENTA CERRADA', 'NO TOCAR', 'SH NO TOCAR', 'NO ROTAR', 'SH NO ROTAR']);
 const CACHE_LISTADO_TTL = 5000;
@@ -385,7 +386,7 @@ router.get('/', auth(ROLES_ALL), async (req, res) => {
     // CPU y de los reinicios por out-of-memory del backend.
     let visorAsesorId = null;
     let visorAsesorNombre = '';
-    if (cargoEfectivo === 'asesor') {
+    if (esCargoAsesor(cargoEfectivo)) {
       // Base del asesor: leads asignados AHORA a él + los que trabajó antes
       // (su nombre aparece en el historial). Así un número no desaparece de su
       // base al ser rotado a otro asesor; conserva su registro de lo trabajado.
@@ -397,7 +398,7 @@ router.get('/', auth(ROLES_ALL), async (req, res) => {
       // Jefatura también puede abrir la vista de un usuario de Back Data. Ese
       // usuario administra la base completa y no debe tratarse como asesor
       // asignado, porque hacerlo deja la jornada artificialmente en cero.
-      if (String(uNom[0]?.cargo || '').trim().toLowerCase() === 'asesor') {
+      if (esCargoAsesor(uNom[0]?.cargo)) {
         visorAsesorId = Number(asesor_id);
         visorAsesorNombre = uNom[0]?.nombre || '';
       }
@@ -449,7 +450,7 @@ router.get('/', auth(ROLES_ALL), async (req, res) => {
     sql += ` WHERE 1=1`;
     // Las instancias técnicas representan formularios independientes para el
     // asesor; Back Data conserva una sola fila para el cliente principal.
-    if (cargoEfectivo !== 'asesor' && !asesor_id) sql += ` AND l.lead_origen_id IS NULL`;
+    if (!esCargoAsesor(cargoEfectivo) && !asesor_id) sql += ` AND l.lead_origen_id IS NULL`;
 
     // La búsqueda global se resuelve en MySQL y no descargando toda la base al
     // navegador. Para teléfonos completos conserva búsquedas indexables.
@@ -748,7 +749,7 @@ router.get('/fechas', auth(ROLES_ALL), async (_req, res) => {
 
 // GET /api/leads/ventas-cerradas
 // Retorna los números del asesor autenticado con tipif_vend = 'VENTA CERRADA' para hoy (Perú).
-router.get('/ventas-cerradas', auth(['asesor', 'jefatura', 'usuarios']), async (req, res) => {
+router.get('/ventas-cerradas', auth(['asesor', 'campo', 'jefatura', 'usuarios']), async (req, res) => {
   try {
     const hoy = fechaPeruHoy();
     const [rows] = await db.query(
@@ -1444,7 +1445,7 @@ router.post('/:id/otra-direccion', auth(ROLES_BO), async (req, res) => {
       await conn.rollback();
       return res.status(409).json({ ok:false, mensaje:`Ya existe un ciclo abierto (Venta ${abiertos[0].numero_ciclo}). Debe cerrarse antes de abrir otra dirección.` });
     }
-    const [usuarios] = await conn.query(`SELECT id,nombre FROM usuarios WHERE TRIM(nombre)=TRIM(?) AND activo=1 AND (cargo='asesor' OR JSON_CONTAINS(COALESCE(permisos,'[]'), JSON_QUOTE('asesor'))) LIMIT 1`, [asesor_nombre]);
+    const [usuarios] = await conn.query(`SELECT id,nombre FROM usuarios WHERE TRIM(nombre)=TRIM(?) AND activo=1 AND (cargo IN ('asesor','campo') OR JSON_CONTAINS(COALESCE(permisos,'[]'), JSON_QUOTE('asesor')) OR JSON_CONTAINS(COALESCE(permisos,'[]'), JSON_QUOTE('campo'))) LIMIT 1`, [asesor_nombre]);
     if (!usuarios.length) { await conn.rollback(); return res.status(404).json({ ok:false, mensaje:'Asesor no encontrado o inactivo' }); }
     const asesor = usuarios[0];
     const [[conteos]] = await conn.query(`
@@ -1592,7 +1593,7 @@ router.post('/:id/rotar', auth(ROLES_BO), async (req, res) => {
       FROM usuarios
       WHERE TRIM(nombre) = ?
         AND activo = 1
-        AND (cargo = 'asesor' OR JSON_CONTAINS(COALESCE(permisos, '[]'), JSON_QUOTE('asesor')))
+        AND (cargo IN ('asesor','campo') OR JSON_CONTAINS(COALESCE(permisos, '[]'), JSON_QUOTE('asesor')) OR JSON_CONTAINS(COALESCE(permisos, '[]'), JSON_QUOTE('campo')))
       LIMIT 1
     `, [asesor_nombre.trim()]);
     if (!usuarios.length) {
@@ -1628,7 +1629,7 @@ router.post('/:id/rotar', auth(ROLES_BO), async (req, res) => {
       const [usuariosInstancia] = await conn.query(`
         SELECT id,TRIM(nombre) nombre FROM usuarios
         WHERE TRIM(nombre)=? AND activo=1
-          AND (cargo='asesor' OR JSON_CONTAINS(COALESCE(permisos,'[]'), JSON_QUOTE('asesor')))
+          AND (cargo IN ('asesor','campo') OR JSON_CONTAINS(COALESCE(permisos,'[]'), JSON_QUOTE('asesor')) OR JSON_CONTAINS(COALESCE(permisos,'[]'), JSON_QUOTE('campo')))
         LIMIT 1
       `, [asesor_nombre.trim()]);
       if (!usuariosInstancia.length) { await conn.rollback(); return res.status(404).json({ok:false,mensaje:'Asesor no encontrado o inactivo'}); }
@@ -1974,7 +1975,7 @@ router.patch('/:id/tipif', auth(ROLES_ALL), async (req, res) => {
     if (tipifNormalizada === 'SIN COBERTURA') {
       obsFinal = String(coordenadas || '').trim();
     }
-    const esAsesor = req.user.cargo === 'asesor';
+    const esAsesor = esCargoAsesor(req.user.cargo);
     if (esAsesor) {
       const [ventasCRM] = await db.query(`
         SELECT v.estado, v.estado_grab, v.created_at AS venta_created_at,
@@ -2077,7 +2078,7 @@ router.patch('/:id/obs', auth(ROLES_ALL), async (req, res) => {
     if (!rows.length) return res.status(404).json({ ok: false, mensaje: 'Lead no encontrado' });
     // La observación global pertenece a la asignación vigente. Si un asesor anterior
     // modifica SU comentario, se actualiza exclusivamente su tramo del historial.
-    if (req.user.cargo === 'asesor' && Number(rows[0].asesor_id) !== Number(req.user.id)) {
+    if (esCargoAsesor(req.user.cargo) && Number(rows[0].asesor_id) !== Number(req.user.id)) {
       const [me] = await db.query(`SELECT nombre FROM usuarios WHERE id = ? LIMIT 1`, [req.user.id]);
       const miNombre = String(me[0]?.nombre || '').trim();
       let historial = [];

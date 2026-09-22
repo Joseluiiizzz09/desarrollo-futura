@@ -246,22 +246,25 @@ function asignacionesVigentesDelAsesor(historial, asesorNombre, asesorId, titula
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
-export default function Dashboard() {
+export default function Dashboard({ area = 'asesor' }) {
   const { sesion, logout, refrescarSesion } = useAuth()
   const navigate = useNavigate()
   const [asesorObjetivo] = useState(() => {
     try {
       const objetivo = JSON.parse(sessionStorage.getItem('nc_dashboard_asesor_objetivo') || 'null')
-      return objetivo?.cargo === 'asesor' ? objetivo : null
+      return objetivo?.cargo === area ? objetivo : null
     } catch { return null }
   })
   const vistaJefatura = Boolean((sesion?._actorJefatura || sesion?.cargo === 'jefatura') && asesorObjetivo?.id)
   const filtroAsesor = vistaJefatura
     ? `?asesor_id=${encodeURIComponent(asesorObjetivo.id)}`
-    : '?area=asesor'
+    : `?area=${encodeURIComponent(area)}`
 
   // Tab
-  const [tab, setTab] = useState(() => sessionStorage.getItem('nc_dashboard_apartado') || 'llamadas')
+  const [tab, setTab] = useState(() => {
+    const guardada = sessionStorage.getItem('nc_dashboard_apartado') || 'llamadas'
+    return area === 'campo' && ['llamadas', 'frases'].includes(guardada) ? 'rendimiento' : guardada
+  })
 
   // Datos
   const [clientes,        setClientes]        = useState([])
@@ -908,7 +911,7 @@ export default function Dashboard() {
   }
 
   async function guardarNuevaVenta() {
-    if (!nvEditId) {
+    if (!nvEditId && area !== 'campo') {
       if (!nvForm.tel1)
         return mostrarToast('Selecciona el Teléfono Contacto')
       if (!nvVentasCerradas.some(v => v.n1 === nvForm.tel1))
@@ -916,11 +919,11 @@ export default function Dashboard() {
     } else {
       if (!nvForm.tel1.trim())
         return mostrarToast('El Teléfono Contacto es obligatorio')
-      if (!/^\d+$/.test(nvForm.tel1.trim()))
-        return mostrarToast('El teléfono de contacto solo puede contener números')
+      if (!/^\d{9}$/.test(nvForm.tel1.trim()))
+        return mostrarToast('El teléfono de contacto debe tener exactamente 9 dígitos, sin espacios')
     }
-    if (nvForm.tel2.trim() && !/^\d+$/.test(nvForm.tel2.trim()))
-      return mostrarToast('El teléfono de referencia es opcional, pero si se completa debe contener únicamente números')
+    if (nvForm.tel2.trim() && !/^\d{9}$/.test(nvForm.tel2.trim()))
+      return mostrarToast('El teléfono de referencia debe tener exactamente 9 dígitos, sin espacios')
     if (nvForm.tel2.trim() && nvForm.tel2.trim() === nvForm.tel1.trim())
       return mostrarToast('El teléfono de referencia debe ser diferente al teléfono principal')
     const longitudDoc = { DNI:8, CE:9, RUC:11 }[nvForm.tipoDoc]
@@ -1106,7 +1109,7 @@ export default function Dashboard() {
 
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="dash-root">
+    <div className={`dash-root${area === 'campo' ? ' dash-campo' : ''}`}>
       {/* ── TOPBAR ─────────────────────────────────────────────────────── */}
       <div className="topbar">
         <div className="brand">
@@ -1115,15 +1118,15 @@ export default function Dashboard() {
           </div>
           <div className="brand-text">
             <img src="/assets/futura-wordmark.png" alt="FUTURA" style={{height:22,width:"auto",display:"block"}} />
-            <span className="brand-sub">Sistema de llamadas</span>
+            <span className="brand-sub">{area === 'campo' ? 'Sistema de campo' : 'Sistema de llamadas'}</span>
           </div>
         </div>
         <div className="tabs">
           {[
-            { id:'llamadas',      label:'Llamadas' },
+            ...(area === 'campo' ? [] : [{ id:'llamadas', label:'Llamadas' }]),
             { id:'rendimiento',   label:'Rendimiento' },
             { id:'ventassubidas', label:'Ventas Subidas' },
-            { id:'frases',        label:'Frases' },
+            ...(area === 'campo' ? [] : [{ id:'frases', label:'Frases' }]),
           ].map(t => (
             <button key={t.id} className={`tab${tab === t.id ? ' active' : ''}`} onClick={() => cambiarTab(t.id)}>
               {t.label}
@@ -1141,7 +1144,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── LLAMADAS ───────────────────────────────────────────────────── */}
-      <div className={`pantalla${tab !== 'llamadas' ? ' hidden' : ''}`}>
+      {area !== 'campo' && <div className={`pantalla${tab !== 'llamadas' ? ' hidden' : ''}`}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px',flexWrap:'wrap',gap:'8px'}}>
           <h2 style={{marginBottom:0}}>Base de llamadas</h2>
           <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
@@ -1206,7 +1209,7 @@ export default function Dashboard() {
           </tbody>
         </table>
         </div>
-      </div>
+      </div>}
 
       {/* ── RENDIMIENTO ────────────────────────────────────────────────── */}
       <div className={`pantalla${tab !== 'rendimiento' ? ' hidden' : ''}`}>
@@ -1218,7 +1221,7 @@ export default function Dashboard() {
               En vivo · actualizado {ultimaSyncTexto}
             </span>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:'8px',background:'#fff',padding:'10px 14px',borderRadius:'12px',border:'1px solid #e5e7eb',flexWrap:'wrap'}}>
+          <div className="rend-periodo" style={{display:'flex',alignItems:'center',gap:'8px',background:'#fff',padding:'10px 14px',borderRadius:'12px',border:'1px solid #e5e7eb',flexWrap:'wrap'}}>
             <span style={{fontSize:'11px',fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:'.3px'}}>Período:</span>
             <input type="date" value={grafDesde} onChange={e => { setGrafDesde(e.target.value); grafRef.current.desde = e.target.value }}
               style={{padding:'5px 8px',border:'1px solid #e5e7eb',borderRadius:'7px',fontSize:'12px',fontFamily:'inherit',outline:'none'}} />
@@ -1241,7 +1244,7 @@ export default function Dashboard() {
         </div>
 
         <div className="rend-kpis">
-          <div className="rend-kpi rend-kpi-azul">   <div className="rend-kpi-icon" /><div className="rend-kpi-valor">{kpiLlamadas}</div>   <div className="rend-kpi-label">Contactos gestionados hoy</div></div>
+          {area !== 'campo' && <div className="rend-kpi rend-kpi-azul">   <div className="rend-kpi-icon" /><div className="rend-kpi-valor">{kpiLlamadas}</div>   <div className="rend-kpi-label">Contactos gestionados hoy</div></div>}
           <div className="rend-kpi rend-kpi-verde">  <div className="rend-kpi-icon" /><div className="rend-kpi-valor">{kpiVentas}</div>     <div className="rend-kpi-label">Ventas hoy</div></div>
           <div className="rend-kpi rend-kpi-morado"> <div className="rend-kpi-icon" /><div className="rend-kpi-valor">{kpiInstaladas}</div> <div className="rend-kpi-label">Instaladas</div></div>
           <div className="rend-kpi rend-kpi-naranja"><div className="rend-kpi-icon" /><div className="rend-kpi-valor">{kpiEfect}%</div>     <div className="rend-kpi-label">Efectividad</div></div>
@@ -1277,6 +1280,11 @@ export default function Dashboard() {
             <h2 style={{marginBottom:'4px'}}>Ventas Subidas</h2>
             <p style={{fontSize:'12px',color:'#9ca3af'}}>Historial de ventas</p>
           </div>
+          {area === 'campo' && (
+            <button type="button" className="vs-btn vs-btn-buscar" onClick={() => abrirNuevaVenta()}>
+              + Registrar venta
+            </button>
+          )}
         </div>
 
         <div className="vs-filtros">
@@ -1549,7 +1557,7 @@ export default function Dashboard() {
               <div className="nv-grid nv-grid-2">
                 <div className="nv-field" ref={nvTelRef} style={{position:'relative'}}>
                   <label className="nv-label">Teléfono Contacto <span>*</span></label>
-                  {!nvEditId ? (
+                  {!nvEditId && area !== 'campo' ? (
                     <>
                       <div
                         className="nv-tel-display"
@@ -1590,13 +1598,13 @@ export default function Dashboard() {
                       )}
                     </>
                   ) : (
-                    <input className="nv-input" placeholder="9XXXXXXXX" maxLength={12} style={{fontFamily:'monospace'}}
+                    <input className="nv-input" type="tel" placeholder="9XXXXXXXX" maxLength={9} inputMode="numeric" style={{fontFamily:'monospace'}}
                       value={nvForm.tel1} onChange={e => nvSet('tel1', e.target.value.replace(/\D/g, ''))} />
                   )}
                 </div>
                 <div className="nv-field">
                   <label className="nv-label">Teléfono Referencia</label>
-                  <input className="nv-input" placeholder="9XXXXXXXX" maxLength={12} style={{fontFamily:'monospace'}}
+                  <input className="nv-input" type="tel" placeholder="9XXXXXXXX" maxLength={9} inputMode="numeric" style={{fontFamily:'monospace'}}
                     value={nvForm.tel2} onChange={e => nvSet('tel2', e.target.value.replace(/\D/g, ''))} />
                 </div>
                 <div className="nv-field">
