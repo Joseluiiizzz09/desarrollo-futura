@@ -936,8 +936,11 @@ export default function Backoffice() {
     try {
       const res  = await fetch(`${API}/usuarios`, { headers: ncHeaders() })
       const data = await res.json()
+      // Los de cargo "campo" no reciben base aunque tengan "asesor" como área
+      // adicional (p.ej. para registrar sus propias ventas) — no deben salir
+      // en el pool de asignación de Backoffice.
       if (data.ok) setAsesores(data.data
-        .filter(u => usuarioTieneCargo(u, 'asesor') && u.activo)
+        .filter(u => usuarioTieneCargo(u, 'asesor') && u.cargo !== 'campo' && u.activo)
         .map(u => ({ id:u.id, nombre:String(u.nombre || '').trim(), usuario:u.usuario, sala:u.sala })))
     } catch(e) { console.error('Error cargando asesores:', e) }
   }, [])
