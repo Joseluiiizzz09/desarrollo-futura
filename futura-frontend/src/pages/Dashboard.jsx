@@ -7,6 +7,7 @@ import { UBIGEO } from '../services/ubigeo'
 import ObsSeguimientoCell from '../components/ObsSeguimientoCell'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
+import { usePaquetesPorPlan } from '../utils/paquetes'
 import '../styles/dashboard.css'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -28,15 +29,6 @@ const TIPS = [
   { label: 'DESEA MOVIL',             cls: 'tip-movil' },
   { label: 'SERVICIO ACTIVO',         cls: 'tip-servicio' },
 ]
-
-const PAQUETES_POR_PLAN = {
-  '1 PLAY': ['150 MBPS S/70.00','300 MBPS S/75.00','800 MBPS S/100.00','1500 MBPS S/200.00','PROM ENTRADA 200 X 12 M 400 MBPS X 6M 39.5','PROM GRANDE 1000 MBPS X 6M 59.9','PROM GRANDE 850 X 12M 1000 MBPS X 4M 55','PROM LIM/ARQ 400 X 12 M 1000 MBPS X 2 M 1 SOL','PROM MEDIANA 400 X 12M 1000 MBPS X 6M 55','REG PRO 1000 MBPS','REG PRO 500 MBPS'],
-  '2 PLAY INTERNET + TELEFONO': ['150 MBPS S/70.00','1000 MBPS S/150.00','1500 MBPS S/205.00','300 MBPS S/80.00','300 MPBS 84.00','400 MBPS 94.00 S','400 MBPS S/90.00','800 MBPS S/105.00'],
-  '2 PLAY INTERNET + CABLE ESTANDAR': ['1000 MBPS S/230.00','150 MBPS S/150.00','1500 MBPS S/285.00','300 MBPS S/160.00','400 MBPS S/170.00','800 MBPS S/185.00'],
-  '2 PLAY INTERNET + CABLE SUPERIOR': ['1000 MBPS S/270.00','150 MBPS S/190.00','1500 MBPS S/325.00','300 MBPS S/200.00','400 MBPS S/210.00','800 MBPS S/225.00'],
-  '3 PLAY ESTANDAR': ['1000 MBPS S/235.00','150 MBPS S/155.00','1500 MBPS S/290.00','300 MBPS S/165.00','400 MBPS S/175.00','800 MBPS S/190.00'],
-  '3 PLAY SUPERIOR': ['1000 MBPS S/275.00','150 MBPS S/195.00','1500 MBPS S/330.00','300 MBPS S/205.00','400 MBPS S/215.00','800 MBPS S/230.00'],
-}
 
 const NV_DEFAULT = {
   nombre:'', tipoDoc:'DNI', dni:'', email:'', tel1:'', tel2:'',
@@ -247,6 +239,8 @@ function asignacionesVigentesDelAsesor(historial, asesorNombre, asesorId, titula
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function Dashboard({ area = 'asesor' }) {
+  // Paquetes por plan: catálogo editable (Usuarios → Paquetes)
+  const PAQUETES_POR_PLAN = usePaquetesPorPlan()
   const { sesion, logout, refrescarSesion } = useAuth()
   const navigate = useNavigate()
   const [asesorObjetivo] = useState(() => {

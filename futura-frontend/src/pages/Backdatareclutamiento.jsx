@@ -8,21 +8,12 @@ import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import { usuarioTieneCargo } from '../utils/roles'
+import { useCampanasReclutamiento } from '../utils/campanas'
 import '../styles/Backdatareclutamiento.css'
 
-// ── Campañas exclusivas de Back Data Reclutamiento (no la lista de Ventas) ─
-const CAMPANAS_RECLUTAMIENTO = [
-  { valor: 'R1',      bg: '#7c3aed', color: '#fff' },
-  { valor: 'R2',      bg: '#ea580c', color: '#fff' },
-  { valor: 'R3',      bg: '#ffffff', color: '#374151', borde: '#d1d5db' },
-  { valor: 'R4',      bg: '#92400e', color: '#fff' },
-  { valor: 'R5',      bg: '#e5e7eb', color: '#374151' },
-  { valor: 'R6',      bg: '#ddd6fe', color: '#5b21b6' },
-  { valor: 'CHANCAY', bg: '#0f766e', color: '#fff' },
-  { valor: 'COMPU T', bg: '#1d4ed8', color: '#fff' },
-  { valor: 'REFERIDO', bg: '#be123c', color: '#fff' },
-]
+// Campañas de Reclutamiento: catálogo editable (Usuarios → Campañas), ver utils/campanas.js
 function CampanaBadge({ valor }) {
+  const CAMPANAS_RECLUTAMIENTO = useCampanasReclutamiento()
   const info = CAMPANAS_RECLUTAMIENTO.find(c => c.valor === valor)
   if (!info) return <strong>{valor || '—'}</strong>
   return <span style={{display:'inline-block',padding:'3px 10px',borderRadius:6,background:info.bg,color:info.color,border:info.borde?`1px solid ${info.borde}`:'none',fontSize:11,fontWeight:800}}>{info.valor}</span>
@@ -30,6 +21,7 @@ function CampanaBadge({ valor }) {
 
 // ── Selector de campaña — Back Data Reclutamiento solo maneja estas 7 ──────
 function CampanaSelect({ value, onChange, plain }) {
+  const CAMPANAS_RECLUTAMIENTO = useCampanasReclutamiento()
   return (
     <select className={plain?undefined:'form-control'} value={value}
       onChange={e=>onChange(e.target.value)}>
@@ -432,6 +424,7 @@ function CopyIcon() {
 
 // ── Component ─────────────────────────────────────────────────────────────
 export default function Backdatareclutamiento() {
+  const CAMPANAS_RECLUTAMIENTO = useCampanasReclutamiento()
   const navigate    = useNavigate()
   const { sesion, logout } = useAuth()
   const idCntRef    = useRef(1)

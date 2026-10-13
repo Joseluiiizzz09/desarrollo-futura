@@ -10,11 +10,12 @@ import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import { UBIGEO } from '../services/ubigeo'
 import { usuarioTieneCargo } from '../utils/roles'
-import { CAMPANAS } from '../utils/campanas'
+import { useCampanas } from '../utils/campanas'
 import '../styles/backoffice.css'
 
 // ── Selector de campaña (lista + opción "Otro" para escribir a mano) ───────
 function CampanaSelect({ value, onChange, plain, sinOtro }) {
+  const CAMPANAS = useCampanas()
   const [manual, setManual] = useState(() => !sinOtro && Boolean(value) && !CAMPANAS.includes(value))
   const [manualConfirmada, setManualConfirmada] = useState(() => !sinOtro && Boolean(value) && !CAMPANAS.includes(value))
   if (manual) {
@@ -577,6 +578,8 @@ function documentoVenta(reg) {
 
 // ── Component ─────────────────────────────────────────────────────────────
 export default function Backoffice() {
+  // Campañas de Back Data: catálogo editable (Usuarios → Campañas)
+  const CAMPANAS = useCampanas()
   const navigate    = useNavigate()
   const { sesion, logout } = useAuth()
   const idCntRef      = useRef(1)

@@ -13,7 +13,7 @@ import CanalBadge from '../components/CanalBadge'
 import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
-import { CAMPANAS } from '../utils/campanas'
+import { useCampanas } from '../utils/campanas'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
@@ -434,6 +434,8 @@ function FiltroEstadoMultiple({ opciones, seleccionados, onChange }) {
 }
 
 export default function Jefatura() {
+  // Campañas de Back Data: catálogo editable (Usuarios → Campañas)
+  const CAMPANAS = useCampanas()
   const navigate = useNavigate()
   const { sesion, logout, refrescarSesion } = useAuth()
   const usuarioNombre = sesion?.nombre || 'Jefatura'
@@ -1526,7 +1528,7 @@ export default function Jefatura() {
   const campanasFlujoOpciones = useMemo(() => [...new Set([
     ...CAMPANAS,
     ...ventasCache.map(v => String(v.campana || '').trim()).filter(Boolean),
-  ])].sort((a, b) => a.localeCompare(b, 'es')), [ventasCache])
+  ])].sort((a, b) => a.localeCompare(b, 'es')), [ventasCache, CAMPANAS])
 
   const ventasFlujoFiltradas = useMemo(() => {
     let lista = fvTipoFecha === 'venta' ? [...ventasFlujoMes] : [...ventasCache]

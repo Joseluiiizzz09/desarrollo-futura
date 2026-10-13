@@ -62,6 +62,8 @@ app.use('/api/leads', require('./routes/leads'));
 app.use('/api/leads-reclutamiento', require('./routes/leads-reclutamiento'));
 app.use('/api/ventas-reclutamiento', require('./routes/ventas-reclutamiento'));
 app.use('/api/eliminaciones', require('./routes/eliminaciones'));
+app.use('/api/paquetes', require('./routes/paquetes'));
+app.use('/api/campanas', require('./routes/campanas'));
 app.use('/api/interno', require('./routes/interno'));
 
 const db = require('./database');

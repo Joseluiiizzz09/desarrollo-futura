@@ -5,6 +5,8 @@ import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import JefaturaViewControls from '../components/JefaturaViewControls'
+import PaquetesCatalogo from '../components/PaquetesCatalogo'
+import CampanasCatalogo from '../components/CampanasCatalogo'
 import '../styles/usuarios.css'
 
 const CARGO_CLASE = {
@@ -53,6 +55,8 @@ export default function Usuarios() {
   const { logout, sesion } = useAuth()
 
   const [usuarios, setUsuarios] = useState([])
+  // Pestaña activa: 'usuarios', 'paquetes' (paquetes de venta) o 'campanas'
+  const [vista, setVista] = useState('usuarios')
   const [buscar, setBuscar]         = useState('')
   const [filtroCargo, setFiltroCargo] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
@@ -227,12 +231,24 @@ export default function Usuarios() {
       <div className="pagina">
         <div className="page-header">
           <div>
-            <h2>Usuarios del sistema</h2>
-            <p>Crea, activa o desactiva usuarios de FUTURA</p>
+            <h2>{vista === 'paquetes' ? 'Paquetes de venta' : vista === 'campanas' ? 'Campañas' : 'Usuarios del sistema'}</h2>
+            <p>{vista === 'paquetes' ? 'Agrega, edita u ordena los paquetes que se ofrecen en el formulario de venta' : vista === 'campanas' ? 'Agrega, edita u ordena las campañas de Back Data y de Reclutamiento' : 'Crea, activa o desactiva usuarios de FUTURA'}</p>
           </div>
-          <button className="btn-nuevo" onClick={abrirModal}>+ Nuevo Usuario</button>
+          {vista === 'usuarios' && <button className="btn-nuevo" onClick={abrirModal}>+ Nuevo Usuario</button>}
         </div>
 
+        <div style={{ display: 'flex', gap: 8, margin: '0 0 16px' }}>
+          {[['usuarios', 'Usuarios'], ['paquetes', 'Paquetes'], ['campanas', 'Campañas']].map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setVista(id)}
+              style={{ padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                border: vista === id ? '1px solid #0f172a' : '1px solid #e5e7eb',
+                background: vista === id ? '#0f172a' : '#fff', color: vista === id ? '#fff' : '#374151' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {vista === 'paquetes' ? <PaquetesCatalogo mostrarToast={mostrarToast} /> : vista === 'campanas' ? <CampanasCatalogo mostrarToast={mostrarToast} /> : (<>
         <div className="kpi-strip">
           <div className="kpi kpi-blue">  <div className="kpi-num">{kpis.total}</div>        <div className="kpi-label">Total</div></div>
           <div className="kpi kpi-green"> <div className="kpi-num">{kpis.activos}</div>      <div className="kpi-label">Activos</div></div>
@@ -323,6 +339,7 @@ export default function Usuarios() {
             </tbody>
           </table>
         </div>
+        </>)}
       </div>
 
       {/* MODAL CREAR / EDITAR */}
@@ -438,6 +455,16 @@ export default function Usuarios() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Avisos (guardado, errores, campos que faltan) */}
+      {toastMsg && (
+        <div role="status" style={{
+          position:'fixed', bottom:28, left:'50%', transform:'translateX(-50%)',
+          background:'#1f2937', color:'#fff', padding:'12px 24px', borderRadius:12,
+          fontSize:13, fontWeight:600, boxShadow:'0 8px 24px rgba(0,0,0,.3)', zIndex:9999,
+          maxWidth:'90vw', textAlign:'center', pointerEvents:'none',
+        }}>{toastMsg}</div>
       )}
 
     </div>
