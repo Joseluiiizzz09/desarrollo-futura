@@ -22,6 +22,7 @@ const Usuarios = lazy(() => import('./pages/Usuarios'))
 const Backdatareclutamiento = lazy(() => import('./pages/Backdatareclutamiento'))
 const DashboardReclutamiento = lazy(() => import('./pages/dashboardreclutamiento'))
 const MarketingLeads = lazy(() => import('./pages/MarketingLeads'))
+const VentaClaro = lazy(() => import('./pages/VentaClaro'))
 
 function RouteLoader() {
   return (
@@ -54,11 +55,20 @@ function InicioAutorizado() {
   return <Navigate to={sesion ? rutaInicialAutorizada(sesion) : '/login'} replace />
 }
 
+// Entrando por la IP del servidor (http://185.253.152.62) solo existe el
+// formulario público de ventas: sin login ni el resto del sistema.
+const SOLO_FORMULARIO = /^\d{1,3}(\.\d{1,3}){3}$/.test(window.location.hostname)
+
 export default function App() {
+  if (SOLO_FORMULARIO) return <Suspense fallback={<RouteLoader />}><VentaClaro /></Suspense>
   return (
     <Suspense fallback={<RouteLoader />}>
       <Routes>
       <Route path="/login" element={<Login />} />
+      {/* Público, sin iniciar sesión */}
+      <Route path="/venta-claro" element={<VentaClaro />} />
+      <Route path="/claro" element={<VentaClaro />} />
+      <Route path="/venta" element={<VentaClaro />} />
       <Route path="/" element={<InicioAutorizado />} />
 
       <Route path="/dashboard"     element={<PrivateRoute cargo="asesor"><Dashboard /></PrivateRoute>} />

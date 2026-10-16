@@ -379,6 +379,7 @@ router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), as
       errorTexto(v.madre, 'madre', { requerido: true, max: 150 }),
       errorTexto(v.cuotaInstalacion, 'cuotaInstalacion', { requerido: true, max: 100 }),
       errorTexto(v.hogar, 'hogar', { requerido: true, max: 150 }),
+      errorEnum(v.predio, 'predio', ['HORIZONTAL', 'VERTICAL']),
       errorTexto(v.tec, 'tecnologia', { requerido: true, max: 100 }),
       errorTexto(v.paquete, 'paquete', { requerido: true, max: 255 }),
       errorTexto(v.full, 'fullClaro', { requerido: true, max: 20 }),
@@ -496,17 +497,17 @@ router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), as
         asesor_id, asesor_nombre, tipo_doc, dni, nombre, email,
         telefono1, telefono2, departamento, provincia, distrito,
         direccion, coordenadas, fecha_nac, lugar_nac, padre, madre,
-        cuota_inst, claro_hogar, tecnologia, paquete,
+        cuota_inst, claro_hogar, predio, tecnologia, paquete,
         full_claro, cant_decos, cant_mesh, plano, estado, observacion,
         lead_id, lead_ciclo_id, sala_atribucion
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [
       asesorVentaId, nombreAsesor, v.tipoDoc||'DNI', v.dni||null, v.nombre||null, v.email||null,
       v.telefono1||null, v.telefono2||null, v.departamento||null,
       v.provincia||null, v.distrito||null, v.direccion||null,
       v.coordenadas||null, v.fechaNac||null, v.lugarNac||null,
       v.padre||null, v.madre||null,
-      v.cuotaInstalacion||null, v.hogar||null, v.tec||null,
+      v.cuotaInstalacion||null, v.hogar||null, v.predio||null, v.tec||null,
       v.paquete||null, v.full||null,
       parseInt(v.cantDecos)||0, parseInt(v.cantMesh)||0,
       v.plano||null, estadoFinal, v.obs||null,
@@ -2289,7 +2290,7 @@ router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios
       nombre, tipoDoc, dni, email,
       telefono1, telefono2,
       departamento, provincia, distrito, direccion, coordenadas,
-      paquete, cuotaInstalacion, hogar, tec, full, plano,
+      paquete, cuotaInstalacion, hogar, predio, tec, full, plano,
       fechaNac, lugarNac, padre, madre,
       cantDecos, cantMesh,
       observacion, canal,
@@ -2313,6 +2314,7 @@ router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios
       errorTexto(paquete,        'paquete',        { max: 100 }),
       errorTexto(cuotaInstalacion,'cuotaInstalacion',{ max: 100}),
       errorTexto(hogar,          'hogar',          { max: 100 }),
+      predio !== undefined ? errorEnum(predio, 'predio', ['HORIZONTAL', 'VERTICAL']) : null,
       errorTexto(tec,            'tec',            { max: 50  }),
       errorTexto(full,           'full',           { max: 50  }),
       errorTexto(plano,          'plano',          { max: 255 }),
@@ -2357,6 +2359,7 @@ router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios
     agregar('paquete',     paquete);
     agregar('cuota_inst',  cuotaInstalacion);
     agregar('claro_hogar', hogar);
+    agregar('predio',      predio);
     agregar('tecnologia',  tec);
     agregar('full_claro',  full);
     agregar('plano',       plano);

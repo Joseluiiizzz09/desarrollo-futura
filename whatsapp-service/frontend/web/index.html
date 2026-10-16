@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM NETCONTACT - Bandeja de conversaciones</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css?v=6.4">
+</head>
+<body>
+    <!-- Sin sesion de Krono valida: el login se hace en Krono, no en este panel -->
+    <div id="login-modal" class="hidden" style="position:fixed;inset:0;z-index:9999;background:#f8fafc;font-family:system-ui,sans-serif;color:#475569;text-align:center;padding:40vh 24px 0">
+        <p>Tu sesión de Krono expiró o no tienes acceso a WhatsApp.<br>Vuelve a iniciar sesión en Krono.</p>
+    </div>
+
+    <!-- Contenedor Principal del CRM (Completamente aislado hasta iniciar sesión) -->
+    <div id="crm-app-root" class="hidden">
+
+    <!-- Modal de Gestión de Asesores (Solo Administradores) -->
+    <div id="admin-modal" class="modal-overlay hidden">
+        <div class="modal-card admin-card">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <div>
+                        <h3>Panel de Asesores y Sesiones</h3>
+                        <p>Supervisa asesores en línea, crea accesos y administra sesiones</p>
+                    </div>
+                </div>
+                <div class="admin-modal-actions">
+                    <button id="btn-open-create-advisor" class="btn-primary btn-sm">+ Nuevo Asesor</button>
+                    <button id="btn-close-admin-modal" class="btn-modal-close" title="Cerrar">✕</button>
+                </div>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Asesor</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Conexión</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-table-body">
+                        <!-- Generado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Gestión de Cuentas WhatsApp (Conectar y Escanear QR) -->
+    <div id="accounts-modal" class="modal-overlay hidden">
+        <div class="modal-card admin-card">
+            <div class="admin-modal-header">
+                <button id="btn-open-create-account" class="btn-primary btn-sm">+ Conectar Nueva Línea</button>
+                <div class="admin-modal-actions">
+                    <button id="btn-close-accounts-modal" class="btn-modal-close" title="Cerrar">✕</button>
+                </div>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre de Línea</th>
+                            <th>Identificador</th>
+                            <th>Módulo</th>
+                            <th>Estado WhatsApp</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accounts-table-body">
+                        <!-- Generado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Escaneo de Código QR WhatsApp -->
+    <div id="qr-modal" class="modal-overlay hidden">
+        <div class="modal-card qr-card" style="max-width: 440px; text-align: center;">
+            <div class="modal-header-simple">
+                <h3 id="qr-modal-title">Vincular WhatsApp Web</h3>
+                <button id="btn-close-qr-modal" class="btn-modal-close">✕</button>
+            </div>
+            <p id="qr-instructions" class="qr-instructions" style="font-size: 13px; color: #64748b; margin: 8px 0 14px 0; line-height: 1.4;">
+                Abre WhatsApp en tu teléfono, entra en <strong>Dispositivos vinculados</strong> y apunta tu cámara al siguiente código:
+            </p>
+            <div id="qr-display-box" style="background: #ffffff; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 270px;">
+                <div id="qr-loading-text" style="color: #64748b; font-size: 13px;">Obteniendo código QR de WhatsApp Web...</div>
+                <img id="qr-image" class="hidden" style="max-width: 240px; height: auto; display: block; border-radius: 8px;" alt="QR WhatsApp" />
+            </div>
+
+            <!-- Vinculo por codigo: alternativa cuando la camara del celular falla -->
+            <div id="pairing-phone-section" class="hidden" style="margin-top: 4px;">
+                <input type="tel" id="pairing-phone-input" placeholder="" autocomplete="off"
+                    style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #d9e0e8; font-size: 14px; text-align: center; box-sizing: border-box;" />
+                <button type="button" id="btn-request-pairing-code" class="btn-primary btn-sm" style="width: 100%; margin-top: 10px;">Pedir código</button>
+            </div>
+
+            <div id="pairing-code-display" class="hidden" style="background: #ffffff; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div id="pairing-code-text" style="font-size: 30px; font-weight: 800; letter-spacing: 5px; color: #172235;">--------</div>
+                <p style="font-size: 12.5px; color: #64748b; margin: 10px 0 0 0; line-height: 1.4;">
+                    En el celular: WhatsApp &gt; <strong>Dispositivos vinculados</strong> &gt; <strong>Vincular con número de teléfono</strong> e ingresa este código.
+                </p>
+            </div>
+
+            <div id="qr-status-info" style="font-size: 12px; color: #0284c7; margin-top: 12px; font-weight: 600;">
+                Esperando escaneo...
+            </div>
+            <button type="button" id="btn-toggle-pairing-mode" class="btn-link-sm" style="background: none; border: none; color: var(--brand-red); font-size: 12.5px; font-weight: 600; cursor: pointer; margin-top: 6px; padding: 4px;">
+                ¿Falla la cámara? Vincular con código
+            </button>
+            <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center;">
+                <button type="button" id="btn-refresh-qr-modal" class="btn-secondary btn-sm">Actualizar QR</button>
+                <button type="button" id="btn-done-qr-modal" class="btn-primary btn-sm">Listo / Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Renombrar Cuenta WhatsApp -->
+    <div id="rename-modal" class="modal-overlay hidden">
+        <div class="modal-card" style="max-width: 400px; text-align: left;">
+            <div class="modal-header-simple">
+                <h3 id="rename-modal-title">Renombrar Línea de WhatsApp</h3>
+                <button type="button" id="btn-close-rename-modal" class="btn-modal-close">✕</button>
+            </div>
+            <form id="rename-account-form">
+                <input type="hidden" id="rename-account-id">
+                <div class="auth-field-group">
+                    <label for="rename-account-input">Nombre visible de la línea:</label>
+                    <input type="text" id="rename-account-input" required autocomplete="off" placeholder="Ej. Ventas 1, Soporte..." />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="button" id="btn-cancel-rename-modal" class="btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="width: auto;">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Crear Nueva Línea WhatsApp -->
+    <div id="create-account-modal" class="modal-overlay hidden">
+        <div class="modal-card" style="max-width: 400px; text-align: left;">
+            <div class="modal-header-simple">
+                <h3>Conectar Nueva Línea WhatsApp</h3>
+                <button type="button" id="btn-close-create-acc-modal" class="btn-modal-close">✕</button>
+            </div>
+            <form id="create-account-form">
+                <div class="auth-field-group">
+                    <label for="create-account-title">Nombre de la nueva línea:</label>
+                    <input type="text" id="create-account-title" required autocomplete="off" placeholder="Ej. Ventas 2, Cobranzas..." />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="button" id="btn-cancel-create-acc-modal" class="btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="width: auto;">Crear Línea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Formulario Crear / Editar Asesor -->
+    <div id="advisor-form-modal" class="modal-overlay hidden">
+        <div class="modal-card advisor-form-card">
+            <div class="modal-header-simple">
+                <h3 id="advisor-modal-title">Crear Nuevo Asesor</h3>
+                <button id="btn-close-advisor-form" class="btn-modal-close">✕</button>
+            </div>
+            <form id="advisor-form">
+                <input type="hidden" id="advisor-edit-id">
+                <div class="auth-field-group">
+                    <label for="advisor-name">Nombre Completo del Asesor</label>
+                    <input type="text" id="advisor-name" placeholder="Ej. Carlos Mendoza" required>
+                </div>
+                <div class="auth-field-group">
+                    <label for="advisor-username">Nombre de Usuario</label>
+                    <input type="text" id="advisor-username" placeholder="Ej. carlosm" required>
+                </div>
+                <div class="auth-field-group">
+                    <label for="advisor-password">Contraseña <span id="advisor-pass-hint" class="text-hint">(Mínimo 6 caracteres)</span></label>
+                    <input type="password" id="advisor-password" placeholder="Contraseña de acceso">
+                </div>
+                <div class="auth-field-group">
+                    <label for="advisor-role">Rol de Acceso</label>
+                    <select id="advisor-role">
+                        <option value="asesor">Asesor de Ventas / Soporte</option>
+                        <option value="admin">Administrador General</option>
+                    </select>
+                </div>
+                <div id="advisor-form-error" class="login-error-box hidden"></div>
+                <div class="modal-footer-btns">
+                    <button type="button" id="btn-cancel-advisor-form" class="btn-secondary">Cancelar</button>
+                    <button type="submit" id="btn-save-advisor" class="btn-primary">Guardar Asesor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== HEADER PRINCIPAL (CRM NETCONTACT) ==================== -->
+    <header class="crm-topbar">
+        <div class="topbar-left">
+            <!-- Vistas del panel (antes barra lateral); sin marca propia: va dentro de Krono -->
+            <nav class="wa-tabs">
+                <a href="#" class="nav-item active" id="menu-bandeja">
+                    <svg class="nav-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                    <span class="nav-label">Bandeja de conversaciones</span>
+                </a>
+                <a href="#" class="nav-item" id="menu-backdata">
+                    <svg class="nav-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span class="nav-label">Back Data</span>
+                </a>
+            </nav>
+
+            <!-- Búsqueda rápida -->
+            <div class="top-search-wrap">
+                <svg class="search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-input" placeholder="Buscar por nombre, número o @usuario...">
+                <button id="search-clear" class="search-clear hidden" title="Limpiar búsqueda">✕</button>
+            </div>
+        </div>
+
+        <div class="topbar-right">
+            <!-- Vista y filtros (antes bajo el titulo) -->
+        <div class="header-actions">
+            <!-- Vista Switcher: Tablero o Dividido -->
+            <div class="view-mode-toggle" id="view-mode-toggle">
+                <button class="btn-toggle active" id="btn-view-board" title="Vista Tablero Kanban">
+                    Tablero
+                </button>
+                <button class="btn-toggle" id="btn-view-split" title="Vista Lista y Chat">
+                    Chat Dividido
+                </button>
+            </div>
+
+            <!-- Filtros rápidos -->
+            <div class="filter-pills" id="filter-pills">
+                <button class="filter-pill active" data-filter="all">Todos <span class="pill-count" id="count-all">0</span></button>
+                <button class="filter-pill" data-filter="unanswered">Sin responder <span class="pill-count" id="count-unanswered">0</span></button>
+                <button class="filter-pill" data-filter="mine">Mis chats <span class="pill-count" id="count-mine">0</span></button>
+            </div>
+        </div>
+
+            <!-- Estado de conexión -->
+            <div id="conn-status" class="live-status online" title="Estado de sincronización">
+                <span class="live-dot"></span>
+                <span id="conn-text">En línea</span>
+            </div>
+
+            <!-- Asesores -->
+            <div id="agents-online" class="agents-pill" title="Asesores en línea">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span id="agents-count">1 asesor</span>
+            </div>
+
+
+            <!-- Botón Cuentas WhatsApp (Solo Admin) -->
+            <button id="btn-accounts-panel" class="btn-top-admin hidden" title="Conectar y Administrar Cuentas de WhatsApp">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span>Cuentas WhatsApp</span>
+            </button>
+
+            <!-- Botón de sonido -->
+            <button id="btn-sound" class="btn-top-icon" title="Silenciar / Activar alertas">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </button>
+
+            <!-- Perfil de asesor con opción de Cerrar Sesión -->
+            <div class="user-profile-pill" id="user-profile-pill">
+                <div class="user-avatar" id="agent-avatar">AD</div>
+                <div class="user-meta">
+                    <strong id="agent-display-name">Administrador</strong>
+                    <span id="agent-role-badge" class="agent-role-badge">Admin</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== CUERPO CRM ==================== -->
+    <div class="crm-body">
+        <!-- BARRA LATERAL IZQUIERDA MINIMALISTA -->
+
+        <!-- ÁREA CENTRAL DE CONTENIDO -->
+        <main class="crm-main-content">
+            <!-- Alerta: lineas de WhatsApp que se desvincularon solas (solo Jefatura) -->
+            <div id="alerta-desvinculadas" class="alerta-desv hidden"></div>
+            <!-- CABECERA DE BANDEJA -->
+            <div class="content-header">
+                <div class="header-titles">
+                    <span class="header-tag" id="header-tag">BANDEJA</span>
+                    <h1 class="header-title" id="header-title">Bandeja de conversaciones</h1>
+                    <p class="header-desc" id="header-desc">Gestiona y da seguimiento a tus conversaciones en tiempo real.</p>
+                </div>
+
+            </div>
+
+            <!-- KPI RESUMEN DE MÉTRICAS -->
+            <section class="kpi-metrics-row" id="kpi-metrics-row">
+                <div class="kpi-card" data-kpi="total">
+                    <div class="kpi-icon-wrap kpi-red">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Total</span>
+                        <strong class="kpi-value" id="kpi-total">0</strong>
+                    </div>
+                </div>
+
+                <div class="kpi-card" data-kpi="attended">
+                    <div class="kpi-icon-wrap kpi-orange">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Atendidos</span>
+                        <strong class="kpi-value" id="kpi-attended">0</strong>
+                    </div>
+                </div>
+
+                <div class="kpi-card" data-kpi="unanswered">
+                    <div class="kpi-icon-wrap kpi-coral">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Sin responder</span>
+                        <strong class="kpi-value" id="kpi-unanswered">0</strong>
+                    </div>
+                </div>
+
+                <div class="kpi-card" data-kpi="blacklist">
+                    <div class="kpi-icon-wrap kpi-slate">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Black List</span>
+                        <strong class="kpi-value" id="kpi-blacklist">0</strong>
+                    </div>
+                </div>
+            </section>
+
+            <!-- WORKSPACE: TABLERO KANBAN + CHAT DRAWER -->
+            <div class="crm-workspace-wrapper" id="crm-workspace">
+                <!-- TABLERO KANBAN DE 3 COLUMNAS -->
+                <section class="kanban-board" id="kanban-board">
+                    <!-- Columna 1: clientes ya respondidos -->
+                    <div class="kanban-col col-attended">
+                        <div class="kanban-col-header">
+                            <div class="col-title-wrap">
+                                <h3>Atendidos</h3>
+                                <span class="col-badge badge-orange" id="badge-col-attended">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-col-cards" id="cards-col-attended"></div>
+                        <div class="kanban-col-footer hidden" id="footer-col-attended"></div>
+                    </div>
+
+                    <!-- Columna 2: clientes que recien escriben -->
+                    <div class="kanban-col col-unanswered">
+                        <div class="kanban-col-header">
+                            <div class="col-title-wrap">
+                                <h3>Nuevos / Sin responder</h3>
+                                <span class="col-badge badge-danger" id="badge-col-unanswered">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-col-cards" id="cards-col-unanswered"></div>
+                        <div class="kanban-col-footer hidden" id="footer-col-unanswered"></div>
+                    </div>
+
+                    <!-- Columna 3: lista negra -->
+                    <div class="kanban-col col-blacklist">
+                        <div class="kanban-col-header">
+                            <div class="col-title-wrap">
+                                <h3>Black List</h3>
+                                <span class="col-badge badge-slate" id="badge-col-blacklist">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-col-cards" id="cards-col-blacklist"></div>
+                        <div class="kanban-col-footer hidden" id="footer-col-blacklist"></div>
+                    </div>
+                </section>
+
+                <!-- LISTA PARA VISTA DIVIDIDA -->
+                <section class="split-list-panel hidden" id="split-list-panel">
+                    <div class="chat-list" id="chat-list"></div>
+                    <div class="kanban-col-footer hidden" id="footer-split-list"></div>
+                </section>
+
+                <!-- MODULO 1: BACK DATA -- lista simple de los grupos de envio de clientes -->
+                <section class="split-list-panel backdata-list-panel hidden" id="backdata-panel">
+                    <div class="chat-list" id="backdata-list"></div>
+                    <div class="kanban-col-footer hidden" id="footer-backdata-list"></div>
+                </section>
+
+                <!-- PANEL DRAWER DEL CHAT ACTIVO -->
+                <section class="active-chat-drawer hidden" id="active-chat-panel">
+                    <!-- Cabecera del Chat -->
+                    <div class="chat-header">
+                        <div class="contact-card-header">
+                            <div class="contact-avatar" id="active-avatar">PA</div>
+                            <div class="contact-details">
+                                <div class="contact-title-row">
+                                    <h2 id="active-contact-name">Contacto</h2>
+                                    <button id="btn-edit-contact-name" class="btn-mini-icon" title="Editar nombre o @usuario de este cliente" style="background: none; border: none; cursor: pointer; color: #94a3b8; padding: 2px 4px; display: inline-flex; align-items: center; border-radius: 4px; transition: color 0.15s, background 0.15s;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    </button>
+                                    <span class="badge-country">PE</span>
+                                </div>
+                                <div class="contact-meta-row">
+                                    <span class="contact-phone" id="active-phone-display">+51 900 000 000</span>
+                                    <button id="btn-copy-phone" class="btn-copy-icon" title="Copiar número">
+                                        <svg class="icon-copy" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        <svg class="icon-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-header-actions">
+                            <div class="chat-header-corner">
+                                <span id="active-account-badge" class="badge-account-line" title="Línea de WhatsApp conectada">Línea WhatsApp</span>
+                                <span id="active-wait-time" class="wait-tag">Reciente</span>
+                                <button id="btn-close-chat" class="btn-close-drawer" title="Cerrar vista de chat">                                 ✕                             </button>
+                            </div>
+                            <div class="chat-stage-selector-wrap" title="Mover este cliente a otro bloque del tablero">
+                                <span class="chat-stage-label">Bloque</span>
+                                <select id="active-chat-stage-select" class="chat-stage-select">
+                                    <option value="attended">Atendidos</option>
+                                    <option value="unanswered">Nuevos / Sin responder</option>
+                                    <option value="blacklist">Black List</option>
+                                </select>
+                            </div>
+                            <div id="collision-alert" class="collision-banner hidden">
+                                Atendido por <strong id="claimed-by-name">Otro asesor</strong>
+                            </div>
+                            <button id="btn-resolve-chat" class="btn-success">
+                                Marcar Atendido
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mensajes de la conversación -->
+                    <div class="chat-history" id="chat-messages">
+                        <div class="messages-load-more hidden" id="messages-load-more-wrap">
+                            <button type="button" id="btn-load-more-msgs" class="btn-load-more-msgs">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                <span>Cargar mensajes anteriores (<span id="load-more-count">0</span>)</span>
+                            </button>
+                        </div>
+                        <div class="messages-container" id="messages-container"></div>
+                    </div>
+
+                    <!-- Respuestas rapidas: un clic las pone en el cuadro de escribir -->
+                    <div id="quick-replies-bar" class="quick-replies-bar">
+                        <div id="quick-chips" class="quick-chips"></div>
+                    </div>
+
+                    <!-- Composer / Redacción -->
+                    <div class="chat-composer">
+                        <form id="composer-form">
+                            <textarea id="composer-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                            <button type="submit" id="btn-send" class="btn-send" title="Enviar respuesta al cliente">
+                                <span>Enviar</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    </div>
+
+    <script src="app.js?v=5.8"></script>
+</body>
+</html>
+
+
+

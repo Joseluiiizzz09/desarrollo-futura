@@ -34,7 +34,7 @@ const NV_DEFAULT = {
   nombre:'', tipoDoc:'DNI', dni:'', email:'', tel1:'', tel2:'',
   dpto:'', prov:'', dist:'', dir:'', coord:'',
   fechaNac:'', lugarNac:'', padre:'', madre:'',
-  cuota:'', hogar:'', tec:'', paquete:'',
+  cuota:'', hogar:'', tipoVivienda:'', tec:'', paquete:'',
   full:'', decos:'0', mesh:'0', plano:'',
   estado:'VENTA', obs:'',
 }
@@ -869,6 +869,7 @@ export default function Dashboard({ area = 'asesor' }) {
       madre:    v.madre       || '',
       cuota:    v.cuota_inst  || '',
       hogar:    v.claro_hogar || '',
+      tipoVivienda: v.predio  || '',
       tec:      v.tecnologia  || '',
       paquete:  v.paquete     || '',
       full:     v.full_claro  || '',
@@ -941,7 +942,7 @@ export default function Dashboard({ area = 'asesor' }) {
       ['Nombre del padre', nvForm.padre], ['Nombre de la madre', nvForm.madre],
       ['Departamento', nvForm.dpto], ['Provincia', nvForm.prov], ['Distrito', nvForm.dist],
       ['Coordenadas', nvForm.coord], ['Dirección', nvForm.dir], ['Cuota de instalación', nvForm.cuota],
-      ['Claro Hogar', nvForm.hogar], ['Tecnología', nvForm.tec], ['Paquete Real', nvForm.paquete],
+      ['Claro Hogar', nvForm.hogar], ['Tipo de vivienda', nvForm.tipoVivienda], ['Tecnología', nvForm.tec], ['Paquete Real', nvForm.paquete],
       ['Full Claro', nvForm.full], ['Plano', nvForm.plano], ['Observación', nvForm.obs],
     ]
     const faltante = requeridos.find(([,valor]) => !String(valor || '').trim())
@@ -955,7 +956,7 @@ export default function Dashboard({ area = 'asesor' }) {
       direccion:nvForm.dir.trim(), coordenadas:nvForm.coord.trim(),
       fechaNac:nvForm.fechaNac, lugarNac:nvForm.lugarNac.trim(),
       padre:nvForm.padre.trim(), madre:nvForm.madre.trim(),
-      cuotaInstalacion:nvForm.cuota, hogar:nvForm.hogar,
+      cuotaInstalacion:nvForm.cuota, hogar:nvForm.hogar, predio:nvForm.tipoVivienda,
       tec:nvForm.tec, paquete:nvForm.paquete,
       full:nvForm.full, cantDecos:nvForm.decos, cantMesh:nvForm.mesh,
       plano:nvForm.plano.trim(), estado: nvEditId ? nvForm.estado : 'VENTA', obs:nvForm.obs.trim(),
@@ -1500,6 +1501,34 @@ export default function Dashboard({ area = 'asesor' }) {
           </div>
 
           <div className="nv-body">
+            {/* Ubicación al inicio del formulario */}
+            <div className="nv-section">
+              <div className="nv-section-title">Ubicación</div>
+              <div className="nv-grid nv-grid-3">
+                <div className="nv-field">
+                  <label className="nv-label">Departamento</label>
+                  <select className="nv-select" value={nvForm.dpto} onChange={e => nvOnDpto(e.target.value)}>
+                    <option value="">Seleccionar departamento</option>
+                    {Object.keys(UBIGEO).map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="nv-field">
+                  <label className="nv-label">Provincia</label>
+                  <select className="nv-select" value={nvForm.prov} onChange={e => nvOnProv(e.target.value)} disabled={!nvForm.dpto}>
+                    <option value="">Seleccionar provincia</option>
+                    {nvProvs.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div className="nv-field">
+                  <label className="nv-label">Distrito</label>
+                  <select className="nv-select" value={nvForm.dist} onChange={e => nvSet('dist', e.target.value)} disabled={!nvForm.prov}>
+                    <option value="">Seleccionar distrito</option>
+                    {nvDists.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Personales */}
             <div className="nv-section">
               <div className="nv-section-title">Personales</div>
@@ -1608,27 +1637,6 @@ export default function Dashboard({ area = 'asesor' }) {
                     onChange={e => nvSet('email', e.target.value)} />
                 </div>
                 <div className="nv-field">
-                  <label className="nv-label">Departamento</label>
-                  <select className="nv-select" value={nvForm.dpto} onChange={e => nvOnDpto(e.target.value)}>
-                    <option value="">Seleccionar departamento</option>
-                    {Object.keys(UBIGEO).map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div className="nv-field">
-                  <label className="nv-label">Provincia</label>
-                  <select className="nv-select" value={nvForm.prov} onChange={e => nvOnProv(e.target.value)}>
-                    <option value="">Seleccionar provincia</option>
-                    {nvProvs.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div className="nv-field">
-                  <label className="nv-label">Distrito</label>
-                  <select className="nv-select" value={nvForm.dist} onChange={e => nvSet('dist', e.target.value)}>
-                    <option value="">Seleccionar distrito</option>
-                    {nvDists.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div className="nv-field">
                   <label className="nv-label">Coordenadas</label>
                   <input className="nv-input" placeholder="-12.000000, -77.000000" style={{fontFamily:'monospace'}}
                     value={nvForm.coord} onChange={e => nvSet('coord', e.target.value)} />
@@ -1658,6 +1666,14 @@ export default function Dashboard({ area = 'asesor' }) {
                   <select className="nv-select" value={nvForm.hogar} onChange={e => nvOnHogar(e.target.value)}>
                     <option value="">Seleccionar</option>
                     {Object.keys(PAQUETES_POR_PLAN).map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+                <div className="nv-field">
+                  <label className="nv-label">Tipo de vivienda</label>
+                  <select className="nv-select" value={nvForm.tipoVivienda} onChange={e => nvSet('tipoVivienda', e.target.value)}>
+                    <option value="">Seleccionar</option>
+                    <option value="HORIZONTAL">Horizontal</option>
+                    <option value="VERTICAL">Vertical</option>
                   </select>
                 </div>
                 <div className="nv-field">

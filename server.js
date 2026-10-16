@@ -65,6 +65,8 @@ app.use('/api/eliminaciones', require('./routes/eliminaciones'));
 app.use('/api/paquetes', require('./routes/paquetes'));
 app.use('/api/campanas', require('./routes/campanas'));
 app.use('/api/interno', require('./routes/interno'));
+// Formulario público de ventas CLARO (sin sesión)
+app.use('/api/publico', require('./routes/publico'));
 
 const db = require('./database');
 app.get('/api/health', auth([]), async (req, res) => {

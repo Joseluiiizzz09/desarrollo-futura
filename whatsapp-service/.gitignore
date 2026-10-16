@@ -1,0 +1,6 @@
+# Sesiones de WhatsApp, chats y configuracion: datos privados, no van al repositorio
+node_modules/
+data/
+.env
+.env.*
+*.log

@@ -1,4 +1,4 @@
-﻿export const UBIGEO = 
+const UBIGEO_COMPLETO = 
 {
   "AMAZONAS": {
     "BAGUA": [
@@ -554,6 +554,33 @@
 }
 ;
 
+// Catálogo de cobertura de Grupo Futura.
+export const UBIGEO = {
+  "ANCASH": { "SANTA": ["CHIMBOTE", "NUEVO CHIMBOTE"] },
+  "AREQUIPA": { "AREQUIPA": ["AREQUIPA"] },
+  "CALLAO": { "CALLAO": ["BELLAVISTA", "CALLAO", "CARMEN DE LA LEGUA REYNOSO", "LA PERLA", "LA PUNTA", "VENTANILLA"] },
+  "CUSCO": { "CUSCO": ["CUSCO"] },
+  "JUNÍN": { "HUANCAYO": ["HUANCAYO"] },
+  "LA LIBERTAD": { "TRUJILLO": ["EL PORVENIR", "FLORENCIA DE MORA", "LA ESPERANZA", "SALAVERRY", "TRUJILLO", "VICTOR LARCO HERRERA"] },
+  "LAMBAYEQUE": {
+    "CHICLAYO": ["CHICLAYO", "JOSE LEONARDO ORTIZ", "LA VICTORIA", "PIMENTEL", "POMALCA"],
+    "LAMBAYEQUE": ["LAMBAYEQUE"]
+  },
+  "LIMA": {
+    "BARRANCA": ["BARRANCA"],
+    "HUARAL": ["CHANCAY", "HUARAL"],
+    "HUAURA": ["HUACHO", "HUALMAY"],
+    "LIMA": [
+      "ATE", "BARRANCO", "BREÑA", "CARABAYLLO", "CHACLACAYO", "CHORRILLOS", "COMAS", "EL AGUSTINO",
+      "INDEPENDENCIA", "JESUS MARIA", "LA MOLINA", "LA VICTORIA", "LIMA", "LINCE", "LOS OLIVOS", "LURIGANCHO",
+      "LURIN", "MAGDALENA DEL MAR", "MIRAFLORES", "PUEBLO LIBRE", "PUENTE PIEDRA", "RIMAC", "SAN BORJA",
+      "SAN ISIDRO", "SAN JUAN DE LURIGANCHO", "SAN JUAN DE MIRAFLORES", "SAN LUIS", "SAN MARTIN DE PORRES",
+      "SAN MIGUEL", "SANTA ANITA", "SANTIAGO DE SURCO", "SURQUILLO", "VILLA EL SALVADOR", "VILLA MARIA DEL TRIUNFO"
+    ]
+  },
+  "PIURA": { "PIURA": ["CASTILLA", "CATACAOS", "PIURA"] }
+};
+
 function actualizarProvincias() {
   const dep  = document.getElementById('nv_dpto')?.value || '';
   const selP = document.getElementById('nv_prov');
@@ -578,3 +605,6 @@ function actualizarDistritos() {
     selD.innerHTML += '<option value="' + d + '">' + d + '</option>';
   });
 }
+
+// Lista completa (todo el país): la usa el formulario público para ventas CLARO.
+export const UBIGEO_CLARO = UBIGEO_COMPLETO;

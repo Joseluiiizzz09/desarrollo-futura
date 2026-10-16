@@ -446,6 +446,10 @@ export default function Jefatura() {
   const [seccion, setSeccion] = useState(() => {
     try { return sessionStorage.getItem(JEF_APARTADO_KEY) || 'dashboard' } catch { return 'dashboard' }
   })
+  // El panel se conserva montado después de abrirlo por primera vez para no
+  // reiniciar las conversaciones al alternar entre apartados.
+  const [whatsappMontado, setWhatsappMontado] = useState(() => seccion === 'whatsapp')
+  useEffect(() => { if (seccion === 'whatsapp') setWhatsappMontado(true) }, [seccion])
 
   /* data */
   const [usuarios,    setUsuarios]    = useState([])
@@ -1923,6 +1927,8 @@ export default function Jefatura() {
           <button className={`nav-btn${seccion==='ventas-flujo'?' active':''}`} onClick={()=>irSeccion('ventas-flujo')}><span className="nav-dot"></span> Ventas generales</button>
           <button className={`nav-btn${seccion==='seguimiento'?' active':''}`} onClick={()=>irSeccion('seguimiento')}><span className="nav-dot"></span> Seguimiento en campo</button>
           <button className={`nav-btn${seccion==='reclutados-generales'?' active':''}`} onClick={()=>irSeccion('reclutados-generales')}><span className="nav-dot"></span> Reclutados generales</button>
+          <div className="sidebar-sep">Comunicación</div>
+          <button className={`nav-btn${seccion==='whatsapp'?' active':''}`} onClick={()=>irSeccion('whatsapp')}><span className="nav-dot"></span> WhatsApp</button>
           <div className="sidebar-sep">Gestión</div>
           <button className={`nav-btn${seccion==='usuarios'?'   active':''}`} onClick={()=>irSeccion('usuarios')}><span className="nav-dot"></span> Usuarios</button>
           <button className={`nav-btn${seccion==='reportes'?'   active':''}`} onClick={()=>irSeccion('reportes')}><span className="nav-dot"></span> Reportes</button>
@@ -3120,6 +3126,16 @@ export default function Jefatura() {
                   ))
               }
             </div>
+          </section>
+
+          <section className={`section${seccion==='whatsapp'?' active':''}`}>
+            {whatsappMontado && (
+              <iframe
+                title="WhatsApp"
+                src="/wa/"
+                style={{display:'block',width:'100%',height:'calc(100vh - 150px)',minHeight:520,border:0,background:'transparent',borderRadius:12}}
+              />
+            )}
           </section>
 
         </main>

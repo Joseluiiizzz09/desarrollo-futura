@@ -58,7 +58,7 @@ function CampanaSelect({ value, onChange, plain, sinOtro }) {
 // ── Utilities ────────────────────────────────────────────────────────────
 const COLORES_AV = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#ef4444','#06b6d4','#ec4899']
 const DOT_COLORS  = ['#185FA5','#0F6E56','#854F0B','#7C3AED','#DC2626']
-const BO_SECCIONES = ['base', 'carga-masiva', 'rendimiento', 'avance']
+const BO_SECCIONES = ['base', 'carga-masiva', 'rendimiento', 'avance', 'whatsapp']
 
 const PERU_TIME_ZONE = 'America/Lima'
 const PERU_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
@@ -476,6 +476,9 @@ function BoNavIcon({ tipo }) {
   if (tipo === 'rotacion') return (
     <svg className="bo-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-7a4 4 0 0 0-4 4v1"/><path d="m17 4 3 3-3 3"/><path d="M4 17h7a4 4 0 0 0 4-4v-1"/><path d="m7 20-3-3 3-3"/></svg>
   )
+  if (tipo === 'whatsapp') return (
+    <svg className="bo-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.9 7L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="M9.5 9.5c.3 2.4 2.6 4.5 5 5l1-1.5-2-1-1 1c-.8-.4-1.5-1.1-1.9-1.9l1-1-1-2-1.1 1.4z"/></svg>
+  )
   if (tipo === 'rendimiento') return (
     <svg className="bo-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/></svg>
   )
@@ -595,6 +598,10 @@ export default function Backoffice() {
     return BO_SECCIONES.includes(guardada) ? guardada : 'base'
   })
   const [sidebarAbierto, setSidebarAbierto] = useState(() => sessionStorage.getItem('nc_backoffice_sidebar') !== 'cerrado')
+  // El panel se conserva montado después de abrirlo por primera vez para no
+  // reiniciar las conversaciones al alternar entre apartados.
+  const [whatsappMontado, setWhatsappMontado] = useState(() => seccion === 'whatsapp')
+  useEffect(() => { if (seccion === 'whatsapp') setWhatsappMontado(true) }, [seccion])
 
   // ── Data ──
   const [asesores,      setAsesores]      = useState([])
@@ -2597,6 +2604,8 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
           <div className="sidebar-sep">Reportes</div>
           <button className={`bo-nav${seccion==='rendimiento'?' active':''}`} onClick={()=>irSeccion('rendimiento')}><BoNavIcon tipo="rendimiento" /> <span>Rendimiento</span></button>
           <button className={`bo-nav${seccion==='avance'?' active':''}`} onClick={()=>irSeccion('avance')}><BoNavIcon tipo="avance" /> <span>Avance Asesores</span></button>
+          <div className="sidebar-sep">Comunicación</div>
+          <button className={`bo-nav${seccion==='whatsapp'?' active':''}`} onClick={()=>irSeccion('whatsapp')}><BoNavIcon tipo="whatsapp" /> <span>WhatsApp</span></button>
           <div className="bo-sidebar-registro">
             <div className="sidebar-sep">Agregar registro</div>
             <div className="bo-input-group"><label>Campaña</label><CampanaSelect value={form.campana} onChange={v=>setForm(p=>({...p,campana:v}))} plain sinOtro /></div>
@@ -3688,6 +3697,16 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
                   ))
               }
             </div>
+          </section>
+
+          <section className={`bo-seccion${seccion==='whatsapp'?'':' hidden'}`}>
+            {whatsappMontado && (
+              <iframe
+                title="WhatsApp"
+                src="/wa/?sin-cuentas=1&sin-salas=1"
+                style={{display:'block',width:'100%',height:'calc(100vh - 130px)',minHeight:520,border:0,background:'transparent',borderRadius:12}}
+              />
+            )}
           </section>
 
         </main>

@@ -1,0 +1,11 @@
+{
+  "name": "netcontact-multi-cuenta",
+  "version": "1.0.0",
+  "main": "electron/electron-main.js",
+  "dependencies": {
+    "baileys": "^7.0.0-rc14",
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4",
+    "ws": "^8.21.3"
+  }
+}
