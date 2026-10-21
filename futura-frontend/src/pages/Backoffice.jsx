@@ -13,6 +13,17 @@ import { usuarioTieneCargo } from '../utils/roles'
 import { useCampanas } from '../utils/campanas'
 import '../styles/backoffice.css'
 
+// Quien tiene Back Office como cargo ADICIONAL (cargo principal asesor, etc.)
+// debe pedir la Base como Back Office: sin "area" la API usa su cargo
+// principal y le devuelve solo los leads asignados a él (tabla vacía).
+function areaBaseQS() {
+  try {
+    const u = JSON.parse(sessionStorage.getItem('nc_usuario') || 'null')
+    const permisos = Array.isArray(u?.permisos) ? u.permisos : []
+    return u && u.cargo !== 'backoffice' && permisos.includes('backoffice') ? 'area=backoffice' : ''
+  } catch { return '' }
+}
+
 // ── Selector de campaña (lista + opción "Otro" para escribir a mano) ───────
 function CampanaSelect({ value, onChange, plain, sinOtro }) {
   const CAMPANAS = useCampanas()
@@ -993,9 +1004,10 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
       if (consultaGlobal?.numero) globalParams.set('numero', consultaGlobal.numero)
       if (consultaGlobal?.desde) globalParams.set('desde', consultaGlobal.desde)
       if (consultaGlobal?.hasta) globalParams.set('hasta', consultaGlobal.hasta)
+      if (areaBaseQS()) globalParams.set('area', 'backoffice')
       const url = todasLasFechas
         ? `${API}/leads${globalParams.size ? `?${globalParams.toString()}` : ''}`
-        : `${API}/leads?fecha=${encodeURIComponent(fechaSolicitada || fechaActivaRef.current)}`
+        : `${API}/leads?fecha=${encodeURIComponent(fechaSolicitada || fechaActivaRef.current)}${areaBaseQS() ? `&${areaBaseQS()}` : ''}`
       const res  = await fetch(url, { headers: ncHeaders() })
       const data = await res.json()
       if (!data.ok) return
@@ -1652,7 +1664,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
     const seleccionados = buildRotLeads().filter(l => selToUse[l.id])
     const fechas = [...new Set(seleccionados.map(l => l.fecha).filter(Boolean))]
     const respuestas = await Promise.all(fechas.map(async fecha => {
-      const respuesta = await fetch(`${API}/leads?fecha=${encodeURIComponent(fecha)}&_rotcheck=${Date.now()}`, {
+      const respuesta = await fetch(`${API}/leads?fecha=${encodeURIComponent(fecha)}${areaBaseQS() ? `&${areaBaseQS()}` : ''}&_rotcheck=${Date.now()}`, {
         headers:ncHeaders(), cache:'no-store',
       })
       const data = await respuesta.json().catch(() => ({}))
