@@ -3,6 +3,7 @@ const router  = express.Router();
 const db      = require('../database');
 const verificarClaveInternaPrizma = require('../middleware/verificarClaveInternaPrizma');
 const verificarClaveInternaGrupoFutura = require('../middleware/verificarClaveInternaGrupoFutura');
+const verificarClaveInternaWhatsapp = require('../middleware/verificarClaveInternaWhatsapp');
 const crypto  = require('crypto');
 const bcrypt  = require('bcryptjs');
 const { validar, errorTexto, errorEmail, errorDni, errorFecha, errorEnteroPositivo, errorEnum, TIPO_DOC_OK } = require('../middleware/validar');
@@ -56,6 +57,61 @@ router.post('/lead-prizma', verificarClaveInternaPrizma, async (req, res) => {
     res.json({ ok: true, id: result.insertId });
   } catch (e) {
     console.error('[interno/lead-prizma] Error:', e);
+    res.status(500).json({ ok: false, mensaje: 'Error al crear el lead' });
+  }
+});
+
+// POST /api/interno/lead-whatsapp
+// Lo llama el servicio de WhatsApp (whatsapp-service) cuando un cliente escribe
+// en vivo: lo registra en la Base (sin tipificar, sin asignar) por numero y/o
+// @usuario, con la campana de la linea por la que escribio.
+// Protegido por X-Internal-Key. Body: { n1?, usuario_whatsapp?, campana }
+router.post('/lead-whatsapp', verificarClaveInternaWhatsapp, async (req, res) => {
+  try {
+    let n1 = normalizarN1(req.body?.n1);
+    // La Base guarda el celular peruano de 9 digitos: se quita el 51 del codigo de pais
+    if (n1.length === 11 && n1.startsWith('51')) n1 = n1.slice(2);
+    n1 = n1.substring(0, 20);
+    const usuario = String(req.body?.usuario_whatsapp || '').trim().replace(/^@+/, '').substring(0, 100);
+    if (!n1 && !usuario) {
+      return res.status(400).json({ ok: false, mensaje: 'Falta el numero (n1) o el usuario de WhatsApp' });
+    }
+    const campana = String(req.body?.campana || '').trim().substring(0, 100);
+    if (!campana) return res.status(400).json({ ok: false, mensaje: 'Falta la campana' });
+
+    const fechaHoy = fechaPeruHoy();
+
+    // Mismo criterio de duplicado que la Base: mismo dia y misma campana
+    const [existentes] = n1
+      ? await db.query(`
+          SELECT id FROM leads
+          WHERE n1_normalizado = ? AND fecha = ? AND campana = ?
+          LIMIT 1
+        `, [n1, fechaHoy, campana])
+      : await db.query(`
+          SELECT id FROM leads
+          WHERE usuario_whatsapp = ? AND fecha = ? AND campana = ?
+          LIMIT 1
+        `, [usuario, fechaHoy, campana]);
+    if (existentes.length) {
+      return res.json({ ok: true, ya_existia: true, id: existentes[0].id });
+    }
+
+    const historial = JSON.stringify([{
+      tipo: 'CARGA', cargadoPor: 'WhatsApp', hora: horaPeruAhora(),
+      fecha: fechaHoy, motivo: 'Ingreso automatico desde WhatsApp',
+      origenCarga: 'WhatsApp', origenUsuario: 'sistema-whatsapp',
+    }]);
+
+    const [result] = await db.query(`
+      INSERT INTO leads (campana, n1, usuario_whatsapp, fecha, sin_asignar, historial, rotaciones,
+                         creado_por_nombre, creado_por_usuario)
+      VALUES (?, ?, ?, ?, 1, ?, 0, 'WhatsApp', 'sistema-whatsapp')
+    `, [campana, n1, usuario, fechaHoy, historial]);
+
+    res.json({ ok: true, id: result.insertId });
+  } catch (e) {
+    console.error('[interno/lead-whatsapp] Error:', e);
     res.status(500).json({ ok: false, mensaje: 'Error al crear el lead' });
   }
 });
