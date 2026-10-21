@@ -698,7 +698,7 @@ export default function Backoffice() {
     })
     try {
       if (bid) {
-        const res = await fetch(`${API}/leads/${bid}/obs`, { method:'PATCH', headers:ncHeaders(), body:JSON.stringify({ obs: val }) })
+        const res = await fetch(`${API}/leads/${bid}/obs${areaBaseQS() ? `?${areaBaseQS()}` : ''}`, { method:'PATCH', headers:ncHeaders(), body:JSON.stringify({ obs: val }) })
         const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo actualizar el DNI')
       }
@@ -968,7 +968,7 @@ export default function Backoffice() {
 
   const cargarEstadosVentas = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/ventas`, { headers:ncHeaders() })
+      const res = await fetch(`${API}/ventas${areaBaseQS() ? `?${areaBaseQS()}` : ''}`, { headers:ncHeaders() })
       const data = await res.json()
       if (!data.ok) return
       const porNumero = {}
@@ -1419,7 +1419,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
     updateReg(id, { _tipifVend:valor, _tipifHora:hora })
     if (reg._backendId) {
       try {
-        const res = await fetch(`${API}/leads/${reg._backendId}/tipif`, { method:'PATCH', headers:ncHeaders(), body:JSON.stringify({ tipif_vend:valor }) })
+        const res = await fetch(`${API}/leads/${reg._backendId}/tipif${areaBaseQS() ? `?${areaBaseQS()}` : ''}`, { method:'PATCH', headers:ncHeaders(), body:JSON.stringify({ tipif_vend:valor }) })
         const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.ok) {
           updateReg(id, { _tipifVend:data.tipif_vend || reg._tipifVend || '', _tipifHora:reg._tipifHora || '' })

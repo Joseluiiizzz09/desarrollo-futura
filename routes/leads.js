@@ -10,6 +10,13 @@ const { validar, errorTexto, errorFecha, errorHora, errorHistorial } = require('
 const ROLES_BO  = ['backoffice','jefatura','usuarios'];
 const ROLES_ALL = ['backoffice','jefatura','usuarios','asesor','campo','supervisor','supgrabaciones'];
 const esCargoAsesor = cargo => ['asesor', 'campo'].includes(String(cargo || '').trim().toLowerCase());
+// Área desde la que actúa el usuario (?area=): solo vale si es su cargo o uno de sus
+// permisos. Así quien es asesor y además Back Office actúa como Back Office en esa pantalla.
+function cargoDeArea(req) {
+  const area = String(req.query?.area || '').trim().toLowerCase();
+  const permisos = Array.isArray(req.user.permisos) ? req.user.permisos : [];
+  return area && (area === req.user.cargo || permisos.includes(area)) ? area : req.user.cargo;
+}
 // Sólo estos estados cierran definitivamente el flujo de asignación/rotación.
 const TIPIF_PROHIBIDAS_ASIGNACION = new Set(['VENTA CERRADA', 'NO TOCAR', 'SH NO TOCAR', 'NO ROTAR', 'SH NO ROTAR']);
 const CACHE_LISTADO_TTL = 5000;
@@ -1975,7 +1982,7 @@ router.patch('/:id/tipif', auth(ROLES_ALL), async (req, res) => {
     if (tipifNormalizada === 'SIN COBERTURA') {
       obsFinal = String(coordenadas || '').trim();
     }
-    const esAsesor = esCargoAsesor(req.user.cargo);
+    const esAsesor = esCargoAsesor(cargoDeArea(req));
     if (esAsesor) {
       const [ventasCRM] = await db.query(`
         SELECT v.estado, v.estado_grab, v.created_at AS venta_created_at,
@@ -2078,7 +2085,7 @@ router.patch('/:id/obs', auth(ROLES_ALL), async (req, res) => {
     if (!rows.length) return res.status(404).json({ ok: false, mensaje: 'Lead no encontrado' });
     // La observación global pertenece a la asignación vigente. Si un asesor anterior
     // modifica SU comentario, se actualiza exclusivamente su tramo del historial.
-    if (esCargoAsesor(req.user.cargo) && Number(rows[0].asesor_id) !== Number(req.user.id)) {
+    if (esCargoAsesor(cargoDeArea(req)) && Number(rows[0].asesor_id) !== Number(req.user.id)) {
       const [me] = await db.query(`SELECT nombre FROM usuarios WHERE id = ? LIMIT 1`, [req.user.id]);
       const miNombre = String(me[0]?.nombre || '').trim();
       let historial = [];
