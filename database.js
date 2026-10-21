@@ -381,6 +381,10 @@ async function initDB() {
       .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
     await conn.query(`ALTER TABLE ventas ADD COLUMN grabando_por_nombre VARCHAR(150) NULL`)
       .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
+    // Canal de la venta (NETCONTACT / KELS). Lo leen la Base (leads.js) y ventas.js;
+    // nullable para ventas históricas anteriores al campo.
+    await conn.query(`ALTER TABLE ventas ADD COLUMN canal VARCHAR(20) NULL`)
+      .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
     await conn.query(`
       UPDATE ventas v
       JOIN usuarios u ON u.id = v.grabando_por_id
