@@ -2774,19 +2774,20 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
 
             {/* TABLA BASE — diseño compacto sin scroll horizontal */}
             <div className="base-tabla-wrap">
-              <table className="base-tabla" style={{tableLayout:'fixed',width:'100%',minWidth:948}}>
+              <table className="base-tabla" style={{tableLayout:'fixed',width:'100%',minWidth:1060}}>
+                {/* Campaña con espacio para el nombre completo (p. ej. CAMPAÑA REDES 2) */}
                 <colgroup>
-                  <col style={{width:34}} />
-                  <col style={{width:62}} />
-                  <col style={{width:112}} />
-                  <col style={{width:108}} />
-                  <col style={{width:108}} />
-                  <col style={{width:140}} />
-                  <col style={{width:160}} />
-                  <col style={{width:92}} />
-                  <col style={{width:52}} />
-                  <col style={{width:44}} />
-                  <col style={{width:112}} />
+                  <col style={{width:30}} />
+                  <col style={{width:150}} />
+                  <col style={{width:120}} />
+                  <col style={{width:96}} />
+                  <col style={{width:96}} />
+                  <col style={{width:132}} />
+                  <col style={{width:138}} />
+                  <col style={{width:86}} />
+                  <col style={{width:70}} />
+                  <col style={{width:42}} />
+                  <col style={{width:100}} />
                 </colgroup>
                 <thead>
                   <tr>
@@ -2870,7 +2871,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
 
                             {/* Campaña */}
                             <td title={r.campana}>
-                              <div style={{display:'flex',alignItems:'center',gap:4}}>
+                              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
                                 <strong style={{fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0,flexShrink:1}}>{r.campana}</strong>
                                 <button type="button" title="Editar campaña"
                                   onClick={()=>setCampanaModal({id:r.id,bid:r._backendId,valor:r.campana||'',guardando:false})}

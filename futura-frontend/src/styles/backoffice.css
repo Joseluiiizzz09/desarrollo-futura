@@ -1164,3 +1164,10 @@ body{
 .badge-canal-netcontact{background:#eef2ff;color:#4338ca;}
 .badge-canal-kels{background:#fdf4ff;color:#a21caf;}
 .badge-canal-sin{background:#f3f4f6;color:#6b7280;}
+
+/* Base: títulos centrados y celdas alineadas al centro de su columna */
+.bo-root .base-tabla thead th{text-align:center;padding:8px 6px;}
+.bo-root .base-tabla thead th .th-sort-btn{justify-content:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+.bo-root .base-tabla tbody tr:not(.historial-row):not(.detalles-row) > td{text-align:center;padding:7px 6px;}
+.bo-root .base-tabla tbody tr:not(.historial-row):not(.detalles-row) > td .num-cell{align-items:center;}
+.bo-root .base-tabla tbody tr:not(.historial-row):not(.detalles-row) > td .tipif-vendedor-cell{justify-content:center;}
