@@ -14,6 +14,8 @@ import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
 import { useCampanas } from '../utils/campanas'
+import PaquetesCatalogo from '../components/PaquetesCatalogo'
+import CampanasCatalogo from '../components/CampanasCatalogo'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
@@ -591,6 +593,8 @@ export default function Jefatura() {
 
   /* toast */
   const [toastMsg, setToastMsg] = useState('')
+  // Usuarios: pestaña activa (usuarios | paquetes | campanas), igual que en la página Usuarios
+  const [vistaUsuarios, setVistaUsuarios] = useState('usuarios')
   const toastRef = useRef(null)
 
   function mostrarToast(msg) {
@@ -2772,10 +2776,25 @@ export default function Jefatura() {
           {/* ===== USUARIOS ===== */}
           <section className={`section${seccion==='usuarios'?' active':''}`}>
             <div className="sec-header">
-              <div><h2>Gestión de Usuarios</h2><p>Crea, edita y gestiona todos los usuarios</p></div>
-              <button className="btn-nuevo" onClick={abrirModalNuevo}>+ Nuevo usuario</button>
+              <div>
+                <h2>{vistaUsuarios === 'paquetes' ? 'Paquetes de venta' : vistaUsuarios === 'campanas' ? 'Campañas' : 'Gestión de Usuarios'}</h2>
+                <p>{vistaUsuarios === 'paquetes' ? 'Agrega, edita u ordena los paquetes que se ofrecen en el formulario de venta' : vistaUsuarios === 'campanas' ? 'Agrega, edita u ordena las campañas de Back Data y de Reclutamiento' : 'Crea, edita y gestiona todos los usuarios'}</p>
+              </div>
+              {vistaUsuarios === 'usuarios' && <button className="btn-nuevo" onClick={abrirModalNuevo}>+ Nuevo usuario</button>}
             </div>
-            <div className="tabla-wrap">
+            <div style={{ display: 'flex', gap: 8, margin: '0 0 16px' }}>
+              {[['usuarios', 'Usuarios'], ['paquetes', 'Paquetes'], ['campanas', 'Campañas']].map(([id, label]) => (
+                <button key={id} type="button" onClick={() => setVistaUsuarios(id)}
+                  style={{ padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    border: vistaUsuarios === id ? '1px solid #0f172a' : '1px solid #e5e7eb',
+                    background: vistaUsuarios === id ? '#0f172a' : '#fff', color: vistaUsuarios === id ? '#fff' : '#374151' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {vistaUsuarios === 'paquetes' && <PaquetesCatalogo mostrarToast={mostrarToast} />}
+            {vistaUsuarios === 'campanas' && <CampanasCatalogo mostrarToast={mostrarToast} />}
+            {vistaUsuarios === 'usuarios' && <div className="tabla-wrap">
               <div className="tabla-header">
                 <div className="tabla-header-left">
                   <span className="tabla-title">Usuarios del sistema</span>
@@ -2864,7 +2883,7 @@ export default function Jefatura() {
                   }
                 </tbody>
               </table>
-            </div>
+            </div>}
           </section>
 
           {/* ===== REPORTES ===== */}
