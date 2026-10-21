@@ -412,7 +412,7 @@ function MisVentas({ ventas, cargando, error, aviso, filtro, setFiltro, onRecarg
       ) : cargando || !ventas ? (
         <p className="vc-ayuda" style={{ margin: '10px 0 16px' }}>Cargando tus ventas…</p>
       ) : !lista.length ? (
-        <p className="vc-ayuda" style={{ margin: '10px 0 16px' }}>{!ventas.length ? 'Todavía no tienes ventas registradas.' : dia ? 'No tienes ventas ese día.' : 'No tienes ventas de este operador.'}</p>
+        <p className="vc-ayuda" style={{ margin: '10px 0 16px' }}>{!ventas.length ? 'Todavía no tienes ventas registradas.' : rango.desde ? 'No tienes ventas en esas fechas.' : 'No tienes ventas de este operador.'}</p>
       ) : lista.map(v => {
         const e = estadoParaVendedor(v)
         return (
