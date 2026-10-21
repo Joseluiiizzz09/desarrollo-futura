@@ -227,6 +227,16 @@ const ESTILOS_OPERADOR = `
 .vc-mv-dia label { display:block; font-weight:600; font-size:16px; color:#4b5563; margin-bottom:7px; }
 .vc-mv-dia-fila { display:flex; gap:8px; flex-wrap:wrap; }
 .vc-mv-dia-fila input { flex:2; min-width:170px; }
+.vc-rango { flex:2; min-width:200px; position:relative; }
+.vc-rango-btn { width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:16px; font-family:inherit; color:#6b7280; padding:13px 14px; border-radius:12px; border:1.5px solid #e5e7eb; background:#f9fafb; cursor:pointer; text-align:left; }
+.vc-rango-btn.activo { color:#111827; font-weight:700; border-color:#111827; background:#fff; }
+.vc-rango-cal { position:absolute; top:calc(100% + 6px); left:0; z-index:30; width:min(340px, 92vw); background:#fff; border:1.5px solid #e5e7eb; border-radius:16px; box-shadow:0 16px 40px rgba(15,23,42,.18); padding:14px; }
+.vc-rango-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.vc-rango-sem { font-size:13px; color:#9ca3af; text-align:center; margin-bottom:4px; font-weight:700; }
+.vc-rango-dia { border:none; background:transparent; border-radius:10px; height:40px; font-size:15px; font-family:inherit; color:#111827; cursor:pointer; }
+.vc-rango-dia:disabled { color:#d1d5db; cursor:default; }
+.vc-rango-dia.dentro { background:#e5e7eb; }
+.vc-rango-dia.extremo { background:#111827; color:#fff; font-weight:800; }
 .vc-mv-dia-fila .vc-mv-filtro { flex:1; min-width:80px; }
 .vc-mv-filtros { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
 .vc-mv-filtro { flex:1; min-width:90px; font-size:16px; font-weight:700; padding:12px 8px; border-radius:12px; border:1.5px solid #e5e7eb; background:#f9fafb; color:#374151; cursor:pointer; font-family:inherit; }
@@ -313,10 +323,62 @@ function estadoParaVendedor(v) {
   return { texto:e.replace(/_/g, ' '), bg:'#f3f4f6', color:'#374151' }
 }
 
+// Calendario de rango para "Mis ventas": primer toque = desde, segundo toque = hasta.
+// Tocar dos veces el mismo día deja ese solo día. No se pueden elegir días futuros.
+const fmtDia = iso => iso ? iso.split('-').reverse().join('/') : ''
+function RangoDias({ desde, hasta, max, onChange }) {
+  const [abierto, setAbierto] = useState(false)
+  const [mes, setMes] = useState(() => { const b = new Date((desde || max) + 'T00:00:00'); return new Date(b.getFullYear(), b.getMonth(), 1) })
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  function tocar(dia) {
+    if (!desde || hasta) return onChange({ desde: dia, hasta: '' })
+    if (dia < desde) return onChange({ desde: dia, hasta: '' })
+    onChange({ desde, hasta: dia }); setAbierto(false)
+  }
+  const dias = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate()
+  const hueco = (new Date(mes.getFullYear(), mes.getMonth(), 1).getDay() + 6) % 7
+  const celdas = [...Array(hueco).fill(null), ...Array.from({ length: dias }, (_, i) => new Date(mes.getFullYear(), mes.getMonth(), i + 1))]
+  const texto = desde && hasta ? (desde === hasta ? fmtDia(desde) : `${fmtDia(desde)} – ${fmtDia(hasta)}`) : desde ? `${fmtDia(desde)} – elige el día final` : 'Elegir fechas (desde – hasta)'
+  const nav = { border: 'none', background: '#f3f4f6', borderRadius: 10, width: 40, height: 40, fontSize: 20, cursor: 'pointer' }
+  return (
+    <div className="vc-rango">
+      <button type="button" className={'vc-rango-btn' + (desde ? ' activo' : '')} onClick={() => setAbierto(a => !a)}>
+        <span>{texto}</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 20, height: 20, minWidth: 20 }}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+      </button>
+      {abierto && (
+        <div className="vc-rango-cal">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <button type="button" style={nav} onClick={() => setMes(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>‹</button>
+            <strong style={{ textTransform: 'capitalize', fontSize: 16 }}>{mes.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })}</strong>
+            <button type="button" style={nav} onClick={() => setMes(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}>›</button>
+          </div>
+          <div className="vc-rango-grid vc-rango-sem">{['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <span key={d}>{d}</span>)}</div>
+          <div className="vc-rango-grid">
+            {celdas.map((d, i) => {
+              if (!d) return <span key={i} />
+              const dia = iso(d)
+              const extremo = dia === desde || dia === hasta
+              const dentro = desde && hasta && dia > desde && dia < hasta
+              return (
+                <button key={i} type="button" disabled={dia > max} onClick={() => tocar(dia)}
+                  className={'vc-rango-dia' + (extremo ? ' extremo' : dentro ? ' dentro' : '')}>{d.getDate()}</button>
+              )
+            })}
+          </div>
+          <p className="vc-ayuda" style={{ margin: '10px 0 0', fontSize: 14 }}>{desde && !hasta ? 'Ahora toca el día final (o el mismo día para ver solo ese).' : 'Toca el día inicial y luego el día final.'}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MisVentas({ ventas, cargando, error, aviso, filtro, setFiltro, onRecargar, onVolver }) {
-  const [dia, setDia] = useState('') // yyyy-mm-dd; vacío = todos los días
+  const [rango, setRango] = useState({ desde: '', hasta: '' }) // yyyy-mm-dd; vacío = todos los días
   const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
-  const delDia = (ventas || []).filter(v => !dia || String(v.fecha || '').startsWith(dia))
+  const enRango = f => !rango.desde || (rango.hasta ? f >= rango.desde && f <= rango.hasta : f === rango.desde)
+  const delDia = (ventas || []).filter(v => enRango(String(v.fecha || '').slice(0, 10)))
+  const soloHoy = rango.desde === hoy && (rango.hasta === hoy || !rango.hasta)
   const lista = delDia.filter(v => filtro === 'TODAS' || v.operador === filtro)
   const cuenta = op => delDia.filter(v => op === 'TODAS' || v.operador === op).length
   return (
@@ -330,11 +392,11 @@ function MisVentas({ ventas, cargando, error, aviso, filtro, setFiltro, onRecarg
         <div><h2>Mis ventas</h2><p className="vc-ayuda">Tus ventas de WIN, Claro y Perú Fibra, con su estado.</p></div>
       </div>
       <div className="vc-mv-dia">
-        <label htmlFor="vc-mv-dia">Ver por día</label>
+        <label>Ver por fechas</label>
         <div className="vc-mv-dia-fila">
-          <input id="vc-mv-dia" type="date" value={dia} max={hoy} onChange={e => setDia(e.target.value)} />
-          <button className={'vc-mv-filtro' + (dia === hoy ? ' sel' : '')} onClick={() => setDia(hoy)}>Hoy</button>
-          <button className={'vc-mv-filtro' + (!dia ? ' sel' : '')} onClick={() => setDia('')}>Todos</button>
+          <RangoDias desde={rango.desde} hasta={rango.hasta} max={hoy} onChange={setRango} />
+          <button className={'vc-mv-filtro' + (soloHoy ? ' sel' : '')} onClick={() => setRango({ desde: hoy, hasta: hoy })}>Hoy</button>
+          <button className={'vc-mv-filtro' + (!rango.desde ? ' sel' : '')} onClick={() => setRango({ desde: '', hasta: '' })}>Todos</button>
         </div>
       </div>
       <div className="vc-mv-filtros">
