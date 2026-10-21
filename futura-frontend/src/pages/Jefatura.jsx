@@ -1512,15 +1512,6 @@ export default function Jefatura() {
     })
   }, [ventasCache, mesReporte])
 
-  const resumenFlujoVentas = useMemo(() => ({
-    todas: ventasFlujoMes.length,
-    validadas: ventasFlujoMes.filter(flujoValidada).length,
-    noValidadas: ventasFlujoMes.filter(flujoNoValidada).length,
-    grabadas: ventasFlujoMes.filter(flujoGrabada).length,
-    noGrabadas: ventasFlujoMes.filter(flujoNoGrabada).length,
-    seguimiento: ventasFlujoMes.filter(v => Boolean(estadoSeguimiento(v))).length,
-  }), [ventasFlujoMes])
-
   const opcionesFlujo = useMemo(() => ({
     estados: opcionesUnicas(ventasCache.map(v => v.estado || v.estado_venta)),
   }), [ventasCache])
@@ -1534,22 +1525,24 @@ export default function Jefatura() {
     ...ventasCache.map(v => String(v.campana || '').trim()).filter(Boolean),
   ])].sort((a, b) => a.localeCompare(b, 'es')), [ventasCache, CAMPANAS])
 
-  const ventasFlujoFiltradas = useMemo(() => {
+  // Salas para el desplegable: las fijas, las de los usuarios y las que aparecen en las ventas
+  const salasFlujoOpciones = useMemo(() => [...new Set([
+    ...SALAS,
+    ...usuarios.map(u => String(u.sala || '').trim().toUpperCase()),
+    ...ventasCache.map(v => String(v.sala || '').trim().toUpperCase()),
+  ].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true })), [usuarios, ventasCache])
+
+  // Filtros avanzados, fecha y búsqueda: de esta lista salen tanto las métricas
+  // (tarjetas) como la tabla, para que siempre cuadren entre sí.
+  const ventasFlujoBase = useMemo(() => {
     let lista = fvTipoFecha === 'venta' ? [...ventasFlujoMes] : [...ventasCache]
-    if (filtroFlujoVentas === 'validadas') lista = lista.filter(flujoValidada)
-    if (filtroFlujoVentas === 'noValidadas') lista = lista.filter(flujoNoValidada)
-    if (filtroFlujoVentas === 'grabadas') lista = lista.filter(flujoGrabada)
-    if (filtroFlujoVentas === 'noGrabadas') lista = lista.filter(flujoNoGrabada)
-    if (filtroFlujoVentas === 'seguimiento') {
-      lista = lista.filter(v => Boolean(estadoSeguimiento(v)))
-    }
     if (fvEstados.length) lista = lista.filter(v => fvEstados.includes(v.estado || v.estado_venta || ''))
     if (fvValidacion) lista = lista.filter(v => coincideFiltroValidacion(v, fvValidacion))
     if (fvGrabacion) lista = lista.filter(v => categoriaFiltroGrabacion(v) === fvGrabacion)
     if (fvCanal) lista = lista.filter(v => String(v.canal || '').toUpperCase() === fvCanal)
     if (fvCampana.length) lista = lista.filter(v => fvCampana.some(c => c.toUpperCase() === String(v.campana || '').trim().toUpperCase()))
     if (fvAsesor) lista = lista.filter(v => String(v.asesor_nombre || v.asesor || v.vendedor || '').toLowerCase().includes(fvAsesor.trim().toLowerCase()))
-    if (fvSala) lista = lista.filter(v => String(v.sala || '').toLowerCase().includes(fvSala.trim().toLowerCase()))
+    if (fvSala) lista = lista.filter(v => String(v.sala || '').trim().toUpperCase() === fvSala)
     if (fvDistrito) lista = lista.filter(v => String(v.distrito || '').toLowerCase().includes(fvDistrito.trim().toLowerCase()))
     // Con solo "desde" puesto (un clic en el calendario) se filtra ese dia
     // exacto; con "desde" y "hasta" (dos clics) se filtra el rango completo.
@@ -1578,13 +1571,34 @@ export default function Jefatura() {
         v.asesor_nombre, v.asesor, v.vendedor, v.sala, v.estado, v.estado_venta, v.distrito
       ].some(x => String(x || '').toLowerCase().includes(b)))
     }
+    return lista
+  }, [ventasCache, ventasFlujoMes, busqFlujoVentas, fvEstados, fvValidacion, fvGrabacion, fvCanal, fvCampana, fvAsesor, fvSala, fvDistrito, fvTipoFecha, fvDesde, fvHasta, fvProgDesde, fvProgHasta])
 
+  const resumenFlujoVentas = useMemo(() => ({
+    todas: ventasFlujoBase.length,
+    validadas: ventasFlujoBase.filter(flujoValidada).length,
+    noValidadas: ventasFlujoBase.filter(flujoNoValidada).length,
+    grabadas: ventasFlujoBase.filter(flujoGrabada).length,
+    noGrabadas: ventasFlujoBase.filter(flujoNoGrabada).length,
+    seguimiento: ventasFlujoBase.filter(v => Boolean(estadoSeguimiento(v))).length,
+  }), [ventasFlujoBase])
+
+  // Tarjeta seleccionada (Validadas, Grabadas…) sobre la lista ya filtrada
+  const ventasFlujoFiltradas = useMemo(() => {
+    let lista = [...ventasFlujoBase]
+    if (filtroFlujoVentas === 'validadas') lista = lista.filter(flujoValidada)
+    if (filtroFlujoVentas === 'noValidadas') lista = lista.filter(flujoNoValidada)
+    if (filtroFlujoVentas === 'grabadas') lista = lista.filter(flujoGrabada)
+    if (filtroFlujoVentas === 'noGrabadas') lista = lista.filter(flujoNoGrabada)
+    if (filtroFlujoVentas === 'seguimiento') {
+      lista = lista.filter(v => Boolean(estadoSeguimiento(v)))
+    }
     return lista.sort((a, b) => {
       const fb = String(b._fecha || b.fecha_ingreso || b.fecha || b.created_at || '')
       const fa = String(a._fecha || a.fecha_ingreso || a.fecha || a.created_at || '')
       return fb.localeCompare(fa) || Number(b.id || 0) - Number(a.id || 0)
     })
-  }, [ventasCache, ventasFlujoMes, filtroFlujoVentas, busqFlujoVentas, fvEstados, fvValidacion, fvGrabacion, fvCanal, fvCampana, fvAsesor, fvSala, fvDistrito, fvTipoFecha, fvDesde, fvHasta, fvProgDesde, fvProgHasta])
+  }, [ventasFlujoBase, filtroFlujoVentas])
 
   const totalPaginasFlujo = Math.max(1, Math.ceil(ventasFlujoFiltradas.length / porPaginaFlujo))
   const ventasFlujoPagina = useMemo(() => {
@@ -2643,7 +2657,7 @@ export default function Jefatura() {
                 <label><span>Canal</span><select value={fvCanal} onChange={e=>setFvCanal(e.target.value)}><option value="">TODOS</option><option value="NETCONTACT">NETCONTACT</option><option value="KELS">KELS</option></select></label>
                 <label><span>Campaña</span><FiltroEstadoMultiple opciones={campanasFlujoOpciones} seleccionados={fvCampana} onChange={setFvCampana} /></label>
                 <label><span>Asesor</span><input value={fvAsesor} onChange={e=>setFvAsesor(e.target.value)} placeholder="Escribir asesor..."/></label>
-                <label><span>Sala</span><input value={fvSala} onChange={e=>setFvSala(e.target.value)} placeholder="Escribir sala..."/></label>
+                <label><span>Sala</span><select value={fvSala} onChange={e=>setFvSala(e.target.value)}><option value="">TODAS</option>{salasFlujoOpciones.map(s=><option key={s} value={s}>{s}</option>)}</select></label>
                 <label><span>Distrito</span><input value={fvDistrito} onChange={e=>setFvDistrito(e.target.value)} placeholder="Escribir distrito..."/></label>
                 <label className="fv-operativo"><span>Filtrar por</span>
                   <select value={fvTipoFecha} onChange={e=>setFvTipoFecha(e.target.value)}>
