@@ -161,12 +161,6 @@ export function VentaEditarModal({ venta, onClose, onSuccess }) {
           {campo('Plano',
             <input style={inputStyle} value={form.plano} onChange={e => set('plano', e.target.value)} />
           )}
-          {campo('Fecha de nacimiento',
-            <input style={inputStyle} type="date" value={form.fechaNac} onChange={e => set('fechaNac', e.target.value)} />
-          )}
-          {campo('Lugar de nacimiento',
-            <input style={inputStyle} value={form.lugarNac} onChange={e => set('lugarNac', e.target.value)} />
-          )}
           {campo('Nombre del padre',
             <input style={inputStyle} value={form.padre} onChange={e => set('padre', e.target.value)} />
           )}

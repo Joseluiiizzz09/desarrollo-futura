@@ -1320,7 +1320,7 @@ export default function Dashboard({ area = 'asesor' }) {
                 <th>Tipo Doc.</th><th>DNI</th><th>Tel. Contacto</th><th>Tel. Referencia</th>
                 <th>Departamento</th><th>Provincia</th><th>Distrito</th>
                 <th>Dirección</th><th>Coordenadas</th>
-                <th>F. Nacimiento</th><th>Lugar Nac.</th><th>Padre</th><th>Madre</th>
+                <th>Padre</th><th>Madre</th>
                 <th>Cuota Inst.</th><th>Claro Hogar</th><th>Tecnología</th>
                 <th>Paquete</th><th>Full Claro</th>
                 <th>Decos</th><th>Mesh</th><th>Plano</th>
@@ -1330,7 +1330,7 @@ export default function Dashboard({ area = 'asesor' }) {
             </thead>
             <tbody>
               {ventasMostradas.length === 0 ? (
-                <tr className="vs-empty"><td colSpan={30}>Sin registros. Usa los filtros para buscar.</td></tr>
+                <tr className="vs-empty"><td colSpan={29}>Sin registros. Usa los filtros para buscar.</td></tr>
               ) : ventasPagina.map((v, iLocal) => {
                 const i = inicioVentas + iLocal
                 return (
@@ -1354,8 +1354,6 @@ export default function Dashboard({ area = 'asesor' }) {
                   <td style={{fontSize:'11px'}}>{v.distrito||'-'}</td>
                   <td style={{fontSize:'11px',minWidth:'140px'}}>{v.direccion||'-'}</td>
                   <td style={{fontSize:'10px',color:'#9ca3af'}}>{v.coordenadas||'-'}</td>
-                  <td style={{fontSize:'11px'}}>{v.fecha_nac||'-'}</td>
-                  <td style={{fontSize:'11px'}}>{v.lugar_nac||'-'}</td>
                   <td style={{fontSize:'11px'}}>{v.padre||'-'}</td>
                   <td style={{fontSize:'11px'}}>{v.madre||'-'}</td>
                   <td style={{fontSize:'11px'}}>{v.cuota_inst||'-'}</td>

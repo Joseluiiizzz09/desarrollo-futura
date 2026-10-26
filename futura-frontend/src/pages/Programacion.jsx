@@ -423,8 +423,6 @@ export default function Programacion() {
                 <DetCampo label="Nombre"            val={modalDet.nombre} />
                 <DetCampo label="Tipo Documento"    val={modalDet.tipo_doc || 'DNI'} />
                 <DetCampo label="DNI / Doc."        val={modalDet.dni} />
-                <DetCampo label="Fecha Nacimiento"  val={modalDet.fecha_nac} />
-                <DetCampo label="Lugar Nacimiento"  val={modalDet.lugar_nac} />
                 <DetCampo label="Padre"             val={modalDet.padre} />
                 <DetCampo label="Madre"             val={modalDet.madre} />
               </div>
