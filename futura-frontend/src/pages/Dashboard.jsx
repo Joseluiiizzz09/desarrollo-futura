@@ -936,10 +936,7 @@ export default function Dashboard({ area = 'asesor' }) {
       return mostrarToast('El nombre del padre solo puede contener letras, tildes, espacios y guiones')
     if (nvForm.madre.trim() && !reNombre.test(nvForm.madre.trim()))
       return mostrarToast('El nombre de la madre solo puede contener letras, tildes, espacios y guiones')
-    if (nvForm.lugarNac.trim() && !reNombre.test(nvForm.lugarNac.trim()))
-      return mostrarToast('El lugar de nacimiento solo puede contener letras, tildes, espacios y guiones')
     const requeridos = [
-      ['Fecha de nacimiento', nvForm.fechaNac], ['Lugar de nacimiento', nvForm.lugarNac],
       ['Nombre del padre', nvForm.padre], ['Nombre de la madre', nvForm.madre],
       ['Departamento', nvForm.dpto], ['Provincia', nvForm.prov], ['Distrito', nvForm.dist],
       ['Coordenadas', nvForm.coord], ['Dirección', nvForm.dir], ['Cuota de instalación', nvForm.cuota],
@@ -1555,14 +1552,6 @@ export default function Dashboard({ area = 'asesor' }) {
                   </label>
                   <input className="nv-input" placeholder="Número de documento" maxLength={{DNI:8,CE:9,RUC:11}[nvForm.tipoDoc]||15} inputMode="numeric" pattern="[0-9]*" style={{fontFamily:'monospace'}}
                     value={nvForm.dni} onChange={e => nvSet('dni', e.target.value.replace(/\D/g, ''))} />
-                </div>
-                <div className="nv-field">
-                  <label className="nv-label">Fecha de Nacimiento</label>
-                  <input className="nv-input" type="date" value={nvForm.fechaNac} onChange={e => nvSet('fechaNac', e.target.value)} />
-                </div>
-                <div className="nv-field">
-                  <label className="nv-label">Lugar de Nacimiento</label>
-                  <input className="nv-input" placeholder="Ciudad / Región" value={nvForm.lugarNac} onChange={e => nvSet('lugarNac', e.target.value)} />
                 </div>
                 <div className="nv-field">
                   <label className="nv-label">Nombres del Padre</label>

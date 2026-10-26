@@ -103,8 +103,6 @@ function faltantes(paso, f) {
       else if (!/^\d+$/.test(d)) req.push('El documento solo lleva números')
     }
     if (claro) {
-      pedir(f.fechaNac, 'Fecha de nacimiento')
-      pedir(f.lugarNac, 'Lugar de nacimiento')
       pedir(f.padre, 'Nombre del padre')
       pedir(f.madre, 'Nombre de la madre')
     }
@@ -739,7 +737,7 @@ export default function VentaClaro() {
     ['Vendedor', vendedor?.nombre],
     ['Operador', f.operador],
     ['Cliente', f.nombre], ['Documento', `${f.tipoDoc} ${f.dni}`],
-    ...(esClaro ? [['Fecha de nacimiento', f.fechaNac], ['Lugar de nacimiento', f.lugarNac], ['Padre', f.padre], ['Madre', f.madre]] : []),
+    ...(esClaro ? [['Padre', f.padre], ['Madre', f.madre]] : []),
     ['Teléfono', f.telefono1], ['Teléfono de referencia', f.telefono2 || '—'], ['Correo', f.email],
     ['Ubicación', [f.departamento, f.provincia, f.distrito].filter(Boolean).join(' / ')], ['Dirección', f.direccion],
     ['Coordenadas', f.coordenadas],
@@ -875,8 +873,6 @@ export default function VentaClaro() {
               <Campo label="Tipo de documento"><Opciones valor={f.tipoDoc} opciones={TIPOS_DOC} onChange={v => set('tipoDoc', v)} /></Campo>
               <Campo label="Número de documento"><input inputMode="numeric" value={f.dni} onChange={e => set('dni', e.target.value.replace(/\D/g, '').slice(0, 15))} autoComplete="off" /></Campo>
               {esClaro && (<>
-                <Campo label="Fecha de nacimiento"><input type="date" value={f.fechaNac} max={new Date().toISOString().slice(0, 10)} onChange={e => set('fechaNac', e.target.value)} /></Campo>
-                <Campo label="Lugar de nacimiento"><input value={f.lugarNac} onChange={e => set('lugarNac', e.target.value.toUpperCase())} placeholder="Ciudad o región" /></Campo>
                 <Campo label="Nombre del padre"><input value={f.padre} onChange={e => set('padre', e.target.value.toUpperCase())} /></Campo>
                 <Campo label="Nombre de la madre"><input value={f.madre} onChange={e => set('madre', e.target.value.toUpperCase())} /></Campo>
               </>)}
