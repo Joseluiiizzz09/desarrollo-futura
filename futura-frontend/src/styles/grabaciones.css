@@ -708,13 +708,18 @@ body{
 .bg-corregir{background:#fff1f2;color:#9f1239;border:1px solid rgba(251,113,133,.45);box-shadow:0 2px 8px rgba(251,113,133,.14);}
 .badge-grab{border-radius:8px;padding:4px 9px;}
 /* Etiqueta de estado clicable: despliega las tipificaciones (reemplaza el botón Estado) */
-.badge-grab-clic{cursor:pointer;font-family:inherit;line-height:inherit;}
-.badge-grab-clic:hover{filter:brightness(.96);box-shadow:0 0 0 2px rgba(15,23,42,.08);}
+.badge-grab-clic{cursor:pointer;font-family:inherit;line-height:inherit;outline:none;transition:box-shadow .15s,filter .15s;}
+.badge-grab-clic:hover{filter:brightness(.97);box-shadow:0 0 0 3px rgba(15,23,42,.06);}
+.badge-grab-clic:focus{outline:none;}
+.badge-grab-clic:focus-visible{box-shadow:0 0 0 3px rgba(220,38,38,.18);}
+.badge-grab-clic[aria-expanded="true"]{box-shadow:0 0 0 3px rgba(220,38,38,.14);}
 .badge-grab-flecha{font-size:9px;opacity:.7;margin-left:2px;}
-.grab-estado-menu{position:fixed;z-index:3000;min-width:190px;max-height:320px;overflow-y:auto;padding:6px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);display:flex;flex-direction:column;gap:3px;}
-.grab-estado-opcion{display:flex;align-items:center;width:100%;padding:5px 6px;border:0;border-radius:8px;background:transparent;cursor:pointer;text-align:left;font-family:inherit;}
+.grab-estado-menu{position:fixed;z-index:3000;width:210px;max-height:calc(100vh - 24px);overflow-y:auto;padding:8px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18),0 2px 6px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:2px;animation:grabMenuIn .12s ease-out;}
+@keyframes grabMenuIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.grab-estado-opcion{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:36px;padding:4px 8px;border:0;border-radius:9px;background:transparent;cursor:pointer;text-align:left;font-family:inherit;outline:none;}
 .grab-estado-opcion:hover{background:#f1f5f9;}
-.grab-estado-opcion.activo{background:#fef2f2;}
+.grab-estado-opcion.activo{background:#f8fafc;}
+.grab-estado-opcion.activo::after{content:'✓';color:#16a34a;font-weight:800;font-size:13px;}
 .grab-estado-opcion .badge-grab{pointer-events:none;}
 .tab-btn{background:transparent;}
 .tabs-bar{background:#f8fafc;border:1px solid rgba(15,23,42,.06);}

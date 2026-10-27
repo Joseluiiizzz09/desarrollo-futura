@@ -140,7 +140,13 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
   useEffect(() => {
     if (!abierto) return undefined
     const r = btnRef.current?.getBoundingClientRect()
-    if (r) setPos({ top: r.bottom + 4, left: r.left })
+    if (r) {
+      // Abre hacia abajo; si no hay espacio suficiente, hacia arriba.
+      const alto = Math.min(ESTADOS_GRAB.length * 38 + 16, window.innerHeight - 24)
+      const abajo = window.innerHeight - r.bottom - 12
+      const top = abajo >= alto ? r.bottom + 6 : Math.max(12, r.top - alto - 6)
+      setPos({ top, left: Math.min(r.left, window.innerWidth - 220) })
+    }
     const fuera = e => {
       if (btnRef.current?.contains(e.target) || listaRef.current?.contains(e.target)) return
       onCerrar()
@@ -148,12 +154,14 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
     const tecla = e => { if (e.key === 'Escape') onCerrar() }
     document.addEventListener('mousedown', fuera)
     document.addEventListener('keydown', tecla)
-    window.addEventListener('scroll', onCerrar, true)
+    // Solo se cierra si se desplaza la página o la tabla, no la propia lista.
+    const alDesplazar = e => { if (!listaRef.current?.contains(e.target)) onCerrar() }
+    window.addEventListener('scroll', alDesplazar, true)
     window.addEventListener('resize', onCerrar)
     return () => {
       document.removeEventListener('mousedown', fuera)
       document.removeEventListener('keydown', tecla)
-      window.removeEventListener('scroll', onCerrar, true)
+      window.removeEventListener('scroll', alDesplazar, true)
       window.removeEventListener('resize', onCerrar)
     }
   }, [abierto, onCerrar])
