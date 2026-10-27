@@ -452,6 +452,17 @@ async function initDB() {
         .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
     }
 
+    // Venta Claro de Campo: ¿es con biometría? (SI/NO) y, si lo es, el tipo
+    // (BIOMETRIA / BIOMETRIA AISLADA). Nullable para ventas históricas.
+    const columnasBiometria = [
+      ['biometria',      'VARCHAR(3) NULL'],
+      ['biometria_tipo', 'VARCHAR(30) NULL'],
+    ];
+    for (const [columna, definicion] of columnasBiometria) {
+      await conn.query(`ALTER TABLE ventas ADD COLUMN ${columna} ${definicion}`)
+        .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
+    }
+
     // Sala atribuida a la venta. Permite corregir reportes históricos cuando
     // un asesor cambia temporalmente de sala sin mover la venta a otro asesor.
     await conn.query(`ALTER TABLE ventas ADD COLUMN sala_atribucion VARCHAR(50) NULL`)

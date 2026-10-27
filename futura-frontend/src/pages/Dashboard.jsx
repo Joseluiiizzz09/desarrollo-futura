@@ -37,6 +37,7 @@ const NV_DEFAULT = {
   fechaNac:'', lugarNac:'', padre:'', madre:'',
   cuota:'', hogar:'', tipoVivienda:'', tec:'', paquete:'',
   full:'', decos:'0', mesh:'0', plano:'',
+  biometria:'', biometriaTipo:'',
   estado:'VENTA', obs:'',
 }
 
@@ -874,6 +875,8 @@ export default function Dashboard({ area = 'asesor' }) {
       tec:      v.tecnologia  || '',
       paquete:  v.paquete     || '',
       full:     v.full_claro  || '',
+      biometria:     v.biometria      || '',
+      biometriaTipo: v.biometria_tipo || '',
       decos:    String(v.cant_decos || '0'),
       mesh:     String(v.cant_mesh  || '0'),
       plano:    v.plano       || '',
@@ -942,6 +945,9 @@ export default function Dashboard({ area = 'asesor' }) {
       ['Coordenadas', nvForm.coord], ['Dirección', nvForm.dir], ['Cuota de instalación', nvForm.cuota],
       ['Claro Hogar', nvForm.hogar], ['Tipo de vivienda', nvForm.tipoVivienda], ['Tecnología', nvForm.tec], ['Paquete Real', nvForm.paquete],
       ['Full Claro', nvForm.full], ['Plano', nvForm.plano], ['Observación', nvForm.obs],
+      // Venta de Campo: ¿con biometría? y, si es Sí, el tipo
+      ...(area === 'campo' ? [['¿Venta con biometría?', nvForm.biometria]] : []),
+      ...(area === 'campo' && nvForm.biometria === 'SI' ? [['Tipo de biometría', nvForm.biometriaTipo]] : []),
     ]
     const faltante = requeridos.find(([,valor]) => !String(valor || '').trim())
     if (faltante) return mostrarToast(`${faltante[0]} es obligatorio para cerrar la venta`)
@@ -958,6 +964,10 @@ export default function Dashboard({ area = 'asesor' }) {
       tec:nvForm.tec, paquete:nvForm.paquete,
       full:nvForm.full, cantDecos:nvForm.decos, cantMesh:nvForm.mesh,
       plano:nvForm.plano.trim(), estado: nvEditId ? nvForm.estado : 'VENTA', obs:nvForm.obs.trim(),
+      ...(area === 'campo' ? {
+        biometria: nvForm.biometria,
+        biometriaTipo: nvForm.biometria === 'SI' ? nvForm.biometriaTipo : '',
+      } : {}),
     }
     setGuardandoNV(true)
     try {
@@ -1687,6 +1697,27 @@ export default function Dashboard({ area = 'asesor' }) {
                     <option>No</option>
                   </select>
                 </div>
+                {area === 'campo' && (
+                  <div className="nv-field">
+                    <label className="nv-label">¿Venta con biometría?</label>
+                    <select className="nv-select" value={nvForm.biometria}
+                      onChange={e => { const val = e.target.value; nvSet('biometria', val); if (val !== 'SI') nvSet('biometriaTipo', '') }}>
+                      <option value="">Seleccionar</option>
+                      <option value="SI">Sí</option>
+                      <option value="NO">No</option>
+                    </select>
+                  </div>
+                )}
+                {area === 'campo' && nvForm.biometria === 'SI' && (
+                  <div className="nv-field">
+                    <label className="nv-label">Tipo de biometría</label>
+                    <select className="nv-select" value={nvForm.biometriaTipo} onChange={e => nvSet('biometriaTipo', e.target.value)}>
+                      <option value="">Seleccionar</option>
+                      <option value="BIOMETRIA">Biometría</option>
+                      <option value="BIOMETRIA AISLADA">Biometría aislada</option>
+                    </select>
+                  </div>
+                )}
                 <div className="nv-field">
                   <label className="nv-label">Cantidad Decos</label>
                   <select className="nv-select" value={nvForm.decos} onChange={e => nvSet('decos', e.target.value)}>

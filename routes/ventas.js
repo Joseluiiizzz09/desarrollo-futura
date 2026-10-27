@@ -29,6 +29,9 @@ const ESTADOS_GRAB_OK    = ['pendiente','grabando','grabado','observado','revisa
 const ESTADOS_SUPGRAB_OK = ['sin_revisar','aprobado','rechazado','observado','programado','conforme','no_conforme','audio_subido'];
 const TRAMOS_SEGUIMIENTO_OK = ['AM','PM','PM 3'];
 const ESTADOS_VALIDOS_POST  = ['VENTA'];
+// Venta Claro de Campo: biometría
+const BIOMETRIA_OK = ['SI', 'NO'];
+const BIOMETRIA_TIPOS_OK = ['BIOMETRIA', 'BIOMETRIA AISLADA'];
 const ESTADOS_VALIDOS_PATCH = [
   'VENTA','GRABADO','APROBADO','VALIDADO','EN_EJECUCION',
   'INSTALADO','CAIDA','RECHAZO_CAMPO','TECNICO_CASA',
@@ -380,6 +383,13 @@ router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), as
       errorTexto(v.cuotaInstalacion, 'cuotaInstalacion', { requerido: true, max: 100 }),
       errorTexto(v.hogar, 'hogar', { requerido: true, max: 150 }),
       errorEnum(v.predio, 'predio', ['HORIZONTAL', 'VERTICAL']),
+      // Biometría: obligatoria para el vendedor de Campo; si es SI, se exige el tipo.
+      (String(req.user.cargo || '').toLowerCase() === 'campo' && !String(v.biometria || '').trim())
+        ? 'Indica si la venta es con biometría (Sí o No)' : null,
+      errorEnum(v.biometria, 'biometria', BIOMETRIA_OK),
+      (String(v.biometria || '').toUpperCase() === 'SI' && !String(v.biometriaTipo || '').trim())
+        ? 'Selecciona el tipo de biometría (Biometría o Biometría aislada)' : null,
+      errorEnum(v.biometriaTipo, 'biometriaTipo', BIOMETRIA_TIPOS_OK),
       errorTexto(v.tec, 'tecnologia', { requerido: true, max: 100 }),
       errorTexto(v.paquete, 'paquete', { requerido: true, max: 255 }),
       errorTexto(v.full, 'fullClaro', { requerido: true, max: 20 }),
@@ -499,8 +509,8 @@ router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), as
         direccion, coordenadas, fecha_nac, lugar_nac, padre, madre,
         cuota_inst, claro_hogar, predio, tecnologia, paquete,
         full_claro, cant_decos, cant_mesh, plano, estado, observacion,
-        lead_id, lead_ciclo_id, sala_atribucion
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        lead_id, lead_ciclo_id, sala_atribucion, biometria, biometria_tipo
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [
       asesorVentaId, nombreAsesor, v.tipoDoc||'DNI', v.dni||null, v.nombre||null, v.email||null,
       v.telefono1||null, v.telefono2||null, v.departamento||null,
@@ -511,7 +521,9 @@ router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), as
       v.paquete||null, v.full||null,
       parseInt(v.cantDecos)||0, parseInt(v.cantMesh)||0,
       v.plano||null, estadoFinal, v.obs||null,
-      leadVenta?.id || null, cicloVentaAbierto?.id || null, salaAtribucion
+      leadVenta?.id || null, cicloVentaAbierto?.id || null, salaAtribucion,
+      v.biometria ? String(v.biometria).toUpperCase() : null,
+      String(v.biometria || '').toUpperCase() === 'SI' && v.biometriaTipo ? String(v.biometriaTipo).toUpperCase() : null,
     ]);
 
     if (leadVenta) {
@@ -2294,6 +2306,7 @@ router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios
       fechaNac, lugarNac, padre, madre,
       cantDecos, cantMesh,
       observacion, canal,
+      biometria, biometriaTipo,
     } = req.body;
     const CANALES_VALIDOS_DATOS = ['NETCONTACT', 'KELS'];
     const canalNormDatos = canal !== undefined ? (canal ? String(canal).trim().toUpperCase() : '') : undefined;
@@ -2363,6 +2376,14 @@ router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios
     agregar('tecnologia',  tec);
     agregar('full_claro',  full);
     agregar('plano',       plano);
+    if (biometria !== undefined) {
+      const bio = biometria ? String(biometria).toUpperCase() : null;
+      if (bio && !BIOMETRIA_OK.includes(bio)) return res.status(400).json({ ok:false, mensaje:'Biometría inválida.' });
+      const tipo = bio === 'SI' && biometriaTipo ? String(biometriaTipo).toUpperCase() : null;
+      if (tipo && !BIOMETRIA_TIPOS_OK.includes(tipo)) return res.status(400).json({ ok:false, mensaje:'Tipo de biometría inválido.' });
+      agregar('biometria',      bio);
+      agregar('biometria_tipo', tipo);
+    }
     agregar('fecha_nac',   fechaNac);
     agregar('lugar_nac',   lugarNac);
     agregar('padre',       padre);

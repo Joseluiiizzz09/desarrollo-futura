@@ -93,6 +93,8 @@ export default function VentaDetalleModal({ venta, onClose }) {
             <Campo label="Cuota de instalación">{valor(v.cuota_inst)}</Campo>
             <Campo label="Cantidad de decos">{valor(v.cant_decos ?? 0)}</Campo>
             <Campo label="Cantidad de mesh">{valor(v.cant_mesh ?? 0)}</Campo>
+            <Campo label="Venta con biometría">{v.biometria === 'SI' ? 'Sí' : v.biometria === 'NO' ? 'No' : '—'}</Campo>
+            <Campo label="Tipo de biometría">{v.biometria === 'SI' ? (v.biometria_tipo === 'BIOMETRIA AISLADA' ? 'Biometría aislada' : v.biometria_tipo === 'BIOMETRIA' ? 'Biometría' : '—') : '—'}</Campo>
           </div>
 
           <div style={S.sec}>Venta</div>

@@ -43,6 +43,8 @@ export function VentaEditarModal({ venta, onClose, onSuccess }) {
     madre:           venta?.madre           || '',
     cantDecos:       String(venta?.cant_decos ?? venta?.cantDecos ?? '0'),
     cantMesh:        String(venta?.cant_mesh  ?? venta?.cantMesh  ?? '0'),
+    biometria:       venta?.biometria       || '',
+    biometriaTipo:   venta?.biometria_tipo  || '',
     observacion:     venta?.observacion     || '',
   })
   const [guardando, setGuardando] = useState(false)
@@ -151,6 +153,20 @@ export function VentaEditarModal({ venta, onClose, onSuccess }) {
           )}
           {campo('Full Claro',
             <input style={inputStyle} value={form.full} onChange={e => set('full', e.target.value)} />
+          )}
+          {campo('¿Venta con biometría?',
+            <select style={inputStyle} value={form.biometria} onChange={e => { set('biometria', e.target.value); if (e.target.value !== 'SI') set('biometriaTipo', '') }}>
+              <option value="">—</option>
+              <option value="SI">Sí</option>
+              <option value="NO">No</option>
+            </select>
+          )}
+          {form.biometria === 'SI' && campo('Tipo de biometría',
+            <select style={inputStyle} value={form.biometriaTipo} onChange={e => set('biometriaTipo', e.target.value)}>
+              <option value="">Seleccionar</option>
+              <option value="BIOMETRIA">Biometría</option>
+              <option value="BIOMETRIA AISLADA">Biometría aislada</option>
+            </select>
           )}
           {campo('Decos',
             <input style={inputStyle} type="number" min="0" value={form.cantDecos} onChange={e => set('cantDecos', e.target.value)} />
