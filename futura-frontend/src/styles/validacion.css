@@ -421,6 +421,8 @@ body{
 .btn-cambiar:hover{background:#d1fae5;transform:scale(1.05);}
 .btn-fotos{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 10px;border:1px solid rgba(8,145,178,.3);border-radius:7px;background:#f0fdfa;color:#0e7490;font-size:12px;cursor:pointer;transition:all .16s var(--sp);}
 .btn-fotos:hover{background:#ccfbf1;transform:scale(1.05);}
+.btn-acc-venta{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 9px;border:1px solid rgba(234,88,12,.35);border-radius:7px;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-acc-venta:hover{background:#ffedd5;}
 
 /* ━━ AUDIO / UPLOAD ━━━━━━━━━━━━━━━━━━━━━━ */
 .audio-player{background:var(--surf-1);border:1px solid var(--line-2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:8px;}
@@ -741,8 +743,8 @@ body{
 .validacion-page .tabla-count{background:#ef4444;color:#fff;box-shadow:0 2px 8px rgba(239,68,68,.25);}
 .validacion-page .tabla-scroll{max-height:calc(100vh - 315px);}
 .validacion-page .tabla tbody td{padding:8px 10px;font-size:11px;}
-.validacion-page .th-accion{width:92px!important;min-width:92px!important;max-width:92px!important;}
-.validacion-page .tabla tbody td:first-child{width:92px!important;min-width:92px!important;max-width:92px!important;padding:6px 8px!important;}
+.validacion-page .th-accion{width:150px!important;min-width:150px!important;max-width:150px!important;}
+.validacion-page .tabla tbody td:first-child{width:150px!important;min-width:150px!important;max-width:150px!important;padding:6px 8px!important;}
 .validacion-page .acciones-cell{justify-content:center!important;gap:5px!important;flex-wrap:nowrap!important;}
 .validacion-page .acciones-cell .btn-accion-row,
 .validacion-page .acciones-cell .btn-fotos{width:28px!important;height:28px!important;min-height:28px!important;padding:0!important;border-radius:8px!important;font-size:12px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;}

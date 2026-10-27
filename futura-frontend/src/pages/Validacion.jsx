@@ -4,6 +4,8 @@ import { useAuth } from '../hooks/useAuth'
 import JefaturaViewControls from '../components/JefaturaViewControls'
 import MediaViewer from '../components/MediaViewer'
 import CanalBadge from '../components/CanalBadge'
+import CambiarAreaMenu from '../components/CambiarAreaMenu'
+import VentaDetalleModal from '../components/VentaDetalleModal'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/validacion.css'
@@ -174,6 +176,7 @@ function Paginacion({ total, pagina, porPagina, onChange }) {
 export default function Validacion() {
   const navigate = useNavigate()
   const { sesion, logout } = useAuth()
+  const [ventaDetalle, setVentaDetalle] = useState(null)
   const toastTimer = useRef(null)
 
   // ── Data ──
@@ -379,6 +382,7 @@ export default function Validacion() {
             <span className="topbar-badge">VALIDACIÓN</span>
             <span className="topbar-user">{sesion?.nombre || 'Validador'}</span>
           </JefaturaViewControls>
+          <CambiarAreaMenu />
           <button className="topbar-salir" onClick={()=>{ logout(); navigate('/') }}>Salir</button>
         </div>
       </div>
@@ -522,6 +526,7 @@ export default function Validacion() {
                             <div className="acciones-cell">
                               <button className="btn-accion-row btn-obs" onClick={()=>abrirModalObs(v.id)} title="Ver historial y observar">📋</button>
                               <button className="btn-fotos" onClick={()=>setMediaVenta(v)} title="Ver fotos y audio">📷</button>
+                              <button className="btn-acc-venta" onClick={()=>setVentaDetalle(v)} title="Ver todos los datos de la venta">Venta</button>
                             </div>
                           </td>
                           <td style={{verticalAlign:'middle'}}>
@@ -592,6 +597,7 @@ export default function Validacion() {
 
       </div>
 
+      <VentaDetalleModal venta={ventaDetalle} onClose={()=>setVentaDetalle(null)} />
       <MediaViewer
         open={!!mediaVenta}
         onClose={()=>setMediaVenta(null)}
