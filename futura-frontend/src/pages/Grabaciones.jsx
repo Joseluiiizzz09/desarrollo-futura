@@ -156,6 +156,8 @@ export default function Grabaciones() {
   // ── Modal estado ──
   const [modalEstado,    setModalEstado]    = useState({ open:false, id:null })
   const [nuevoEstadoSel, setNuevoEstadoSel] = useState('pendiente')
+  // Venta cuya etiqueta de estado está desplegada (clic en PENDIENTE, etc.)
+  const [estadoAbiertoId, setEstadoAbiertoId] = useState(null)
 
   // ── Modal subir ──
   const [modalSubir,  setModalSubir]  = useState({ open:false, id:null })
@@ -275,9 +277,13 @@ export default function Grabaciones() {
     setNuevoEstadoSel(v._estadoGrab || 'pendiente')
   }
 
-  async function guardarEstado() {
-    const v = ventas.find(x=>x.id===modalEstado.id); if (!v) return
-    if (nuevoEstadoSel === 'grabado') {
+  // Se llama desde el desplegable de la etiqueta de estado (id, estado) o
+  // desde el modal antiguo (sin argumentos).
+  async function guardarEstado(idDirecto, estadoDirecto) {
+    const id = idDirecto ?? modalEstado.id
+    const estadoSel = estadoDirecto ?? nuevoEstadoSel
+    const v = ventas.find(x=>x.id===id); if (!v) return
+    if (estadoSel === 'grabado') {
       try {
         const res  = await fetch(`${API}/ventas/${v.id}`, {
           method:'PATCH', headers:ncHeaders(),
@@ -296,11 +302,11 @@ export default function Grabaciones() {
     try {
       const res  = await fetch(`${API}/ventas/${v.id}`, {
         method:'PATCH', headers:ncHeaders(),
-        body: JSON.stringify({ estado_grab: nuevoEstadoSel }),
+        body: JSON.stringify({ estado_grab: estadoSel }),
       })
       const data = await res.json()
       if (!res.ok || !data.ok) { mostrarToast('Error: ' + (data.mensaje||'no se pudo guardar')); return }
-      setVentas(list => list.map(x => x.id===v.id ? { ...x, _estadoGrab:nuevoEstadoSel } : x))
+      setVentas(list => list.map(x => x.id===v.id ? { ...x, _estadoGrab:estadoSel } : x))
     } catch(e) { console.error('Error guardando estado:', e); mostrarToast('Error conectando al servidor'); return }
     setModalEstado({ open:false, id:null })
   }
@@ -655,11 +661,23 @@ export default function Grabaciones() {
                               <button className="btn-acc btn-acc-obs"    onClick={()=>abrirModalObs(v.id)}    title="Observación">Obs.</button>
                               <button className="btn-acc btn-acc-subir"  onClick={()=>abrirModalSubir(v.id)}  title="Subir grabación">Subir</button>
                               <button className="btn-acc btn-acc-eliminar-audio" onClick={()=>eliminarAudio(v.id)} disabled={!tieneAudio} title={tieneAudio?'Eliminar grabación':'No hay grabación para eliminar'} aria-label="Eliminar grabación">🗑</button>
-                              <button className="btn-acc btn-acc-estado" onClick={()=>abrirModalEstado(v.id)} title="Cambiar estado">Estado</button>
                               <button className="btn-fotos btn-archivos" onClick={()=>setMediaVenta(v)} title="Ver fotos y documentos">Archivos</button>
                             </div>
                           </td>
-                          <td><span className={`badge-grab ${eg.cls}`}>{eg.id==='grabando' && v.grabando_por_nombre ? `GRABANDO ${primerNombre(v.grabando_por_nombre).toUpperCase()}` : eg.label}</span></td>
+                          <td>
+                            {estadoAbiertoId === v.id ? (
+                              <select autoFocus className="grab-estado-select" defaultValue={v._estadoGrab || 'pendiente'}
+                                onChange={e => { const nuevo = e.target.value; setEstadoAbiertoId(null); if (nuevo !== (v._estadoGrab || 'pendiente')) guardarEstado(v.id, nuevo) }}
+                                onBlur={() => setEstadoAbiertoId(null)}
+                                onKeyDown={e => { if (e.key === 'Escape') setEstadoAbiertoId(null) }}>
+                                {ESTADOS_GRAB.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+                              </select>
+                            ) : (
+                              <button type="button" className={`badge-grab ${eg.cls} badge-grab-clic`} onClick={() => setEstadoAbiertoId(v.id)} title="Clic para cambiar el estado">
+                                {eg.id==='grabando' && v.grabando_por_nombre ? `GRABANDO ${primerNombre(v.grabando_por_nombre).toUpperCase()}` : eg.label} ▾
+                              </button>
+                            )}
+                          </td>
                           <td><CanalBadge canal={v.canal} /></td>
                           <td>
                             {v._estadoSupGrab === 'observado'

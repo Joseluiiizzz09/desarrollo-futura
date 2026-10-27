@@ -707,6 +707,10 @@ body{
 .bg-esperando{background:#fefce8;color:#854d0e;border:1px solid rgba(234,179,8,.45);box-shadow:0 2px 8px rgba(234,179,8,.14);}
 .bg-corregir{background:#fff1f2;color:#9f1239;border:1px solid rgba(251,113,133,.45);box-shadow:0 2px 8px rgba(251,113,133,.14);}
 .badge-grab{border-radius:8px;padding:4px 9px;}
+/* Etiqueta de estado clicable: despliega las tipificaciones (reemplaza el botón Estado) */
+.badge-grab-clic{cursor:pointer;font-family:inherit;line-height:inherit;}
+.badge-grab-clic:hover{filter:brightness(.96);box-shadow:0 0 0 2px rgba(15,23,42,.08);}
+.grab-estado-select{height:30px;padding:0 8px;border:1.5px solid #dc2626;border-radius:8px;background:#fff;color:#111827;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;}
 .tab-btn{background:transparent;}
 .tabs-bar{background:#f8fafc;border:1px solid rgba(15,23,42,.06);}
 .tab-btn.active{box-shadow:0 2px 8px rgba(15,23,42,.10);}
