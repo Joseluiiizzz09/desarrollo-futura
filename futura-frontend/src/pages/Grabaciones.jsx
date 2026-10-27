@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import JefaturaViewControls from '../components/JefaturaViewControls'
@@ -129,6 +130,53 @@ function Paginacion({ total, pagina, porPagina, onChange }) {
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
+// Etiqueta de estado clicable: abre debajo una lista con las tipificaciones.
+// La lista va en un portal con posición fija para que la tabla (que tiene
+// scroll horizontal) no la recorte.
+function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, onElegir }) {
+  const btnRef = useRef(null)
+  const listaRef = useRef(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  useEffect(() => {
+    if (!abierto) return undefined
+    const r = btnRef.current?.getBoundingClientRect()
+    if (r) setPos({ top: r.bottom + 4, left: r.left })
+    const fuera = e => {
+      if (btnRef.current?.contains(e.target) || listaRef.current?.contains(e.target)) return
+      onCerrar()
+    }
+    const tecla = e => { if (e.key === 'Escape') onCerrar() }
+    document.addEventListener('mousedown', fuera)
+    document.addEventListener('keydown', tecla)
+    window.addEventListener('scroll', onCerrar, true)
+    window.addEventListener('resize', onCerrar)
+    return () => {
+      document.removeEventListener('mousedown', fuera)
+      document.removeEventListener('keydown', tecla)
+      window.removeEventListener('scroll', onCerrar, true)
+      window.removeEventListener('resize', onCerrar)
+    }
+  }, [abierto, onCerrar])
+  return (
+    <>
+      <button ref={btnRef} type="button" className={`badge-grab ${clase} badge-grab-clic`} onClick={onAbrir}
+        aria-haspopup="listbox" aria-expanded={abierto} title="Clic para cambiar el estado">
+        {etiqueta} <span className="badge-grab-flecha">▾</span>
+      </button>
+      {abierto && createPortal(
+        <div ref={listaRef} className="grab-estado-menu" role="listbox" style={{ top: pos.top, left: pos.left }}>
+          {ESTADOS_GRAB.map(e => (
+            <button key={e.id} type="button" role="option" aria-selected={e.id === actual}
+              className={`grab-estado-opcion${e.id === actual ? ' activo' : ''}`} onClick={() => onElegir(e.id)}>
+              <span className={`badge-grab ${e.cls}`}>{e.label}</span>
+            </button>
+          ))}
+        </div>, document.body
+      )}
+    </>
+  )
+}
+
 export default function Grabaciones() {
   const navigate  = useNavigate()
   const { sesion, logout } = useAuth()
@@ -606,15 +654,15 @@ export default function Grabaciones() {
           <div className="tabla-scroll">
             <table className="tabla grabaciones-ventas-tabla">
               <colgroup>
-                <col style={{width:295}} />
-                <col style={{width:170}} />
+                <col style={{width:235}} />
+                <col style={{width:180}} />
                 <col style={{width:100}} />
                 <col style={{width:135}} />
-                <col style={{width:50}} />
-                <col style={{width:120}} />
-                <col style={{width:160}} />
-                <col style={{width:80}} />
+                <col style={{width:75}} />
+                <col style={{width:110}} />
+                <col style={{width:210}} />
                 <col style={{width:100}} />
+                <col style={{width:115}} />
                 <col style={{width:115}} />
                 <col style={{width:180}} />
                 <col style={{width:75}} />
@@ -665,18 +713,15 @@ export default function Grabaciones() {
                             </div>
                           </td>
                           <td>
-                            {estadoAbiertoId === v.id ? (
-                              <select autoFocus className="grab-estado-select" defaultValue={v._estadoGrab || 'pendiente'}
-                                onChange={e => { const nuevo = e.target.value; setEstadoAbiertoId(null); if (nuevo !== (v._estadoGrab || 'pendiente')) guardarEstado(v.id, nuevo) }}
-                                onBlur={() => setEstadoAbiertoId(null)}
-                                onKeyDown={e => { if (e.key === 'Escape') setEstadoAbiertoId(null) }}>
-                                {ESTADOS_GRAB.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-                              </select>
-                            ) : (
-                              <button type="button" className={`badge-grab ${eg.cls} badge-grab-clic`} onClick={() => setEstadoAbiertoId(v.id)} title="Clic para cambiar el estado">
-                                {eg.id==='grabando' && v.grabando_por_nombre ? `GRABANDO ${primerNombre(v.grabando_por_nombre).toUpperCase()}` : eg.label} ▾
-                              </button>
-                            )}
+                            <EstadoGrabMenu
+                              abierto={estadoAbiertoId === v.id}
+                              actual={v._estadoGrab || 'pendiente'}
+                              clase={eg.cls}
+                              etiqueta={eg.id==='grabando' && v.grabando_por_nombre ? `GRABANDO ${primerNombre(v.grabando_por_nombre).toUpperCase()}` : eg.label}
+                              onAbrir={() => setEstadoAbiertoId(estadoAbiertoId === v.id ? null : v.id)}
+                              onCerrar={() => setEstadoAbiertoId(null)}
+                              onElegir={nuevo => { setEstadoAbiertoId(null); if (nuevo !== (v._estadoGrab || 'pendiente')) guardarEstado(v.id, nuevo) }}
+                            />
                           </td>
                           <td><CanalBadge canal={v.canal} /></td>
                           <td>
