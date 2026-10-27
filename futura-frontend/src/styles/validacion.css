@@ -423,6 +423,10 @@ body{
 .btn-fotos:hover{background:#ccfbf1;transform:scale(1.05);}
 .btn-acc-venta{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 9px;border:1px solid rgba(234,88,12,.35);border-radius:7px;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
 .btn-acc-venta:hover{background:#ffedd5;}
+/* Acciones de la fila: botones blancos y sobrios (icono historial, clip, Venta) */
+.val-acc-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#475569;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s;}
+.val-acc-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:#111827;}
+.val-acc-btn.val-acc-texto{width:auto;padding:0 14px;font-size:12px;font-weight:600;}
 
 /* ━━ AUDIO / UPLOAD ━━━━━━━━━━━━━━━━━━━━━━ */
 .audio-player{background:var(--surf-1);border:1px solid var(--line-2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:8px;}

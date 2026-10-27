@@ -524,9 +524,9 @@ export default function Validacion() {
                         <tr key={v.id} id={`fila-${v.id}`}>
                           <td style={{textAlign:'center',verticalAlign:'middle'}}>
                             <div className="acciones-cell">
-                              <button className="btn-accion-row btn-obs" onClick={()=>abrirModalObs(v.id)} title="Ver historial y observar">📋</button>
-                              <button className="btn-fotos" onClick={()=>setMediaVenta(v)} title="Ver fotos y audio">📷</button>
-                              <button className="btn-acc-venta" onClick={()=>setVentaDetalle(v)} title="Ver todos los datos de la venta">Venta</button>
+                              <button className="val-acc-btn" onClick={()=>abrirModalObs(v.id)} title="Ver historial y observar" aria-label="Ver historial y observar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
+                              <button className="val-acc-btn" onClick={()=>setMediaVenta(v)} title="Ver fotos y audio" aria-label="Ver fotos y audio"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
+                              <button className="val-acc-btn val-acc-texto" onClick={()=>setVentaDetalle(v)} title="Ver todos los datos de la venta">Venta</button>
                             </div>
                           </td>
                           <td style={{verticalAlign:'middle'}}>
