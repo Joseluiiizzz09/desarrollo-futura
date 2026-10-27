@@ -78,6 +78,11 @@ function erroresVentaClaro(v) {
     errorTexto(v.tec, 'Tecnología', { requerido: true, max: 100 }),
     errorTexto(v.paquete, 'Paquete', { requerido: true, max: 255 }),
     errorTexto(v.full, 'Full Claro', { requerido: true, max: 20 }),
+    // Biometría: obligatoria; si es SI, también el tipo.
+    errorTexto(v.biometria, '¿Venta con biometría?', { requerido: true, max: 3 }),
+    errorEnum(v.biometria, '¿Venta con biometría?', ['SI', 'NO']),
+    String(v.biometria || '').toUpperCase() === 'SI' && !String(v.biometriaTipo || '').trim() ? 'Tipo de biometría es obligatorio' : null,
+    errorEnum(v.biometriaTipo, 'Tipo de biometría', ['BIOMETRIA', 'BIOMETRIA AISLADA']),
     errorTexto(v.plano, 'Plano', { requerido: true, max: 100 }),
     errorTexto(v.obs, 'Observación', { max: 1000 }),
     errorEnteroPositivo(v.cantDecos, 'Cantidad de decos', { max: 10 }),
@@ -503,8 +508,8 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
         direccion, coordenadas, fecha_nac, lugar_nac, padre, madre,
         cuota_inst, claro_hogar, predio, tecnologia, paquete,
         full_claro, cant_decos, cant_mesh, plano, estado, observacion,
-        sala_atribucion
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        sala_atribucion, biometria, biometria_tipo
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [
       dueno.id, dueno.nombre, v.tipoDoc, v.dni, v.nombre, v.email,
       v.telefono1, v.telefono2 || null, v.departamento, v.provincia, v.distrito,
@@ -513,6 +518,8 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
       v.full, parseInt(v.cantDecos) || 0, parseInt(v.cantMesh) || 0, v.plano, 'VENTA',
       `[Formulario Claro] ${v.obs}`.substring(0, 1000),
       dueno.sala || null,
+      String(v.biometria || '').toUpperCase() || null,
+      String(v.biometria || '').toUpperCase() === 'SI' ? String(v.biometriaTipo || '').toUpperCase() || null : null,
     ]);
     console.log(`[publico/venta-claro] venta ${result.insertId} -> usuario ${dueno.id}`);
     res.json({ ok: true });

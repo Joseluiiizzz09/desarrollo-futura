@@ -25,6 +25,7 @@ const CANTIDADES = ['0', '1', '2', '3', '4', '5']
 
 const DATOS_SERVICIO = {
   cuotaInstalacion:'', hogar:'', paquete:'', predio:'', tec:'', full:'', cantDecos:'0', cantMesh:'', plano:'', obs:'', adicionales:[],
+  biometria:'', biometriaTipo:'',
 }
 const VACIO = {
   operador:'',
@@ -126,6 +127,8 @@ function faltantes(paso, f) {
       pedir(f.predio, 'Tipo de vivienda')
       pedir(f.tec, 'Tecnología')
       pedir(f.full, 'Full Claro')
+      pedir(f.biometria, '¿Venta con biometría?')
+      if (f.biometria === 'SI') pedir(f.biometriaTipo, 'Tipo de biometría')
       pedir(f.cantMesh, 'Cantidad de mesh')
       pedir(f.plano, 'Plano')
     } else {
@@ -654,7 +657,7 @@ export default function VentaClaro() {
     setErrorEnvio('')
     try {
       const venta = esTipoWin
-        ? { ...f, fechaNac: '', lugarNac: '', padre: '', madre: '', hogar: '', tec: '', full: '', plano: '',
+        ? { ...f, fechaNac: '', lugarNac: '', padre: '', madre: '', hogar: '', tec: '', full: '', plano: '', biometria: '', biometriaTipo: '',
             cuotaInstalacion: esWin && esRuc20(f.paquete) ? f.cuotaInstalacion : '',
             ...(esPeruFibra ? { cantDecos: '0', adicionales: [], predio: '' } : {}) }
         : { ...f, adicionales: [] }
@@ -744,7 +747,10 @@ export default function VentaClaro() {
     ...(esClaro ? [
       ['Cuota de instalación', f.cuotaInstalacion], ['Claro Hogar', f.hogar], ['Paquete', f.paquete],
       ['Tipo de vivienda', VIVIENDAS.find(x => x[0] === f.predio)?.[1] || f.predio],
-      ['Tecnología', f.tec], ['Full Claro', f.full], ['Decos', f.cantDecos], ['Mesh', f.cantMesh], ['Plano', f.plano],
+      ['Tecnología', f.tec], ['Full Claro', f.full],
+      ['Venta con biometría', f.biometria === 'SI' ? 'Sí' : f.biometria === 'NO' ? 'No' : ''],
+      ...(f.biometria === 'SI' ? [['Tipo de biometría', f.biometriaTipo === 'BIOMETRIA AISLADA' ? 'Biometría aislada' : 'Biometría']] : []),
+      ['Decos', f.cantDecos], ['Mesh', f.cantMesh], ['Plano', f.plano],
     ] : [
       ...(esWin ? [['Región', region]] : []),
       ...(esWin ? [['Tipo de vivienda', VIVIENDAS.find(x => x[0] === f.predio)?.[1] || f.predio]] : []), ['Paquete', f.paquete],
@@ -956,6 +962,10 @@ export default function VentaClaro() {
               <Campo label="Tipo de vivienda"><Opciones valor={f.predio} opciones={VIVIENDAS} onChange={v => set('predio', v)} /></Campo>
               <Campo label="Tecnología"><Opciones valor={f.tec} opciones={TECNOLOGIAS} onChange={v => set('tec', v)} /></Campo>
               <Campo label="Full Claro"><Opciones valor={f.full} opciones={[['Si', 'Sí'], ['No', 'No']]} onChange={v => set('full', v)} /></Campo>
+              <Campo label="¿Venta con biometría?"><Opciones valor={f.biometria} opciones={[['SI', 'Sí'], ['NO', 'No']]} onChange={v => { set('biometria', v); if (v !== 'SI') set('biometriaTipo', '') }} /></Campo>
+              {f.biometria === 'SI' && (
+                <Campo label="Tipo de biometría"><Opciones valor={f.biometriaTipo} opciones={[['BIOMETRIA', 'Biometría'], ['BIOMETRIA AISLADA', 'Biometría aislada']]} onChange={v => set('biometriaTipo', v)} /></Campo>
+              )}
               <Campo label="Cantidad de decos"><Opciones valor={f.cantDecos} opciones={CANTIDADES} onChange={v => set('cantDecos', v)} /></Campo>
               <Campo label="Cantidad de mesh"><Opciones valor={f.cantMesh} opciones={CANTIDADES} onChange={v => set('cantMesh', v)} /></Campo>
               <Campo label="Plano"><input value={f.plano} onChange={e => set('plano', e.target.value.toUpperCase())} placeholder="Código de plano" /></Campo>
