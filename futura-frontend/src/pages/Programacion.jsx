@@ -55,11 +55,8 @@ function estadoVisible(v) {
     return propioProgramacion
   }
   const raw = (v.estado || '').toUpperCase()
-  if (raw === 'VALIDADO' && (v.estado_grab || '').toLowerCase() === 'grabado') {
-    return (v.estado_supgrab || '').toLowerCase() === 'aprobado'
-      ? 'GRABADO'
-      : 'GRABADA_REVISION'
-  }
+  // GRABADO pasa directo a Programación (ya no espera revisión previa de Super).
+  if (raw === 'VALIDADO' && (v.estado_grab || '').toLowerCase() === 'grabado') return 'GRABADO'
   return raw
 }
 

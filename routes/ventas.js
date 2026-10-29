@@ -1548,7 +1548,10 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
     }
 
     if (cargoEfectivo === 'grabaciones') {
-      sql += ` AND UPPER(v.estado) = 'VALIDADO'`;
+      // VALIDADO (por grabar) y las que regresan de Programación como
+      // PROGRAMADO, para revisarlas igual que Super de Grabaciones.
+      sql += ` AND (UPPER(v.estado) = 'VALIDADO'
+                OR LOWER(TRIM(COALESCE(v.estado_supgrab, ''))) = 'programado')`;
     }
 
     if (cargoEfectivo === 'seguimiento') {
@@ -1561,13 +1564,13 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
     }
 
     if (cargoEfectivo === 'programacion' || programacion === '1') {
-      // Las ventas que siguen en VALIDADO entran a Programación únicamente
-      // después de la aprobación explícita de Super de Grabaciones.
-      // Sin revisar, observadas o rechazadas no deben ser visibles aquí.
+      // Flujo actual: al marcar GRABADO la venta pasa directo a Programación
+      // (ya no espera la aprobación previa de Super de Grabaciones). Super y
+      // Grabaciones revisan después, cuando la venta vuelve como PROGRAMADO.
       sql += ` AND (UPPER(v.estado) IN (${ESTADOS_PROGRAMACION.map(() => '?').join(',')})
                 OR (UPPER(v.estado) = 'VALIDADO'
                     AND LOWER(v.estado_grab) = 'grabado'
-                    AND LOWER(COALESCE(v.estado_supgrab, 'sin_revisar')) = 'aprobado'))`;
+                    AND LOWER(COALESCE(v.estado_supgrab, 'sin_revisar')) IN ('sin_revisar', 'aprobado')))`;
       params.push(...ESTADOS_PROGRAMACION);
     }
 
@@ -2109,6 +2112,13 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     }
 
     const resultadoSuper = String(estado_supgrab || '').trim().toLowerCase();
+    // Venta que regresó de Programación: Grabaciones la revisa con los mismos
+    // resultados que Super de Grabaciones (CONFORME / NO CONFORME / RECHAZADO).
+    const grabacionesRevisaProgramado = cargoEfectivo === 'grabaciones' &&
+      String(rows[0].estado_supgrab || '').trim().toLowerCase() === 'programado';
+    if (grabacionesRevisaProgramado && !['conforme', 'no_conforme', 'rechazado'].includes(resultadoSuper)) {
+      return res.status(409).json({ ok: false, mensaje: 'Esta venta está programada. Selecciona CONFORME, NO CONFORME o RECHAZADO.' });
+    }
     if (
       cargoEfectivo === 'supgrabaciones' &&
       rows[0].tuvo_programacion &&
@@ -2120,7 +2130,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       });
     }
 
-    if (cargoEfectivo === 'grabaciones' && String(rows[0].estado || '').toUpperCase() !== 'VALIDADO') {
+    if (cargoEfectivo === 'grabaciones' && !grabacionesRevisaProgramado && String(rows[0].estado || '').toUpperCase() !== 'VALIDADO') {
       return res.status(403).json({ ok: false, mensaje: 'Solo puedes gestionar ventas con estado VALIDADO' });
     }
 

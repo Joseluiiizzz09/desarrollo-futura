@@ -864,3 +864,19 @@ body{
 .badge-canal-netcontact{background:#eef2ff;color:#4338ca;}
 .badge-canal-kels{background:#fdf4ff;color:#a21caf;}
 .badge-canal-sin{background:#f3f4f6;color:#6b7280;}
+
+/* Revisión de ventas programadas (Grabaciones hace lo mismo que Super) */
+.bg-programado{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;}
+.btn-acc-revisar{border-color:rgba(37,99,235,.35);background:#eff6ff;color:#1d4ed8;font-weight:700;}
+.btn-acc-revisar:hover{background:#dbeafe;}
+.rev-opciones{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rev-opcion{display:flex;flex-direction:column;gap:3px;padding:10px 8px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;text-align:center;}
+.rev-opcion strong{font-size:12px;font-weight:800;}
+.rev-opcion span{font-size:10px;color:#6b7280;}
+.rev-opcion.rev-conforme strong{color:#15803d;}
+.rev-opcion.rev-no_conforme strong{color:#b45309;}
+.rev-opcion.rev-rechazado strong{color:#b91c1c;}
+.rev-opcion.sel.rev-conforme{border-color:#16a34a;background:#f0fdf4;}
+.rev-opcion.sel.rev-no_conforme{border-color:#d97706;background:#fffbeb;}
+.rev-opcion.sel.rev-rechazado{border-color:#dc2626;background:#fef2f2;}
+@media(max-width:520px){.rev-opciones{grid-template-columns:1fr;}}

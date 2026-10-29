@@ -188,6 +188,11 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
 export default function Grabaciones() {
   const navigate  = useNavigate()
   const { sesion, logout } = useAuth()
+  // Revisión de ventas que regresan de Programación (como Super de Grabaciones)
+  const [modalRevisar, setModalRevisar] = useState(null)
+  const [resultadoRev, setResultadoRev] = useState('')
+  const [obsRev, setObsRev] = useState('')
+  const [guardandoRev, setGuardandoRev] = useState(false)
   const toastTimer  = useRef(null)
   const audioRef    = useRef(null)
   const fileInputRef= useRef(null)
@@ -236,6 +241,36 @@ export default function Grabaciones() {
   const [toast, setToast] = useState('')
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+  async function guardarRevision() {
+    const v = modalRevisar
+    if (!v || guardandoRev) return
+    if (!resultadoRev) { mostrarToast('Selecciona un resultado'); return }
+    setGuardandoRev(true)
+    const ahora = new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    const lineas = String(v.obs_supgrab || '').split('\n').filter(l => l.trim())
+    lineas.push(`[${ahora} - ${sesion?.nombre || 'Grabaciones'}] ${resultadoRev.toUpperCase()}${obsRev.trim() ? ' -- ' + obsRev.trim() : ''}`)
+    const obs_supgrab = lineas.join('\n')
+    // Mismos resultados que Super de Grabaciones en el segundo ciclo
+    const cuerpo = resultadoRev === 'conforme'
+      ? { estado: 'EN_EJECUCION', estado_supgrab: 'conforme', estado_grab: 'grabado' }
+      : resultadoRev === 'rechazado'
+        ? { estado: 'CAIDA', estado_supgrab: 'rechazado', estado_grab: 'grabado', motivo_seguimiento: 'RECHAZO POR AUDIO' }
+        : { estado: 'VALIDADO', estado_supgrab: 'no_conforme', estado_grab: 'grabando' }
+    try {
+      const res = await fetch(`${API}/ventas/${v.id}?area=grabaciones`, {
+        method: 'PATCH', headers: ncHeaders(), body: JSON.stringify({ obs_supgrab, ...cuerpo }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) { mostrarToast(data.mensaje || 'No se pudo guardar la revisión'); setGuardandoRev(false); return }
+      setVentas(list => resultadoRev === 'no_conforme'
+        ? list.map(x => x.id === v.id ? { ...x, estado:'VALIDADO', estado_supgrab:'no_conforme', _estadoSupGrab:'no_conforme', estado_grab:'grabando', _estadoGrab:'grabando', obs_supgrab } : x)
+        : list.filter(x => x.id !== v.id))
+      mostrarToast(resultadoRev === 'conforme' ? 'CONFORME: la venta pasó a Seguimiento' : resultadoRev === 'rechazado' ? 'Venta RECHAZADA por audio' : 'NO CONFORME: vuelve a grabarse')
+      setModalRevisar(null); setResultadoRev(''); setObsRev('')
+    } catch { mostrarToast('Error conectando al servidor') }
+    setGuardandoRev(false)
+  }
+
   function mostrarToast(msg) {
     if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast(msg)
@@ -256,18 +291,18 @@ export default function Grabaciones() {
     if (cargandoVentasRef.current) return  // evita polls solapados (respuestas fuera de orden que causan parpadeo)
     cargandoVentasRef.current = true
     try {
-      const res  = await fetch(`${API}/ventas?estado=validado`, { headers: ncHeaders() })
+      const res  = await fetch(`${API}/ventas?area=grabaciones`, { headers: ncHeaders() })
       const data = await res.json()
       if (data.ok && responseChanged(firmaVentasRef, data.data)) {
         setVentas(data.data
           .filter(v => {
             const e  = (v.estado||'').toLowerCase()
             const eg = (v.estado_grab||'').toLowerCase()
-            // Ya no depende de que `estado` cambie a 'grabado' (eso pisaría
-            // Validación). Una vez Back marca GRABADO, estado_grab='grabado'
-            // saca la venta de esta cola porque pasa a Super de Grabaciones;
-            // si Super la observa (estado_grab='observado') vuelve a aparecer.
-            return e==='validado' && eg!=='grabado'
+            // GRABADO sale de esta cola y va a Programación. Cuando
+            // Programación la programa, vuelve aquí como PROGRAMADO para
+            // revisarla (igual que Super de Grabaciones).
+            const revision = (v.estado_supgrab||'').toLowerCase()
+            return (e==='validado' && eg!=='grabado') || revision==='programado'
           })
           .map(mapVenta)
         )
@@ -715,13 +750,19 @@ export default function Grabaciones() {
                             <div className="acciones-cell">
 
                               <button className="btn-acc btn-acc-obs"    onClick={()=>abrirModalObs(v.id)}    title="Observación">Obs.</button>
-                              <button className="btn-acc btn-acc-subir"  onClick={()=>abrirModalSubir(v.id)}  title="Subir grabación">Subir</button>
-                              <button className="btn-acc btn-acc-eliminar-audio" onClick={()=>eliminarAudio(v.id)} disabled={!tieneAudio} title={tieneAudio?'Eliminar grabación':'No hay grabación para eliminar'} aria-label="Eliminar grabación">🗑</button>
+                              {String(v.estado_supgrab||'').toLowerCase()==='programado' ? (
+                                <button className="btn-acc btn-acc-revisar" onClick={()=>{ setModalRevisar(v); setResultadoRev(''); setObsRev('') }} title="Revisar la venta programada (como Super de Grabaciones)">Revisar</button>
+                              ) : (<>
+                                <button className="btn-acc btn-acc-subir"  onClick={()=>abrirModalSubir(v.id)}  title="Subir grabación">Subir</button>
+                                <button className="btn-acc btn-acc-eliminar-audio" onClick={()=>eliminarAudio(v.id)} disabled={!tieneAudio} title={tieneAudio?'Eliminar grabación':'No hay grabación para eliminar'} aria-label="Eliminar grabación">🗑</button>
+                              </>)}
                               <button className="btn-fotos btn-archivos" onClick={()=>setMediaVenta(v)} title="Ver fotos y documentos">Archivos</button>
                             </div>
                           </td>
                           <td>
-                            <EstadoGrabMenu
+                            {String(v.estado_supgrab||'').toLowerCase()==='programado'
+                              ? <span className="badge-grab bg-programado" title="Regresó de Programación: pendiente de revisión">PROGRAMADO</span>
+                              : (<EstadoGrabMenu
                               abierto={estadoAbiertoId === v.id}
                               actual={v._estadoGrab || 'pendiente'}
                               clase={eg.cls}
@@ -729,7 +770,7 @@ export default function Grabaciones() {
                               onAbrir={() => setEstadoAbiertoId(estadoAbiertoId === v.id ? null : v.id)}
                               onCerrar={() => setEstadoAbiertoId(null)}
                               onElegir={nuevo => { setEstadoAbiertoId(null); if (nuevo !== (v._estadoGrab || 'pendiente')) guardarEstado(v.id, nuevo) }}
-                            />
+                                />)}
                           </td>
                           <td><CanalBadge canal={v.canal} /></td>
                           <td>
@@ -809,6 +850,35 @@ export default function Grabaciones() {
             <div className="modal-btns">
               <button className="btn-cancelar-m" onClick={()=>setModalEstado({open:false,id:null})}>Cancelar</button>
               <button type="button" className="btn-guardar modal-guardar-estable" onClick={guardarEstado}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL REVISAR (venta programada) ═══════════════════════════════ */}
+      {modalRevisar && (
+        <div className="modal-bg open" onClick={e=>{ if(e.target===e.currentTarget && !guardandoRev) setModalRevisar(null) }}>
+          <div className="modal-box" style={{maxWidth:460}}>
+            <div className="modal-title">Revisar venta programada</div>
+            <div className="modal-sub">Cliente: <strong>{modalRevisar.nombreApellidos || modalRevisar.nombre || '—'}</strong>{modalRevisar.sot ? <> · SOT: <strong>{modalRevisar.sot}</strong></> : null}</div>
+            <div className="modal-campo">
+              <label>Resultado</label>
+              <div className="rev-opciones">
+                {[['conforme','CONFORME','Pasa a Seguimiento'],['no_conforme','NO CONFORME','Vuelve a grabarse'],['rechazado','RECHAZADO','Caída por audio']].map(([id,label,ayuda]) => (
+                  <button key={id} type="button" className={`rev-opcion rev-${id}${resultadoRev===id?' sel':''}`} onClick={()=>setResultadoRev(id)}>
+                    <strong>{label}</strong><span>{ayuda}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="modal-campo">
+              <label>Observación (opcional)</label>
+              <textarea rows={3} value={obsRev} onChange={e=>setObsRev(e.target.value)} placeholder="Escribe una observación…" />
+            </div>
+            <div className="modal-sub" style={{marginTop:4}}>Para escuchar el audio usa el botón <strong>Archivos</strong>.</div>
+            <div className="modal-btns">
+              <button className="btn-cancelar-m" onClick={()=>setModalRevisar(null)} disabled={guardandoRev}>Cancelar</button>
+              <button type="button" className="btn-guardar modal-guardar-estable" onClick={guardarRevision} disabled={guardandoRev || !resultadoRev}>{guardandoRev ? 'Guardando…' : 'Guardar'}</button>
             </div>
           </div>
         </div>

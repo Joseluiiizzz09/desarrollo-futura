@@ -122,9 +122,11 @@ export default function SupGrabaciones() {
           // permanece visible aunque luego continúe en Programación o vuelva
           // a Grabaciones. Esto no modifica las colas de las otras áreas.
           .filter(v => {
-            const grab = (v.estado_grab || '').toLowerCase()
+            // Super revisa solo desde que la venta vuelve de Programación
+            // (PROGRAMADO) y conserva su resultado como historial. Lo recién
+            // GRABADO ya no pasa por aquí: va directo a Programación.
             const revision = (v.estado_supgrab || '').toLowerCase()
-            return revision !== 'conforme' && (revision !== '' || grab === 'grabado')
+            return ['programado', 'no_conforme', 'rechazado', 'audio_subido'].includes(revision)
           })
           .map(v => ({
             ...v,
