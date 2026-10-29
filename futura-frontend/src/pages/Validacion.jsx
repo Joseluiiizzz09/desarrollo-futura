@@ -44,7 +44,6 @@ const TIP_BTNS = [
 ]
 
 const CANAL_BTNS = [
-  { id:'NETCONTACT', label:'NETCONTACT', cls:'be-canal-netcontact' },
   { id:'KELS',       label:'KELS',       cls:'be-canal-kels' },
 ]
 
@@ -307,7 +306,7 @@ export default function Validacion() {
     }
 
     if ((tipSel === 'venta' || tipSel === 'validado') && !canalSel && !v.canal) {
-      mostrarToast('Selecciona el canal (NETCONTACT o KELS) antes de guardar')
+      mostrarToast('Selecciona el canal (KELS) antes de guardar')
       return
     }
 
