@@ -55,9 +55,9 @@ function InicioAutorizado() {
   return <Navigate to={sesion ? rutaInicialAutorizada(sesion) : '/login'} replace />
 }
 
-// Entrando por la IP del servidor (http://185.253.152.62) solo existe el
+// Entrando por vexa.net.pe (o por la IP del servidor) solo existe el
 // formulario público de ventas: sin login ni el resto del sistema.
-const SOLO_FORMULARIO = /^\d{1,3}(\.\d{1,3}){3}$/.test(window.location.hostname)
+const SOLO_FORMULARIO = /^(\d{1,3}(\.\d{1,3}){3}|(www\.)?vexa\.net\.pe)$/i.test(window.location.hostname)
 
 export default function App() {
   if (SOLO_FORMULARIO) return <Suspense fallback={<RouteLoader />}><VentaClaro /></Suspense>

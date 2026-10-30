@@ -482,8 +482,8 @@ export default function VentaClaro() {
 
   useEffect(() => {
     document.title = 'Registrar venta'
-    // Entrando por la dirección con números no se muestra la marca en la pestaña
-    if (/^[0-9.]+$/.test(window.location.hostname)) {
+    // Entrando por vexa.net.pe (o la IP) no se muestra la marca en la pestaña
+    if (/^([0-9.]+|(www\.)?vexa\.net\.pe)$/i.test(window.location.hostname)) {
       const icono = document.querySelector('link[rel~="icon"]')
       if (icono) icono.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#111827"/><path d="M9 16.5l4.5 4.5L23 11.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>')
     }
