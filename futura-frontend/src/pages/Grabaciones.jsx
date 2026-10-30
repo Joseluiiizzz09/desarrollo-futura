@@ -26,6 +26,13 @@ const ESTADOS_GRAB = [
 // Estados que ya no aparecen en el selector de Back/Grabaciones pero que otros
 // módulos (Super de Grabaciones) siguen usando internamente — se conservan
 // aquí solo para que la tabla los siga rotulando correctamente.
+// Tipificaciones de una venta que regresa de Programación (como Super de Grabaciones)
+const RESULTADOS_PROGRAMADO = [
+  { id:'conforme',    label:'CONFORME',    cls:'bg-grabado'    },
+  { id:'no_conforme', label:'NO CONFORME', cls:'bg-nocontesta' },
+  { id:'rechazado',   label:'RECHAZADO',   cls:'bg-nodesea'    },
+]
+
 const ESTADOS_GRAB_BADGE = [
   ...ESTADOS_GRAB,
   { id:'observado', label:'OBSERVADO', cls:'bg-observado' },
@@ -133,7 +140,7 @@ function Paginacion({ total, pagina, porPagina, onChange }) {
 // Etiqueta de estado clicable: abre debajo una lista con las tipificaciones.
 // La lista va en un portal con posición fija para que la tabla (que tiene
 // scroll horizontal) no la recorte.
-function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, onElegir }) {
+function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, onElegir, opciones = ESTADOS_GRAB, titulo = 'Clic para cambiar el estado' }) {
   const btnRef = useRef(null)
   const listaRef = useRef(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
@@ -142,7 +149,7 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
     const r = btnRef.current?.getBoundingClientRect()
     if (r) {
       // Abre hacia abajo; si no hay espacio suficiente, hacia arriba.
-      const alto = Math.min(ESTADOS_GRAB.length * 38 + 16, window.innerHeight - 24)
+      const alto = Math.min(opciones.length * 38 + 16, window.innerHeight - 24)
       const abajo = window.innerHeight - r.bottom - 12
       const top = abajo >= alto ? r.bottom + 6 : Math.max(12, r.top - alto - 6)
       setPos({ top, left: Math.min(r.left, window.innerWidth - 220) })
@@ -168,12 +175,12 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
   return (
     <>
       <button ref={btnRef} type="button" className={`badge-grab ${clase} badge-grab-clic`} onClick={onAbrir}
-        aria-haspopup="listbox" aria-expanded={abierto} title="Clic para cambiar el estado">
+        aria-haspopup="listbox" aria-expanded={abierto} title={titulo}>
         {etiqueta} <span className="badge-grab-flecha">▾</span>
       </button>
       {abierto && createPortal(
         <div ref={listaRef} className="grab-estado-menu" role="listbox" style={{ top: pos.top, left: pos.left }}>
-          {ESTADOS_GRAB.map(e => (
+          {opciones.map(e => (
             <button key={e.id} type="button" role="option" aria-selected={e.id === actual}
               className={`grab-estado-opcion${e.id === actual ? ' activo' : ''}`} onClick={() => onElegir(e.id)}>
               <span className={`badge-grab ${e.cls}`}>{e.label}</span>
@@ -752,9 +759,7 @@ export default function Grabaciones() {
                             <div className="acciones-cell">
 
                               <button className="btn-acc btn-acc-obs"    onClick={()=>abrirModalObs(v.id)}    title="Observación">Obs.</button>
-                              {String(v.estado_supgrab||'').toLowerCase()==='programado' ? (
-                                <button className="btn-acc btn-acc-revisar" onClick={()=>{ setModalRevisar(v); setResultadoRev(''); setObsRev('') }} title="Revisar la venta programada (como Super de Grabaciones)">Revisar</button>
-                              ) : (<>
+                              {String(v.estado_supgrab||'').toLowerCase()!=='programado' && (<>
                                 <button className="btn-acc btn-acc-subir"  onClick={()=>abrirModalSubir(v.id)}  title="Subir grabación">Subir</button>
                                 <button className="btn-acc btn-acc-eliminar-audio" onClick={()=>eliminarAudio(v.id)} disabled={!tieneAudio} title={tieneAudio?'Eliminar grabación':'No hay grabación para eliminar'} aria-label="Eliminar grabación">🗑</button>
                               </>)}
@@ -763,7 +768,17 @@ export default function Grabaciones() {
                           </td>
                           <td>
                             {String(v.estado_supgrab||'').toLowerCase()==='programado'
-                              ? <span className="badge-grab bg-programado" title="Regresó de Programación: pendiente de revisión">PROGRAMADO</span>
+                              ? (<EstadoGrabMenu
+                              abierto={estadoAbiertoId === v.id}
+                              actual="programado"
+                              clase="bg-programado"
+                              etiqueta="PROGRAMADO"
+                              opciones={RESULTADOS_PROGRAMADO}
+                              titulo="Regresó de Programación: clic para tipificar"
+                              onAbrir={() => setEstadoAbiertoId(estadoAbiertoId === v.id ? null : v.id)}
+                              onCerrar={() => setEstadoAbiertoId(null)}
+                              onElegir={res => { setEstadoAbiertoId(null); setModalRevisar(v); setResultadoRev(res); setObsRev('') }}
+                                />)
                               : (<EstadoGrabMenu
                               abierto={estadoAbiertoId === v.id}
                               actual={v._estadoGrab || 'pendiente'}

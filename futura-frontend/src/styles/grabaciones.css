@@ -867,8 +867,6 @@ body{
 
 /* Revisión de ventas programadas (Grabaciones hace lo mismo que Super) */
 .bg-programado{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;}
-.btn-acc-revisar{border-color:rgba(37,99,235,.35);background:#eff6ff;color:#1d4ed8;font-weight:700;}
-.btn-acc-revisar:hover{background:#dbeafe;}
 .rev-opciones{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .rev-opcion{display:flex;flex-direction:column;gap:3px;padding:10px 8px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;text-align:center;}
 .rev-opcion strong{font-size:12px;font-weight:800;}
