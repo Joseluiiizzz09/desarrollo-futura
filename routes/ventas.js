@@ -2301,7 +2301,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
 // ===== PATCH /api/ventas/:id/datos — editar datos básicos del cliente =====
 // Solo modifica campos del cliente (nombre, DNI, teléfono, dirección, paquete, etc.)
 // No toca: estado, estado_grab, estado_supgrab, observaciones operativas, audio.
-router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios']), async (req, res) => {
+router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios','validacion']), async (req, res) => {
   const conn = await db.getConnection();
   try {
     const ventaId = Number(req.params.id);

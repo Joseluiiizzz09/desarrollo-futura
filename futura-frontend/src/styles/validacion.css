@@ -747,8 +747,8 @@ body{
 .validacion-page .tabla-count{background:#ef4444;color:#fff;box-shadow:0 2px 8px rgba(239,68,68,.25);}
 .validacion-page .tabla-scroll{max-height:calc(100vh - 315px);}
 .validacion-page .tabla tbody td{padding:8px 10px;font-size:11px;}
-.validacion-page .th-accion{width:150px!important;min-width:150px!important;max-width:150px!important;}
-.validacion-page .tabla tbody td:first-child{width:150px!important;min-width:150px!important;max-width:150px!important;padding:6px 8px!important;}
+.validacion-page .th-accion{width:195px!important;min-width:195px!important;max-width:195px!important;}
+.validacion-page .tabla tbody td:first-child{width:195px!important;min-width:195px!important;max-width:195px!important;padding:6px 8px!important;}
 .validacion-page .acciones-cell{justify-content:center!important;gap:5px!important;flex-wrap:nowrap!important;}
 .validacion-page .acciones-cell .btn-accion-row,
 .validacion-page .acciones-cell .btn-fotos{width:28px!important;height:28px!important;min-height:28px!important;padding:0!important;border-radius:8px!important;font-size:12px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;}

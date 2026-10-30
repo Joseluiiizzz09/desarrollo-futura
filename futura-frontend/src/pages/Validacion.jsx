@@ -6,6 +6,7 @@ import MediaViewer from '../components/MediaViewer'
 import CanalBadge from '../components/CanalBadge'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import VentaDetalleModal from '../components/VentaDetalleModal'
+import { VentaEditarModal } from '../components/VentaEditarModal'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/validacion.css'
@@ -176,6 +177,7 @@ export default function Validacion() {
   const navigate = useNavigate()
   const { sesion, logout } = useAuth()
   const [ventaDetalle, setVentaDetalle] = useState(null)
+  const [ventaEditar, setVentaEditar] = useState(null)
   const toastTimer = useRef(null)
 
   // ── Data ──
@@ -526,6 +528,7 @@ export default function Validacion() {
                               <button className="val-acc-btn" onClick={()=>abrirModalObs(v.id)} title="Ver historial y observar" aria-label="Ver historial y observar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
                               <button className="val-acc-btn" onClick={()=>setMediaVenta(v)} title="Ver fotos y audio" aria-label="Ver fotos y audio"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
                               <button className="val-acc-btn val-acc-texto" onClick={()=>setVentaDetalle(v)} title="Ver todos los datos de la venta">Venta</button>
+                              <button className="val-acc-btn" onClick={()=>setVentaEditar(v)} title="Editar datos de la venta" aria-label="Editar datos de la venta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
                             </div>
                           </td>
                           <td style={{verticalAlign:'middle'}}>
@@ -597,6 +600,13 @@ export default function Validacion() {
       </div>
 
       <VentaDetalleModal venta={ventaDetalle} onClose={()=>setVentaDetalle(null)} />
+      {ventaEditar && (
+        <VentaEditarModal
+          venta={ventaEditar}
+          onClose={()=>setVentaEditar(null)}
+          onSuccess={()=>{ setVentaEditar(null); cargarVentas(); mostrarToast('Datos de la venta actualizados') }}
+        />
+      )}
       <MediaViewer
         open={!!mediaVenta}
         onClose={()=>setMediaVenta(null)}
