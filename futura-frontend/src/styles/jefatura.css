@@ -718,7 +718,7 @@ body {
 
 .tabla-usuarios-pro {
   width: 100%;
-  min-width: 1440px;
+  min-width: 1100px;
   table-layout: fixed;
 }
 
@@ -728,34 +728,14 @@ body {
   vertical-align: middle;
 }
 
-.tabla-usuarios-pro th:nth-child(1),
-.tabla-usuarios-pro td:nth-child(1) {
-  width: 290px;
-  min-width: 290px;
-  max-width: 290px;
-}
+/* Nombre y cargos pueden ocupar dos líneas; así la tabla entra completa
+   en pantalla y las acciones no quedan cortadas. */
+.tabla-usuarios-pro td:nth-child(1) { white-space: normal; }
+.tabla-usuarios-pro td:nth-child(1) > div > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+.tabla-usuarios-pro td:nth-child(4) { overflow: hidden; text-overflow: ellipsis; }
+.tabla-usuarios-pro td:nth-child(2) .usuario-cargos { width: 100%; min-width: 0; }
 
-.tabla-usuarios-pro th:nth-child(2),
-.tabla-usuarios-pro td:nth-child(2) {
-  width: 290px;
-  min-width: 290px;
-  max-width: 290px;
-  overflow: hidden;
-  text-overflow: clip;
-}
-
-.tabla-usuarios-pro td:nth-child(2) .usuario-cargos {
-  width: 100%;
-  min-width: 0;
-}
-
-.tabla-usuarios-pro th:nth-child(7),
-.tabla-usuarios-pro td:nth-child(7) {
-  width: 350px;
-  min-width: 350px;
-  max-width: 350px;
-  overflow: visible;
-}
+.jef-root .tabla-usuarios-pro .acc-cell { flex-wrap: wrap; gap: 5px; }
 
 /* ===== AJUSTE LOGO / MARCA JEFATURA =====
    Estilo limpio como referencia: topbar completo, logo compacto y alineado. */
