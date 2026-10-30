@@ -328,7 +328,9 @@ export default function Grabaciones() {
   const kpis = useMemo(() => {
     const hoy = fechaHoy()
     return {
-      hoy:        ventas.filter(v => v._fechaGrab === hoy).length,
+      // El servidor guarda la hora de Madrid (+6 h): una venta validada de noche
+      // en Perú llega con fecha de "mañana"; se cuenta como de hoy.
+      hoy:        ventas.filter(v => v._fechaGrab >= hoy).length,
       pendientes: ventas.filter(v => v._fechaGrab < hoy).length,
       grabados:   ventas.filter(v => v._estadoGrab === 'grabado').length,
       observados: ventas.filter(v => v._estadoGrab === 'observado').length,
@@ -338,7 +340,7 @@ export default function Grabaciones() {
   const ventasFiltradas = useMemo(() => {
     const hoy  = fechaHoy()
     const base = tabActiva === 'hoy'
-      ? ventas.filter(v => v._fechaGrab === hoy)
+      ? ventas.filter(v => v._fechaGrab >= hoy)
       : ventas.filter(v => v._fechaGrab < hoy)
     return base.filter(v => {
       if (fVendedor && !(v.vendedor||'').toLowerCase().includes(fVendedor.toLowerCase())) return false
