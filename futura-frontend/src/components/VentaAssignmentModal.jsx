@@ -141,6 +141,7 @@ function etiquetaCargo(cargo) {
     grabaciones: 'Grabaciones',
     supgrabaciones: 'Supervisión de grabaciones',
     supcalidad: 'Supervisión de calidad',
+    supcampo: 'Supervisor Campo',
     programacion: 'Programación',
     seguimiento: 'Seguimiento',
     jefatura: 'Jefatura',

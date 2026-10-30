@@ -13,6 +13,7 @@ const CARGO_CLASE = {
   asesor:        'bc-asesor',
   campo:         'bc-asesor',
   supervisor:    'bc-supervisor',
+  supcampo:      'bc-supervisor',
   backoffice:    'bc-backoffice',
   validacion:    'bc-validacion',
   grabaciones:   'bc-grabaciones',
@@ -33,6 +34,7 @@ const CARGOS = [
   { value: 'asesor',         label: 'Asesor'           },
   { value: 'campo',          label: 'Campo'            },
   { value: 'supervisor',     label: 'Supervisor'       },
+  { value: 'supcampo',       label: 'Supervisor Campo' },
   { value: 'backoffice',     label: 'Back Office'      },
   { value: 'validacion',     label: 'Validación'       },
   { value: 'grabaciones',    label: 'Grabaciones'      },
@@ -396,6 +398,7 @@ export default function Usuarios() {
                     <option value="SALA 1">Sala 1</option>
                     <option value="SALA 2">Sala 2</option>
                     <option value="CAMPO">Campo</option>
+                    {Array.from({ length: 10 }, (_, i) => <option key={i} value={`CAMPO ${i + 1}`}>Campo {i + 1}</option>)}
                   </select>
                 </div>
                 <div className="campo">

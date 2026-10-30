@@ -75,6 +75,7 @@ export default function App() {
       <Route path="/campo"         element={<PrivateRoute cargo="campo"><Campo /></PrivateRoute>} />
       <Route path="/backoffice"    element={<PrivateRoute cargo="backoffice"><Backoffice /></PrivateRoute>} />
       <Route path="/supervisor"    element={<PrivateRoute cargo="supervisor"><Supervisor /></PrivateRoute>} />
+      <Route path="/sup-campo"     element={<PrivateRoute cargo="supcampo"><Supervisor area="supcampo" /></PrivateRoute>} />
       <Route path="/validacion"    element={<PrivateRoute cargo="validacion"><Validacion /></PrivateRoute>} />
       <Route path="/seguimiento"   element={<PrivateRoute cargo="seguimiento"><Seguimiento /></PrivateRoute>} />
       <Route path="/grabaciones"   element={<PrivateRoute cargo="grabaciones"><Grabaciones /></PrivateRoute>} />

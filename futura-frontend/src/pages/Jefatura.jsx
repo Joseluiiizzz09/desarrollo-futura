@@ -30,6 +30,7 @@ const CARGOS = [
   { id:'asesor',         label:'Asesor',           cls:'bc-asesor'         },
   { id:'campo',          label:'Campo',            cls:'bc-asesor'         },
   { id:'supervisor',     label:'Supervisor',        cls:'bc-supervisor'     },
+  { id:'supcampo',       label:'Supervisor Campo',  cls:'bc-supervisor'     },
   { id:'backoffice',     label:'Back Data',         cls:'bc-backoffice'     },
   { id:'validacion',     label:'Validación',        cls:'bc-validacion'     },
   { id:'grabaciones',    label:'Grabaciones',       cls:'bc-grabaciones'    },
@@ -46,7 +47,8 @@ const CARGOS = [
   { id:'capacitador',   label:'Capacitación',  cls:'bc-capacitador'   },
   { id:'marketing',     label:'Marketing',     cls:'bc-marketing'     },
 ]
-const SALAS = ['SALA 1','SALA 2','CAMPO']
+// CAMPO 1–10: equipos de Supervisor Campo; sus asesores de campo usan el mismo equipo.
+const SALAS = ['SALA 1','SALA 2','CAMPO','CAMPO 1','CAMPO 2','CAMPO 3','CAMPO 4','CAMPO 5','CAMPO 6','CAMPO 7','CAMPO 8','CAMPO 9','CAMPO 10']
 const TIPIFICACIONES_ENTREVISTA = ['NO CONTESTA','DESISTE','REPROGRAMA','CORTA LLAMADA','ASISTE','EN CAMINO','FALTA']
 const TURNOS_ENTREVISTA = ['TURNO 1','TURNO 2']
 
@@ -115,6 +117,7 @@ const ACCESOS_MODS = [
   { nombre:'Grabaciones',      desc:'Auditoría de llamadas',         icon:'mic',       path:'/grabaciones',     color:'#0f766e', cargo:'grabaciones' },
   { nombre:'Seguimiento',      desc:'Seguimiento postventa',         icon:'activity',  path:'/seguimiento',     color:'#0284c7', cargo:'seguimiento' },
   { nombre:'Supervisor',       desc:'Gestión de equipos y salas',    icon:'briefcase', path:'/supervisor',      color:'#7c3aed', cargo:'supervisor' },
+  { nombre:'Supervisor Campo', desc:'Equipos de asesores de campo',  icon:'briefcase', path:'/sup-campo',       color:'#0891b2', cargo:'supcampo' },
   { nombre:'Dashboard CRM',    desc:'Panel individual del asesor',   icon:'chart',     path:'/dashboard',       color:'#2563eb', cargo:'asesor' },
   { nombre:'Campo',            desc:'Panel individual de campo',    icon:'chart',     path:'/campo',           color:'#0891b2', cargo:'campo' },
   { nombre:'Gestión Usuarios', desc:'Administración de accesos',     icon:'users',     path:'/usuarios',        color:'#be185d', cargo:'usuarios' },

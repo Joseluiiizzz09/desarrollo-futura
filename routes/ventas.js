@@ -7,7 +7,7 @@ const path     = require('path');
 const fs       = require('fs');
 const { validar, errorTexto, errorEmail, errorDni, errorFecha, errorEnteroPositivo, errorId, errorEnum, TIPO_DOC_OK } = require('../middleware/validar');
 
-const ROLES_VENTAS       = ['asesor','campo','supervisor','backoffice','validacion','grabaciones','seguimiento','jefatura','usuarios','programacion','cobranzas','calidad','supcalidad','supgrabaciones'];
+const ROLES_VENTAS       = ['asesor','campo','supervisor','supcampo','backoffice','validacion','grabaciones','seguimiento','jefatura','usuarios','programacion','cobranzas','calidad','supcalidad','supgrabaciones'];
 const esCargoAsesor = cargo => ['asesor', 'campo'].includes(String(cargo || '').trim().toLowerCase());
 const CACHE_VENTAS_TTL = 5000;
 const cacheVentas = new Map();
@@ -163,6 +163,7 @@ function supervisorPuedeGestionar(actor, venta) {
 const MODULOS_POR_CARGO = {
   asesor: 'Asesor',
   supervisor: 'Supervisor',
+  supcampo: 'Supervisor Campo',
   backoffice: 'Back Data',
   validacion: 'Validación',
   grabaciones: 'Grabaciones',
@@ -1537,7 +1538,7 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
     if (alcance === 'sala') {
       const actor = await obtenerActor(db, req.user.id);
       const permisos = Array.isArray(req.user.permisos) ? req.user.permisos : [];
-      if (!actor || (req.user.cargo !== 'supervisor' && !permisos.includes('supervisor'))) {
+      if (!actor || (!['supervisor','supcampo'].includes(req.user.cargo) && !permisos.includes('supervisor') && !permisos.includes('supcampo'))) {
         return res.status(403).json({ ok: false, mensaje: 'Sin permiso para consultar ventas por sala' });
       }
       if (!salaNormalizada(actor.sala)) {
@@ -1591,7 +1592,7 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
 });
 
 // ===== PATCH /api/ventas/:id/reasignar =====
-router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res) => {
+router.patch('/:id/reasignar', auth(['supervisor','supcampo','jefatura']), async (req, res) => {
   const ventaId = Number(req.params.id);
   const asesorNuevoId = Number(req.body?.asesor_id);
   if (!Number.isInteger(ventaId) || ventaId <= 0 || !Number.isInteger(asesorNuevoId) || asesorNuevoId <= 0) {
@@ -1602,7 +1603,7 @@ router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res)
   try {
     await conn.beginTransaction();
     const actor = await obtenerActor(conn, req.user.id);
-    if (!actor || !actor.activo || !['supervisor','jefatura'].includes(actor.cargo)) {
+    if (!actor || !actor.activo || !['supervisor','supcampo','jefatura'].includes(actor.cargo)) {
       await conn.rollback();
       return res.status(403).json({ ok: false, mensaje: 'No tienes permiso para reasignar ventas.' });
     }
@@ -1629,7 +1630,7 @@ router.patch('/:id/reasignar', auth(['supervisor','jefatura']), async (req, res)
       return res.status(400).json({ ok: false, mensaje: 'La venta ya pertenece a ese asesor.' });
     }
 
-    if (actor.cargo === 'supervisor') {
+    if (['supervisor','supcampo'].includes(actor.cargo)) {
       if (!supervisorPuedeGestionar(actor, venta)) {
         await conn.rollback();
         return res.status(403).json({ ok: false, mensaje: 'Solo puedes gestionar ventas de tu sala.' });
@@ -2301,7 +2302,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
 // ===== PATCH /api/ventas/:id/datos — editar datos básicos del cliente =====
 // Solo modifica campos del cliente (nombre, DNI, teléfono, dirección, paquete, etc.)
 // No toca: estado, estado_grab, estado_supgrab, observaciones operativas, audio.
-router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios','validacion']), async (req, res) => {
+router.patch('/:id/datos', auth(['supervisor','supcampo','jefatura','seguimiento','usuarios','validacion']), async (req, res) => {
   const conn = await db.getConnection();
   try {
     const ventaId = Number(req.params.id);
@@ -2353,7 +2354,7 @@ router.patch('/:id/datos', auth(['supervisor','jefatura','seguimiento','usuarios
     const venta = await obtenerVentaConAsesor(conn, ventaId);
     if (!venta) return res.status(404).json({ ok: false, mensaje: 'Venta no encontrada.' });
 
-    if (req.user.cargo === 'supervisor') {
+    if (['supervisor','supcampo'].includes(req.user.cargo)) {
       const actor = await obtenerActor(conn, req.user.id);
       if (!supervisorPuedeGestionar(actor, venta))
         return res.status(403).json({ ok: false, mensaje: 'Solo puedes editar ventas de tu sala.' });
@@ -2653,15 +2654,15 @@ router.delete('/:id/fotos/:fotoId', auth(ROLES_VENTAS), async (req, res) => {
 });
 
 // ===== DELETE /api/ventas/:id =====
-router.delete('/:id', auth(['supervisor','jefatura']), async (req, res) => {
+router.delete('/:id', auth(['supervisor','supcampo','jefatura']), async (req, res) => {
   try {
     const actor = await obtenerActor(db, req.user.id);
     const venta = await obtenerVentaConAsesor(db, req.params.id);
     if (!venta) return res.status(404).json({ ok: false, mensaje: 'Venta no encontrada' });
-    if (!actor || !actor.activo || !['supervisor','jefatura'].includes(actor.cargo)) {
+    if (!actor || !actor.activo || !['supervisor','supcampo','jefatura'].includes(actor.cargo)) {
       return res.status(403).json({ ok: false, mensaje: 'No tienes permiso para eliminar ventas.' });
     }
-    if (actor.cargo === 'supervisor' && !supervisorPuedeGestionar(actor, venta)) {
+    if (['supervisor','supcampo'].includes(actor.cargo) && !supervisorPuedeGestionar(actor, venta)) {
       return res.status(403).json({ ok: false, mensaje: 'Solo puedes eliminar ventas de tu sala.' });
     }
 

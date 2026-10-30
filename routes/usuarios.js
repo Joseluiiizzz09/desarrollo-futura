@@ -10,7 +10,7 @@ const { validar, errorTexto, errorEnum, errorPermisos, GENERO_OK } = require('..
 const { desbloquearLogin } = require('../security/loginRateLimit');
 
 const ROLES = ['jefatura','usuarios'];
-const CARGOS_VALIDOS = ['jefatura','usuarios','supervisor','backoffice','asesor','campo','validacion','grabaciones','seguimiento','programacion','cobranzas','calidad','supcalidad','supgrabaciones','backreclutamiento','entrevistas','capacitador','marketing'];
+const CARGOS_VALIDOS = ['jefatura','usuarios','supervisor','supcampo','backoffice','asesor','campo','validacion','grabaciones','seguimiento','programacion','cobranzas','calidad','supcalidad','supgrabaciones','backreclutamiento','entrevistas','capacitador','marketing'];
 
 function normalizarPermisos(permisos) {
   if (!Array.isArray(permisos)) return [];
@@ -26,7 +26,7 @@ function normalizarNombrePersonal(nombre) {
 }
 
 // GET todos
-router.get('/', auth(['jefatura','usuarios','backoffice','supervisor','backreclutamiento']), async (req, res) => {
+router.get('/', auth(['jefatura','usuarios','backoffice','supervisor','supcampo','backreclutamiento']), async (req, res) => {
   try {
     const [lista] = await db.query(`
       SELECT id, nombre, usuario, cargo, sala, genero, activo, permisos, created_at

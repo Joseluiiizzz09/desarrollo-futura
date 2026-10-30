@@ -7,7 +7,7 @@ const db      = require('../database');
 const auth    = require('../middleware/auth');
 
 // POST â€” publicar frase
-router.post('/', auth(['supervisor','jefatura']), async (req, res) => {
+router.post('/', auth(['supervisor','supcampo','jefatura']), async (req, res) => {
   try {
     const { texto, sala } = req.body;
     if (!texto?.trim()) return res.status(400).json({ ok:false, mensaje:'El texto es obligatorio' });
@@ -23,7 +23,7 @@ router.post('/', auth(['supervisor','jefatura']), async (req, res) => {
 });
 
 // GET â€” frases de hoy
-router.get('/', auth(['asesor','supervisor','backoffice','validacion','grabaciones','seguimiento','jefatura']), async (req, res) => {
+router.get('/', auth(['asesor','supervisor','supcampo','backoffice','validacion','grabaciones','seguimiento','jefatura']), async (req, res) => {
   try {
     const { sala } = req.query;
     const ahora=new Date();const peru=new Date(ahora.getTime()+ahora.getTimezoneOffset()*60000+(-5*60*60000));const hoy=peru.getFullYear()+'-'+String(peru.getMonth()+1).padStart(2,'0')+'-'+String(peru.getDate()).padStart(2,'0');
@@ -44,7 +44,7 @@ router.get('/', auth(['asesor','supervisor','backoffice','validacion','grabacion
 });
 
 // DELETE
-router.delete('/:id', auth(['supervisor','jefatura']), async (req, res) => {
+router.delete('/:id', auth(['supervisor','supcampo','jefatura']), async (req, res) => {
   try {
     const [rows] = await db.query(`SELECT supervisor_id FROM frases WHERE id = ?`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ ok:false, mensaje:'Frase no encontrada' });

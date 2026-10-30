@@ -188,7 +188,11 @@ function BadgeEstado({ id, grabandoPorNombre, fraudeProgramacion }) {
 }
 
 // â”€â”€ Componente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export default function Supervisor() {
+// area="supcampo": Supervisor Campo. Mismo panel, pero con los asesores de
+// campo de su equipo (CAMPO 1–10) en lugar de los asesores de sala.
+export default function Supervisor({ area = 'supervisor' }) {
+  const esCampo = area === 'supcampo'
+  const cargoAsesores = esCampo ? 'campo' : 'asesor'
   const navigate   = useNavigate()
   const { sesion, logout } = useAuth()
   const toastTimer = useRef(null)
@@ -198,7 +202,7 @@ export default function Supervisor() {
   const chartInst = useRef({})
 
   // â”€â”€ Session â”€â”€
-  const salaActual    = sesion?.sala || 'SALA 1'
+  const salaActual    = sesion?.sala || (esCampo ? '' : 'SALA 1')
   const supervisorNom = sesion?.nombre || 'Supervisor'
 
   // â”€â”€ Section / period â”€â”€
@@ -305,8 +309,8 @@ export default function Supervisor() {
 
   // â”€â”€ Computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const asesoresSala = useMemo(() =>
-    asesores.filter(a => !salaActual || normalizarSala(a.sala) === normalizarSala(salaActual)),
-  [asesores, salaActual])
+    asesores.filter(a => (!salaActual && !esCampo) || normalizarSala(a.sala) === normalizarSala(salaActual)),
+  [asesores, salaActual, esCampo])
 
   const todasVentas = useMemo(() => {
     if (!salaActual) return ventas
@@ -443,7 +447,7 @@ export default function Supervisor() {
         fetch(`${API}/ventas?alcance=sala`, { headers: ncHeaders() }),
       ])
       const [dU, dV] = await Promise.all([rU.json(), rV.json()])
-      if (dU.ok && responseChanged(firmaAsesoresRef, dU.data)) setAsesores(dU.data.filter(u=>usuarioTieneCargo(u,'asesor')&&u.activo))
+      if (dU.ok && responseChanged(firmaAsesoresRef, dU.data)) setAsesores(dU.data.filter(u=>usuarioTieneCargo(u,cargoAsesores)&&u.activo))
       if (dV.ok && responseChanged(firmaVentasRef, dV.data)) setVentas(dV.data.map(v => ({
         ...v,
         asesor:   v.asesor_nombre || '',
@@ -457,7 +461,7 @@ export default function Supervisor() {
       })))
     } catch(e) { console.error(e) }
     finally { cargandoDatosRef.current = false }
-  }, [])
+  }, [cargoAsesores])
 
   const cargarFrases = useCallback(async () => {
     try {
@@ -659,7 +663,7 @@ export default function Supervisor() {
           </div>
           <div className="topbar-brand-text">
             <img src="/assets/futura-wordmark.png" alt="FUTURA" style={{height:22,width:"auto",display:"block"}} />
-            <span className="brand-sub">Supervisor</span>
+            <span className="brand-sub">{esCampo ? 'Supervisor Campo' : 'Supervisor'}</span>
           </div>
           <button
             type="button"
