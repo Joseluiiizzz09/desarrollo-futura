@@ -200,6 +200,7 @@ export default function Grabaciones() {
   const [resultadoRev, setResultadoRev] = useState('')
   const [obsRev, setObsRev] = useState('')
   const [guardandoRev, setGuardandoRev] = useState(false)
+  const [revAudio, setRevAudio] = useState({ src:'', cargando:false, error:'' })
   const toastTimer  = useRef(null)
   const audioRef    = useRef(null)
   const fileInputRef= useRef(null)
@@ -514,6 +515,20 @@ export default function Grabaciones() {
     setModalSubir({ open:false, id:null })
     setArchivoSel(null); setSubirInfo(''); setSubirLoading(false)
   }
+
+  // Audio de la venta dentro del modal de revisión, para oírlo antes de tipificar.
+  const revisarId = modalRevisar?.id
+  const revisarAudio = modalRevisar?._grabAudio
+  useEffect(() => {
+    if (!revisarId) return undefined
+    if (!revisarAudio) { setRevAudio({ src:'', cargando:false, error:'Esta venta no tiene grabación.' }); return undefined }
+    let vivo = true, blobUrl = ''
+    setRevAudio({ src:'', cargando:true, error:'' })
+    prepararAudioUrl(revisarAudio)
+      .then(url => { blobUrl = url; if (vivo) setRevAudio({ src:url, cargando:false, error:'' }); else URL.revokeObjectURL(url) })
+      .catch(() => { if (vivo) setRevAudio({ src:'', cargando:false, error:'No se pudo cargar el audio. Revisa que el archivo exista.' }) })
+    return () => { vivo = false; if (blobUrl) URL.revokeObjectURL(blobUrl) }
+  }, [revisarId, revisarAudio])
 
   // ── Modal Audio ───────────────────────────────────────────────────────────
   async function prepararAudioUrl(ruta) {
@@ -889,10 +904,17 @@ export default function Grabaciones() {
               </div>
             </div>
             <div className="modal-campo">
+              <label>Audio de la grabación</label>
+              {revAudio.cargando
+                ? <div className="modal-sub">Cargando audio…</div>
+                : revAudio.src
+                  ? <audio src={revAudio.src} controls style={{width:'100%',height:40}} />
+                  : <div className="modal-sub">{revAudio.error}</div>}
+            </div>
+            <div className="modal-campo">
               <label>Observación (opcional)</label>
               <textarea rows={3} value={obsRev} onChange={e=>setObsRev(e.target.value)} placeholder="Escribe una observación…" />
             </div>
-            <div className="modal-sub" style={{marginTop:4}}>Para escuchar el audio usa el botón <strong>Archivos</strong>.</div>
             <div className="modal-btns">
               <button className="btn-cancelar-m" onClick={()=>setModalRevisar(null)} disabled={guardandoRev}>Cancelar</button>
               <button type="button" className="btn-guardar modal-guardar-estable" onClick={guardarRevision} disabled={guardandoRev || !resultadoRev}>{guardandoRev ? 'Guardando…' : 'Guardar'}</button>
