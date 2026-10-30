@@ -50,6 +50,13 @@ const CARGOS = [
   { value: 'capacitador',   label: 'Capacitación'  },
 ]
 
+// Campo y Supervisor Campo solo usan los equipos CAMPO 1–10; los demás, las salas.
+const EQUIPOS_CAMPO = Array.from({ length: 10 }, (_, i) => `CAMPO ${i + 1}`)
+const SALAS_OFICINA = ['SALA 1','SALA 2']
+function salasParaCargo(cargo) {
+  return ['campo','supcampo'].includes(cargo) ? EQUIPOS_CAMPO : SALAS_OFICINA
+}
+
 const FORM_VACIO = { nombre: '', usuario: '', pass: '', pass2: '', cargo: '', cargo2: '', sala: '', genero: 'M', activo: true }
 
 export default function Usuarios() {
@@ -137,7 +144,12 @@ export default function Usuarios() {
   }
 
   function setField(k, v) {
-    setForm(f => ({ ...f, [k]: v }))
+    setForm(f => {
+      const nuevo = { ...f, [k]: v }
+      // Al cambiar el cargo, se limpia una sala que no corresponde al nuevo cargo.
+      if (k === 'cargo' && nuevo.sala && !salasParaCargo(v).includes(nuevo.sala)) nuevo.sala = ''
+      return nuevo
+    })
     setErrores(e => ({ ...e, [k]: '' }))
   }
 
@@ -395,10 +407,8 @@ export default function Usuarios() {
                   <label>Sala / equipo</label>
                   <select value={form.sala} onChange={e => setField('sala', e.target.value)}>
                     <option value="">— Seleccionar sala —</option>
-                    <option value="SALA 1">Sala 1</option>
-                    <option value="SALA 2">Sala 2</option>
-                    <option value="CAMPO">Campo</option>
-                    {Array.from({ length: 10 }, (_, i) => <option key={i} value={`CAMPO ${i + 1}`}>Campo {i + 1}</option>)}
+                    {form.sala && !salasParaCargo(form.cargo).includes(form.sala) && <option value={form.sala}>{form.sala}</option>}
+                    {salasParaCargo(form.cargo).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="campo">

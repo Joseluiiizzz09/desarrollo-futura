@@ -49,6 +49,12 @@ const CARGOS = [
 ]
 // CAMPO 1–10: equipos de Supervisor Campo; sus asesores de campo usan el mismo equipo.
 const SALAS = ['SALA 1','SALA 2','CAMPO','CAMPO 1','CAMPO 2','CAMPO 3','CAMPO 4','CAMPO 5','CAMPO 6','CAMPO 7','CAMPO 8','CAMPO 9','CAMPO 10']
+// Campo y Supervisor Campo solo usan los equipos CAMPO 1–10; los demás, las salas.
+const EQUIPOS_CAMPO = Array.from({ length: 10 }, (_, i) => `CAMPO ${i + 1}`)
+const SALAS_OFICINA = ['SALA 1','SALA 2']
+function salasParaCargo(cargo) {
+  return ['campo','supcampo'].includes(cargo) ? EQUIPOS_CAMPO : SALAS_OFICINA
+}
 const TIPIFICACIONES_ENTREVISTA = ['NO CONTESTA','DESISTE','REPROGRAMA','CORTA LLAMADA','ASISTE','EN CAMINO','FALTA']
 const TURNOS_ENTREVISTA = ['TURNO 1','TURNO 2']
 
@@ -1782,7 +1788,15 @@ export default function Jefatura() {
     setModErrores({}); setModalUsu(true)
   }
   function cerrarModalUsu() { setModalUsu(false); setEditandoId(null); setModForm(MOD_FORM_VACIO); setModErrores({}) }
-  function setField(k, v) { setModForm(f=>({...f,[k]:v})); setModErrores(e=>({...e,[k]:false})) }
+  function setField(k, v) {
+    setModForm(f=>{
+      const nuevo = {...f,[k]:v}
+      // Al cambiar el cargo, se limpia una sala que no corresponde al nuevo cargo.
+      if (k==='cargo' && nuevo.sala && !salasParaCargo(v).includes(nuevo.sala)) nuevo.sala = ''
+      return nuevo
+    })
+    setModErrores(e=>({...e,[k]:false}))
+  }
 
   async function guardarUsuario() {
     const { nombre, usuario, cargo, cargo2, cargo3, sala, pass, pass2 } = modForm
@@ -3262,7 +3276,8 @@ export default function Jefatura() {
                 <label>Sala / Equipo</label>
                 <select value={modForm.sala} onChange={e=>setField('sala',e.target.value)}>
                   <option value="">— Seleccionar sala —</option>
-                  {SALAS.map(s=><option key={s} value={s}>{s}</option>)}
+                  {modForm.sala && !salasParaCargo(modForm.cargo).includes(modForm.sala) && <option value={modForm.sala}>{modForm.sala}</option>}
+                  {salasParaCargo(modForm.cargo).map(s=><option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="modal-sep">Contraseña</div>
