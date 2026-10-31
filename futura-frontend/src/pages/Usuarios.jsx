@@ -54,6 +54,7 @@ const CARGOS = [
 const EQUIPOS_CAMPO = Array.from({ length: 10 }, (_, i) => `CAMPO ${i + 1}`)
 const SALAS_OFICINA = ['SALA 1','SALA 2']
 function salasParaCargo(cargo) {
+  if (!cargo) return []
   return ['campo','supcampo'].includes(cargo) ? EQUIPOS_CAMPO : SALAS_OFICINA
 }
 
@@ -405,8 +406,8 @@ export default function Usuarios() {
                 </div>
                 <div className="campo">
                   <label>Sala / equipo</label>
-                  <select value={form.sala} onChange={e => setField('sala', e.target.value)}>
-                    <option value="">— Seleccionar sala —</option>
+                  <select value={form.sala} onChange={e => setField('sala', e.target.value)} disabled={!form.cargo}>
+                    <option value="">{form.cargo ? '— Seleccionar sala —' : '— Primero elige el cargo —'}</option>
                     {form.sala && !salasParaCargo(form.cargo).includes(form.sala) && <option value={form.sala}>{form.sala}</option>}
                     {salasParaCargo(form.cargo).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>

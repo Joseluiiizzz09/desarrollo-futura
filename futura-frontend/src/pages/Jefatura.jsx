@@ -53,6 +53,7 @@ const SALAS = ['SALA 1','SALA 2','CAMPO','CAMPO 1','CAMPO 2','CAMPO 3','CAMPO 4'
 const EQUIPOS_CAMPO = Array.from({ length: 10 }, (_, i) => `CAMPO ${i + 1}`)
 const SALAS_OFICINA = ['SALA 1','SALA 2']
 function salasParaCargo(cargo) {
+  if (!cargo) return []
   return ['campo','supcampo'].includes(cargo) ? EQUIPOS_CAMPO : SALAS_OFICINA
 }
 const TIPIFICACIONES_ENTREVISTA = ['NO CONTESTA','DESISTE','REPROGRAMA','CORTA LLAMADA','ASISTE','EN CAMINO','FALTA']
@@ -3274,8 +3275,8 @@ export default function Jefatura() {
               </div>
               <div className="modal-campo">
                 <label>Sala / Equipo</label>
-                <select value={modForm.sala} onChange={e=>setField('sala',e.target.value)}>
-                  <option value="">— Seleccionar sala —</option>
+                <select value={modForm.sala} onChange={e=>setField('sala',e.target.value)} disabled={!modForm.cargo}>
+                  <option value="">{modForm.cargo ? '— Seleccionar sala —' : '— Primero elige el cargo —'}</option>
                   {modForm.sala && !salasParaCargo(modForm.cargo).includes(modForm.sala) && <option value={modForm.sala}>{modForm.sala}</option>}
                   {salasParaCargo(modForm.cargo).map(s=><option key={s} value={s}>{s}</option>)}
                 </select>
