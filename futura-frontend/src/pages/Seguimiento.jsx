@@ -7,6 +7,7 @@ import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import WhatsappSeguimientoBoton from '../components/WhatsappSeguimientoBoton'
 import CanalBadge from '../components/CanalBadge'
+import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/seguimiento.css'
@@ -608,12 +609,9 @@ export default function Seguimiento() {
               </select>
             </div>
             <div className="fg">
-              <label>Desde</label>
-              <input type="date" value={fDesde} onChange={e => { setFDesde(e.target.value); setPagina(1) }} />
-            </div>
-            <div className="fg">
-              <label>Hasta</label>
-              <input type="date" value={fHasta} onChange={e => { setFHasta(e.target.value); setPagina(1) }} />
+              <label>Rango de fechas</label>
+              <RangoFechasPicker desde={fDesde} hasta={fHasta}
+                onChange={v => { setFDesde(v.desde); setFHasta(v.hasta); setPagina(1) }} />
             </div>
             <div style={{ alignSelf: 'flex-end' }}>
               <button className="btn-limpiar" onClick={limpiarFiltros}>✕ Limpiar</button>

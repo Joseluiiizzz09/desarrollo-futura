@@ -228,6 +228,10 @@ body{
   font-size:12px;font-family:inherit;outline:none;
   background:var(--surf-1);color:var(--ink);transition:all .18s;width:100%;
 }
+.fg .form-control{
+  padding:7px 11px;border:1px solid var(--line-2);border-radius:9px;
+  font-size:12px;font-family:inherit;color:var(--ink);min-height:33px;
+}
 .fg input:focus,.fg select:focus,.filtro-input:focus,.filtro-select:focus,.bo-input-group input:focus,.bo-input-group select:focus{
   border-color:var(--brand);background:var(--surf-0);box-shadow:0 0 0 3px rgba(229,62,62,.1);
 }
