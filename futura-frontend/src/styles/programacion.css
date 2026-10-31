@@ -1034,6 +1034,11 @@ body{
 }
 .prog-reference-filter{display:flex!important;flex-direction:column!important;gap:5px!important;}
 .prog-reference-filter>label{font-size:9px!important;font-weight:800!important;color:#475569!important;letter-spacing:.45px!important;}
+.prog-reference-filter>.form-control{
+  width:100%!important;height:34px!important;padding:0 11px!important;
+  border:1px solid #d9e0e9!important;border-radius:8px!important;
+  font-size:12px!important;font-family:inherit!important;color:#0f172a!important;
+}
 .prog-reference-filter>.filtro-input,
 .prog-reference-filter>.filtro-select,
 .prog-reference-filters .btn-limpiar{

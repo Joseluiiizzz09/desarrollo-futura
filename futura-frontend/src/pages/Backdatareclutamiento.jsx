@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import JefaturaViewControls from '../components/JefaturaViewControls'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
+import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import { usuarioTieneCargo } from '../utils/roles'
@@ -2171,12 +2172,7 @@ export default function Backdatareclutamiento() {
               <div className="bo-input-group base-filtro-numero"><label>Número</label>
                 <input className="form-control" value={filtros.numero} onChange={e=>setFiltros(p=>({...p,numero:e.target.value.replace(/\s+/g,'')}))} placeholder="Buscar N1, N2 o usuario WhatsApp..." />
               </div>
-              <div className="bo-input-group base-filtro-fecha"><label>Desde</label>
-                <input type="date" className="form-control" value={filtros.desde} max={filtros.hasta||undefined} onChange={e=>setFiltros(p=>({...p,desde:e.target.value,global:true}))} />
-              </div>
-              <div className="bo-input-group base-filtro-fecha"><label>Hasta</label>
-                <input type="date" className="form-control" value={filtros.hasta} min={filtros.desde||undefined} onChange={e=>setFiltros(p=>({...p,hasta:e.target.value,global:true}))} />
-              </div>
+              <div className="bo-input-group base-filtro-fecha base-filtro-rango"><label>Rango de fechas</label><RangoFechasPicker desde={filtros.desde} hasta={filtros.hasta} onChange={v=>setFiltros(p=>({...p,desde:v.desde,hasta:v.hasta,global:true}))} /></div>
               <label className="toggle-col base-filtro-toggle base-filtro-global">
                 <input type="checkbox" checked={filtros.global} onChange={e=>setFiltros(p=>({...p,global:e.target.checked}))} />
                 <span>Buscar global</span>
@@ -2694,8 +2690,7 @@ export default function Backdatareclutamiento() {
 
             <div className="filtros-grid" style={{marginBottom:14}}>
               <div className="bo-input-group"><label>Buscar</label><input className="form-control" value={filtrosEntrevistas.busqueda} onChange={e=>setFiltrosEntrevistas(p=>({...p,busqueda:e.target.value}))} placeholder="Postulante, número o campaña…" /></div>
-              <div className="bo-input-group"><label>Desde</label><input type="date" className="form-control" value={filtrosEntrevistas.desde} onChange={e=>setFiltrosEntrevistas(p=>({...p,desde:e.target.value}))} /></div>
-              <div className="bo-input-group"><label>Hasta</label><input type="date" className="form-control" value={filtrosEntrevistas.hasta} onChange={e=>setFiltrosEntrevistas(p=>({...p,hasta:e.target.value}))} /></div>
+              <div className="bo-input-group"><label>Rango de fechas</label><RangoFechasPicker desde={filtrosEntrevistas.desde} hasta={filtrosEntrevistas.hasta} onChange={v=>setFiltrosEntrevistas(p=>({...p,desde:v.desde,hasta:v.hasta}))} /></div>
             </div>
 
             <div className="base-tabla-wrap reclutados-tabla-wrap">
@@ -2774,8 +2769,7 @@ export default function Backdatareclutamiento() {
 
             <div className="filtros-grid" style={{marginBottom:14}}>
               <div className="bo-input-group"><label>Buscar</label><input className="form-control" value={filtrosCapacitacion.busqueda} onChange={e=>setFiltrosCapacitacion(p=>({...p,busqueda:e.target.value}))} placeholder="Postulante, número o campaña…" /></div>
-              <div className="bo-input-group"><label>Desde</label><input type="date" className="form-control" value={filtrosCapacitacion.desde} onChange={e=>setFiltrosCapacitacion(p=>({...p,desde:e.target.value}))} /></div>
-              <div className="bo-input-group"><label>Hasta</label><input type="date" className="form-control" value={filtrosCapacitacion.hasta} onChange={e=>setFiltrosCapacitacion(p=>({...p,hasta:e.target.value}))} /></div>
+              <div className="bo-input-group"><label>Rango de fechas</label><RangoFechasPicker desde={filtrosCapacitacion.desde} hasta={filtrosCapacitacion.hasta} onChange={v=>setFiltrosCapacitacion(p=>({...p,desde:v.desde,hasta:v.hasta}))} /></div>
             </div>
 
             <div className="base-tabla-wrap reclutados-tabla-wrap">

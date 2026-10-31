@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import JefaturaViewControls from '../components/JefaturaViewControls'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import CanalBadge from '../components/CanalBadge'
+import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import { UBIGEO } from '../services/ubigeo'
@@ -2763,8 +2764,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
               {/* BÚSQUEDA Y FILTROS AL COSTADO DE LA FECHA */}
               <div className="base-filtros">
                 <div className="bo-input-group base-filtro-numero"><label>Número</label><input className="form-control" value={filtros.numero} onChange={e=>setFiltros(p=>({...p,numero:e.target.value}))} placeholder="Buscar N1, N2 o usuario WhatsApp..." /></div>
-                <div className="bo-input-group base-filtro-fecha"><label>Desde</label><input type="date" className="form-control" value={filtros.desde} max={filtros.hasta||undefined} onChange={e=>setFiltros(p=>({...p,desde:e.target.value,global:true}))} /></div>
-                <div className="bo-input-group base-filtro-fecha"><label>Hasta</label><input type="date" className="form-control" value={filtros.hasta} min={filtros.desde||undefined} onChange={e=>setFiltros(p=>({...p,hasta:e.target.value,global:true}))} /></div>
+                <div className="bo-input-group base-filtro-fecha base-filtro-rango"><label>Rango de fechas</label><RangoFechasPicker desde={filtros.desde} hasta={filtros.hasta} onChange={v=>setFiltros(p=>({...p,desde:v.desde,hasta:v.hasta,global:true}))} /></div>
                 <label className="toggle-col base-filtro-toggle base-filtro-global"><input type="checkbox" checked={filtros.global} onChange={e=>setFiltros(p=>({...p,global:e.target.checked}))} /><span>Buscar global</span></label>
                 <label className="toggle-col base-filtro-toggle"><input type="checkbox" checked={filtros.duplicados} onChange={e=>setFiltros(p=>({...p,duplicados:e.target.checked}))} /><span>Números duplicados</span></label>
                 <button className="bo-btn-limpiar btn btn-sm base-filtro-limpiar" onClick={()=>setFiltros({tipBack1:[],tipBack2:[],tipVend:[],asesor:[],campana:[],sala:[],numero:'',desde:'',hasta:'',global:false,duplicados:false})}>Limpiar filtros</button>
@@ -3626,8 +3626,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
                 </div>
               )}
               {rendFiltroTipo === 'rango' && <>
-                <div className="bo-input-group" style={{minWidth:140}}><label>Desde</label><input className="form-control" type="date" value={rendDesde} onChange={e=>setRendDesde(e.target.value)} /></div>
-                <div className="bo-input-group" style={{minWidth:140}}><label>Hasta</label><input className="form-control" type="date" value={rendHasta} onChange={e=>setRendHasta(e.target.value)} /></div>
+                <div className="bo-input-group" style={{minWidth:200}}><label>Rango de fechas</label><RangoFechasPicker desde={rendDesde} hasta={rendHasta} onChange={v=>{ setRendDesde(v.desde); setRendHasta(v.hasta) }} /></div>
               </>}
               <div className="bo-input-group" style={{minWidth:170}}>
                 <label>Sala</label>

@@ -7,6 +7,7 @@ import CanalBadge from '../components/CanalBadge'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import VentaDetalleModal from '../components/VentaDetalleModal'
 import { VentaEditarModal } from '../components/VentaEditarModal'
+import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/validacion.css'
@@ -438,12 +439,9 @@ export default function Validacion() {
               <input value={fAsesor} onChange={e=>setFAsesor(e.target.value)} placeholder="Buscar vendedor..." />
             </div>
             <div className="fg">
-              <label>Desde</label>
-              <input type="date" value={fDesde} onChange={e=>setFDesde(e.target.value)} />
-            </div>
-            <div className="fg">
-              <label>Hasta</label>
-              <input type="date" value={fHasta} onChange={e=>setFHasta(e.target.value)} />
+              <label>Rango de fechas</label>
+              <RangoFechasPicker desde={fDesde} hasta={fHasta}
+                onChange={v => { setFDesde(v.desde); setFHasta(v.hasta) }} />
             </div>
             <div className="filtros-acciones">
               <button className="btn-borrar" onClick={limpiarFiltros}>✕ Limpiar</button>

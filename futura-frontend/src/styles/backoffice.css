@@ -385,6 +385,7 @@ body{
 .bo-root .base-filtros .base-filtro-numero{flex-basis:210px;min-width:180px;}
 .bo-root .base-filtros .base-filtro-fecha{flex:0 1 142px;min-width:132px;}
 .bo-root .base-filtros .base-filtro-fecha .form-control{min-height:33px;font-size:11px;}
+.bo-root .base-filtros .base-filtro-rango{flex:0 1 200px;min-width:190px;}
 .bo-root .base-filtro-toggle{
   flex:0 0 auto;display:flex;align-items:center;gap:6px;white-space:nowrap;
   height:33px;padding:0 9px;border:1px solid var(--line-2);border-radius:9px;

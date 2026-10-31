@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import JefaturaViewControls from '../components/JefaturaViewControls'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import CanalBadge from '../components/CanalBadge'
+import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/programacion.css'
@@ -337,12 +338,9 @@ export default function Programacion() {
                 onChange={e => setFAsesor(e.target.value)} placeholder="Nombre asesor..." />
             </div>
             <div className="filtro-group prog-reference-filter">
-              <label>Desde</label>
-              <input type="date" className="filtro-input" value={fDesde} onChange={e => setFDesde(e.target.value)} />
-            </div>
-            <div className="filtro-group prog-reference-filter">
-              <label>Hasta</label>
-              <input type="date" className="filtro-input" value={fHasta} onChange={e => setFHasta(e.target.value)} />
+              <label>Rango de fechas</label>
+              <RangoFechasPicker desde={fDesde} hasta={fHasta}
+                onChange={v => { setFDesde(v.desde); setFHasta(v.hasta) }} />
             </div>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
               <button className="btn-limpiar" onClick={limpiarFiltros}>Limpiar</button>
