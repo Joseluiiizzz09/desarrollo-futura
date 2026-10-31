@@ -43,7 +43,7 @@ changed() { echo "$CHANGED" | grep -qE "$1"; }
 
 # Backend
 if changed '^package-lock\.json$'; then as_futura npm ci --omit=dev; fi
-if echo "$CHANGED" | grep -qvE '^(futura-frontend|whatsapp-service)/'; then
+if echo "$CHANGED" | grep -qvE '^(futura-frontend|whatsapp-service|scripts)/'; then
   systemctl restart futura-api.service; echo "futura-api reiniciado"
 fi
 
