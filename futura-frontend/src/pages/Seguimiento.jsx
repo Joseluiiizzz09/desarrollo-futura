@@ -362,7 +362,7 @@ export default function Seguimiento() {
     if (estNuevo === 'rechazo_programacion') body.estado_supgrab = 'aprobado'
     if (motivoAplica) body.motivo_seguimiento = estMotivo
     try {
-      const res  = await fetch(`${API}/ventas/${modalEstado.id}`, {
+      const res  = await fetch(`${API}/ventas/${modalEstado.id}?area=seguimiento`, {
         method: 'PATCH', headers: ncHeaders(),
         body: JSON.stringify(body),
       })
@@ -394,7 +394,7 @@ export default function Seguimiento() {
       return
     }
     try {
-      const res = await fetch(`${API}/ventas/${modalProgramacion.id}`, {
+      const res = await fetch(`${API}/ventas/${modalProgramacion.id}?area=seguimiento`, {
         method: 'PATCH',
         headers: ncHeaders(),
         body: JSON.stringify({ sot, fecha_programada: progFecha }),
@@ -425,7 +425,7 @@ export default function Seguimiento() {
     if (!valor) { mostrarToast('Ingresa el número de SOT'); return }
     setSotModal(prev => prev ? { ...prev, guardando: true } : prev)
     try {
-      const res = await fetch(`${API}/ventas/${sotModal.id}`, {
+      const res = await fetch(`${API}/ventas/${sotModal.id}?area=seguimiento`, {
         method: 'PATCH', headers: ncHeaders(),
         body: JSON.stringify({ sot: valor }),
       })
@@ -481,7 +481,7 @@ export default function Seguimiento() {
     const nuevoHistorial = [...(modalObs._historial || []), { fecha: fechaHoy(), hora: horaAhora(), user: usuarioActual, resultado, obs }]
     const comentario = obsComentario.trim() || modalObs._comentario
     try {
-      const res  = await fetch(`${API}/ventas/${modalObs.id}`, {
+      const res  = await fetch(`${API}/ventas/${modalObs.id}?area=seguimiento`, {
         method: 'PATCH', headers: ncHeaders(),
         body: JSON.stringify({ obs_seguimiento: comentario }),
       })
