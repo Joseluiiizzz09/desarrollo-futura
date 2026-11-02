@@ -19,6 +19,14 @@ const BADGE_MAP = {
   programado:   { cls: 'bg-revisado', label: 'PROGRAMADO'   },
   sin_revisar:  { cls: 'bg-revisado', label: 'EN REVISION'  },
   audio_subido: { cls: 'bg-grabado',  label: 'AUDIO SUBIDO' },
+  grabado:      { cls: 'bg-revisado', label: 'GRABADO'      },
+}
+
+// Recién GRABADO (sigue su curso en Programación): Super solo supervisa con
+// APROBADO / DESAPROBADO, sin intervenir en el flujo de la venta.
+function esPrimerCiclo(v) {
+  const revision = (v.estado_supgrab || '').toLowerCase()
+  return (v.estado_grab || '').toLowerCase() === 'grabado' && ['', 'sin_revisar', 'aprobado'].includes(revision)
 }
 
 function formatF(f) {
@@ -123,11 +131,11 @@ export default function SupGrabaciones() {
           // permanece visible aunque luego continúe en Programación o vuelva
           // a Grabaciones. Esto no modifica las colas de las otras áreas.
           .filter(v => {
-            // Super revisa solo desde que la venta vuelve de Programación
-            // (PROGRAMADO) y conserva su resultado como historial. Lo recién
-            // GRABADO ya no pasa por aquí: va directo a Programación.
+            // Lo recién GRABADO se ve aquí para supervisión (mapeo/verificación)
+            // mientras sigue en Programación; el resultado CONFORME / NO CONFORME
+            // se da cuando vuelve de Programación (PROGRAMADO).
             const revision = (v.estado_supgrab || '').toLowerCase()
-            return ['programado', 'no_conforme', 'rechazado', 'audio_subido'].includes(revision)
+            return esPrimerCiclo(v) || ['programado', 'no_conforme', 'rechazado', 'audio_subido'].includes(revision)
           })
           .map(v => ({
             ...v,
@@ -136,7 +144,9 @@ export default function SupGrabaciones() {
             email:            v.email         || '',
             vendedor:         v.asesor_nombre || '',
             fechaIngreso:     (v.created_at   || '').split(' ')[0],
-            estadoRev:        v.estado_supgrab || 'sin_revisar',
+            primerCiclo:      esPrimerCiclo(v),
+            estadoRev:        esPrimerCiclo(v) ? 'grabado' : (v.estado_supgrab || 'sin_revisar'),
+            supervision:      (v.supervision_supgrab || '').toLowerCase(),
             obsSup:           v.obs_supgrab    || '',
             audioPath:        v.audio_path || '',
             audioUrl:         v.audio_path ? `${NC_API}/${v.audio_path}` : null,
@@ -217,7 +227,7 @@ export default function SupGrabaciones() {
 
   async function abrirModalRevisar(v) {
     setModalRevisar(v)
-    setEstadoRevision(esSegundoCicloVenta(v) ? '' : (v.estadoRev || 'sin_revisar'))
+    setEstadoRevision(v.primerCiclo ? v.supervision : esSegundoCicloVenta(v) ? '' : (v.estadoRev || 'sin_revisar'))
     setRevObs('')
     setAudioSrc('')
     if (v.audioUrl) {
@@ -251,6 +261,26 @@ export default function SupGrabaciones() {
     const lineas = (modalRevisar.obsSup || '').split('\n').filter(l => l.trim())
     lineas.push(`[${nowLabel()} - ${usuarioActual}] ${estadoRevision.toUpperCase()}${revObs ? ' -- ' + revObs : ''}`)
     const nuevoHistorial = lineas.join('\n')
+    if (modalRevisar.primerCiclo) {
+      // Solo supervisión: no cambia estado, estado_supgrab ni estado_grab.
+      try {
+        const res  = await fetch(`${API}/ventas/${modalRevisar.id}?area=supgrabaciones`, {
+          method: 'PATCH', headers: ncHeaders(),
+          body: JSON.stringify({ supervision_supgrab: estadoRevision, obs_supgrab: nuevoHistorial }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.ok) { mostrarToast(data.mensaje || 'Error guardando'); setGuardando(false); return }
+        setVentas(list => list.map(x => x.id === modalRevisar.id
+          ? { ...x, supervision: estadoRevision, obsSup: nuevoHistorial }
+          : x))
+        setGuardando(false)
+        cerrarModalRevisar()
+      } catch (e) {
+        mostrarToast('Error conectando al servidor')
+        setGuardando(false)
+      }
+      return
+    }
     const esSegundoCiclo = esSegundoCicloVenta(modalRevisar)
     try {
       const res  = await fetch(`${API}/ventas/${modalRevisar.id}?area=supgrabaciones`, {
@@ -351,6 +381,7 @@ export default function SupGrabaciones() {
               <label>Estado revisión</label>
               <select value={fEstado} onChange={e => { setFEstado(e.target.value); setPagina(1) }}>
                 <option value="">Todos</option>
+                <option value="grabado">Grabado</option>
                 <option value="sin_revisar">En revisión</option>
                 <option value="aprobado">Aprobado</option>
                 <option value="observado">Observado</option>
@@ -455,7 +486,11 @@ export default function SupGrabaciones() {
                       </td>
                       <td><CanalBadge canal={v.canal} /></td>
                       <td>
-                        {['aprobado','conforme','observado','no_conforme','rechazado'].includes(v.estadoRev)
+                        {v.primerCiclo
+                          ? (v.supervision
+                              ? <span className={`badge-grab ${v.supervision === 'aprobado' ? 'bg-grabado' : 'bg-observado'}`}>{v.supervision === 'aprobado' ? 'APROBADO' : 'DESAPROBADO'}</span>
+                              : <span style={{color:'#9ca3af'}}>—</span>)
+                          : ['aprobado','conforme','observado','no_conforme','rechazado'].includes(v.estadoRev)
                           ? <span className={`badge-grab ${['aprobado','conforme'].includes(v.estadoRev) ? 'bg-grabado' : 'bg-observado'}`}>
                               {['aprobado','conforme'].includes(v.estadoRev) ? 'APROBADO' : v.estadoRev === 'no_conforme' ? 'NO CONFORME' : v.estadoRev === 'rechazado' ? 'RECHAZADO' : 'OBSERVADO'}
                             </span>
@@ -543,7 +578,12 @@ export default function SupGrabaciones() {
             <div style={{ marginBottom: '14px' }}>
               <div style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.3px', marginBottom: '8px' }}>Resultado de revisión</div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {(esSegundoCicloVenta(modalRevisar)
+                {(modalRevisar.primerCiclo
+                  ? [
+                      { id: 'aprobado',    label: 'APROBADO',    border: '#86efac', bg: '#f0fdf4', color: '#15803d' },
+                      { id: 'desaprobado', label: 'DESAPROBADO', border: '#fca5a5', bg: '#fef2f2', color: '#b91c1c' },
+                    ]
+                  : esSegundoCicloVenta(modalRevisar)
                   ? [
                       { id: 'conforme',     label: 'CONFORME',     border: '#86efac', bg: '#f0fdf4', color: '#15803d' },
                       { id: 'audio_subido', label: 'AUDIO SUBIDO', border: '#86efac', bg: '#f0fdf4', color: '#15803d' },

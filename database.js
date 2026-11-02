@@ -385,6 +385,11 @@ async function initDB() {
     // nullable para ventas históricas anteriores al campo.
     await conn.query(`ALTER TABLE ventas ADD COLUMN canal VARCHAR(20) NULL`)
       .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
+    // Supervisión de grabaciones (APROBADO / DESAPROBADO): marca de simple
+    // supervisión sobre lo recién GRABADO. No interviene en el flujo
+    // (estado, estado_supgrab y estado_grab siguen igual).
+    await conn.query(`ALTER TABLE ventas ADD COLUMN supervision_supgrab VARCHAR(20) NULL`)
+      .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
     await conn.query(`
       UPDATE ventas v
       JOIN usuarios u ON u.id = v.grabando_por_id
