@@ -1570,8 +1570,10 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
       // Flujo actual: al marcar GRABADO la venta pasa directo a Programación
       // (ya no espera la aprobación previa de Super de Grabaciones). Super y
       // Grabaciones revisan después, cuando la venta vuelve como PROGRAMADO.
+      // estado GRABADO: ventas que Programación guardó sin elegir estado
+      // (antes la pantalla enviaba el estado visible GRABADO); siguen en cola.
       sql += ` AND (UPPER(v.estado) IN (${ESTADOS_PROGRAMACION.map(() => '?').join(',')})
-                OR (UPPER(v.estado) = 'VALIDADO'
+                OR (UPPER(v.estado) IN ('VALIDADO', 'GRABADO')
                     AND LOWER(v.estado_grab) = 'grabado'
                     AND LOWER(COALESCE(v.estado_supgrab, 'sin_revisar')) IN ('sin_revisar', 'aprobado')))`;
       params.push(...ESTADOS_PROGRAMACION);
@@ -2236,7 +2238,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       String(estado_supgrab).toLowerCase() === 'sin_revisar'
     ) {
       const estadoActual = String(rows[0].estado || '').toUpperCase();
-      const ESTADOS_PROG_VAL = new Set(['VALIDADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL']);
+      const ESTADOS_PROG_VAL = new Set(['VALIDADO','GRABADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL']);
       if (!ESTADOS_PROG_VAL.has(estadoActual)) _estadoAplicar = undefined;
     }
     agregarCambio('estado', _estadoAplicar);

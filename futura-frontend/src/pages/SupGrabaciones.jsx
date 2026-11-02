@@ -26,7 +26,10 @@ const BADGE_MAP = {
 // APROBADO / DESAPROBADO, sin intervenir en el flujo de la venta.
 function esPrimerCiclo(v) {
   const revision = (v.estado_supgrab || '').toLowerCase()
-  return (v.estado_grab || '').toLowerCase() === 'grabado' && ['', 'sin_revisar', 'aprobado'].includes(revision)
+  return (v.estado_grab || '').toLowerCase() === 'grabado' &&
+    ['', 'sin_revisar', 'aprobado'].includes(revision) &&
+    ['VALIDADO', 'GRABADO'].includes((v.estado || '').toUpperCase()) &&
+    !v.seguimiento_ingresado_at
 }
 
 function formatF(f) {

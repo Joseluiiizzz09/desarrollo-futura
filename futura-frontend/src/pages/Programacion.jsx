@@ -191,14 +191,16 @@ export default function Programacion() {
     const esRechazo = estadoModal === 'RECHAZADO'
     const payload = esRechazo
       ? {
-          ...(['VALIDADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL'].includes((modalDet.estado || '').toUpperCase())
+          ...(['VALIDADO','GRABADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL'].includes((modalDet.estado || '').toUpperCase())
             ? { estado: 'VALIDADO' } : {}),
           estado_grab: 'grabado',
           estado_supgrab: 'sin_revisar',
           obs_programacion: obsProg,
         }
       : {
-          estado: estadoModal,
+          // GRABADO es solo el estado visible de llegada (ver estadoVisible):
+          // guardarlo sacaba la venta de la cola de Programación.
+          ...(estadoModal === 'GRABADO' ? {} : { estado: estadoModal }),
           obs_programacion: obsProg,
           ...(estadoModal === 'PROGRAMADO'
             ? {
