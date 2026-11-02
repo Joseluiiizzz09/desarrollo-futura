@@ -505,7 +505,7 @@ export default function Jefatura() {
     try { return sessionStorage.getItem(JEF_SEG_FILTRO_KEY) || '' } catch { return '' }
   })
   const [salaReporte, setSalaReporte] = useState(() => {
-    try { return sessionStorage.getItem(JEF_SALA_REPORTE_KEY) || 'todas' } catch { return 'todas' }
+    try { const s = sessionStorage.getItem(JEF_SALA_REPORTE_KEY); return SALAS_OFICINA.includes(s) ? s : 'todas' } catch { return 'todas' }
   })
   // Los reportes abren en el mes vigente; el histórico completo queda como
   // una consulta explícita mediante el botón "Ver todos".
@@ -1182,7 +1182,7 @@ export default function Jefatura() {
       destroy('salas')
       const mesUsar   = mesReporte || mesActual()
       const esMesSeleccionado = valor => String(soloFecha(valor) || '').slice(0, 7) === mesUsar
-      const salas     = ['SALA 1','SALA 2','SALA 3','SALA 4','SALA CHANCAY','SALA 5','SALA 6']
+      const salas     = SALAS_OFICINA
       // Se agrupa por v.sala (ya resuelve sala_atribucion en el backend), no
       // por la sala ACTUAL del asesor en usuarios: si no, una venta que un
       // asesor hizo para otra sala y que luego se movio de sala seguia
@@ -1208,7 +1208,7 @@ export default function Jefatura() {
       destroy('diario')
       const dias = []
       for (let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); dias.push(d.toISOString().split('T')[0]) }
-      const salas  = ['SALA 1','SALA 2','SALA 3','SALA 4','SALA CHANCAY','SALA 5','SALA 6']
+      const salas  = SALAS_OFICINA
       const colors = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#06b6d4','#f43f5e','#eab308']
       const datasets = salas.map((s,i) =>
         ({ label:s, data:dias.map(d=>ventasCache.filter(v=>v._fecha===d&&String(v.sala||'').toUpperCase()===s).length), borderColor:colors[i], backgroundColor:colors[i]+'22', fill:true, tension:.4, borderWidth:2, pointRadius:4 })
@@ -2925,13 +2925,7 @@ export default function Jefatura() {
             <div className="sala-tabs sala-tabs-pro">
               {[
                 { id:'todas', label:'Todas las salas' },
-                { id:'SALA 1', label:'Sala 1' },
-                { id:'SALA 2', label:'Sala 2' },
-                { id:'SALA 3', label:'Sala 3' },
-                { id:'SALA 4', label:'Sala 4' },
-                { id:'SALA CHANCAY', label:'Sala Chancay' },
-                { id:'SALA 5', label:'Sala 5' },
-                { id:'SALA 6', label:'Sala 6' },
+                ...SALAS_OFICINA.map(sala => ({ id:sala, label:sala.charAt(0)+sala.slice(1).toLowerCase() })),
               ].map(tab => (
                 <button key={tab.id}
                   className={`sala-tab${salaReporte===tab.id?' active':''}`}
