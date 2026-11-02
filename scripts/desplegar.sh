@@ -20,7 +20,11 @@ git fetch -q origin
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/$BRANCH)" ] || { echo "HEAD local != origin/$BRANCH; haz push/pull antes"; exit 1; }
 
 # 2. Servidor
-ssh -i "$KEY" -o BatchMode=yes "$HOST" BRANCH="$BRANCH" 'bash -s' <<'REMOTE'
+# El script viaja por stdin: todo va dentro de main() para que bash lo lea
+# completo antes de ejecutar y ningún comando (systemctl, npm...) se coma el
+# resto. FORZAR_FRONTEND=1 recompila el frontend aunque no haya cambios.
+ssh -i "$KEY" -o BatchMode=yes "$HOST" BRANCH="$BRANCH" FORZAR_FRONTEND="${FORZAR_FRONTEND:-}" 'bash -s' <<'REMOTE'
+main() {
 set -euo pipefail
 cd /var/www/futura
 as_futura() { runuser -u futura -- "$@"; }
@@ -34,16 +38,17 @@ OLD=$(as_futura git rev-parse HEAD)
 as_futura git fetch -q origin
 as_futura git merge --ff-only -q "origin/$BRANCH"
 NEW=$(as_futura git rev-parse HEAD)
-if [ "$OLD" = "$NEW" ]; then echo "Producción ya está en $NEW; nada que desplegar"; exit 0; fi
-echo "Desplegando ${OLD:0:7} -> ${NEW:0:7}"
 CHANGED=$(as_futura git diff --name-only "$OLD" "$NEW")
+if [ "${FORZAR_FRONTEND:-}" = 1 ]; then CHANGED=$(printf '%s\n%s' "$CHANGED" 'futura-frontend/(forzado)' | sed '/^$/d'); fi
+if [ -z "$CHANGED" ]; then echo "Producción ya está en $NEW; nada que desplegar"; exit 0; fi
+echo "Desplegando ${OLD:0:7} -> ${NEW:0:7}"
 echo "$CHANGED" | sed 's/^/  /'
 
 changed() { echo "$CHANGED" | grep -qE "$1"; }
 
 # Backend
 if changed '^package-lock\.json$'; then as_futura npm ci --omit=dev; fi
-if echo "$CHANGED" | grep -qvE '^(futura-frontend|whatsapp-service|scripts)/'; then
+if echo "$CHANGED" | grep -vE '^(futura-frontend|whatsapp-service|scripts)/' | grep -q .; then
   systemctl restart futura-api.service; echo "futura-api reiniciado"
 fi
 
@@ -70,4 +75,6 @@ systemctl is-active --quiet futura-api.service || { echo "futura-api NO está ac
 CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/health)
 echo "API /api/health -> HTTP $CODE (401 sin token = OK)"
 echo "Listo. Para revertir: cd /var/www/futura && runuser -u futura -- git reset --hard $OLD (y restaurar dist desde .backups)"
+}
+main < /dev/null
 REMOTE
