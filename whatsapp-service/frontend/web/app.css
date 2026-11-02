@@ -2711,7 +2711,7 @@ body.module-backdata .active-chat-drawer,
 #qr-status-info:empty { display: none; }
 #btn-refresh-qr-modal, #btn-done-qr-modal { flex: 1 1 0; min-width: 0; max-width: 160px; width: auto; height: 40px; padding: 0 12px; font-size: 13px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
 /* Sin vista Back Data: todas las cuentas son Bandeja, la columna Modulo ya no aplica */
-#accounts-modal .admin-table th:nth-child(3), #accounts-modal .admin-table td:nth-child(3) { display: none; }
+#accounts-modal .admin-table th:nth-child(4), #accounts-modal .admin-table td:nth-child(4) { display: none; }
 
 /* Cabecera del chat a todo el ancho: fila 1 = contacto + cerrar; fila 2 = selector de bloque (se estira) + marcar atendido */
 .active-chat-drawer .chat-header {
