@@ -286,6 +286,7 @@ class MultiAgentServer {
                                 title: tab.title,
                                 unread: tab.unread || 0,
                                 status: statusInfo.status,
+                                telefono: statusInfo.telefono || null,
                                 hasQr: Boolean(statusInfo.qrData || statusInfo.status === 'qr_ready'),
                                 module: tab.module || 'bandeja',
                                 desvinculada: tab.desvinculada || null

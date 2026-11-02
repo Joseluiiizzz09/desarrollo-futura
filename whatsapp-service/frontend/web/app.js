@@ -667,19 +667,19 @@ async function loadAccountsList() {
         // "Cargando" solo si la tabla esta vacia; si ya hay filas se actualiza en silencio
         // (antes se borraba la tabla en cada aviso y el recuadro se encogia y crecia).
         if (!accountsTableBody.children.length) {
-            accountsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Cargando estado de las cuentas WhatsApp...</td></tr>';
+            accountsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">Cargando estado de las cuentas WhatsApp...</td></tr>';
         }
         const res = await fetch('/api/admin/accounts', {
             headers: { 'Authorization': `Bearer ${state.token}` }
         });
         const data = await res.json();
         if (!res.ok || !(data.ok || data.success)) {
-            accountsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 20px;">Error cargando cuentas WhatsApp</td></tr>';
+            accountsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 20px;">Error cargando cuentas WhatsApp</td></tr>';
             accountsSig = '';
             return;
         }
         const accounts = data.accounts || [];
-        const sig = JSON.stringify(accounts.map(a => [a.id, a.title, a.module, a.status, Boolean(a.hasQr), a.desvinculada?.at || 0]));
+        const sig = JSON.stringify(accounts.map(a => [a.id, a.title, a.module, a.status, a.telefono || '', Boolean(a.hasQr), a.desvinculada?.at || 0]));
         const hayFilas = accountsTableBody.querySelector('button[data-action]');
         if (sig === accountsSig && hayFilas) return; // nada cambio: no se toca la tabla
         accountsSig = sig;
@@ -692,7 +692,7 @@ async function loadAccountsList() {
 function renderAccountsTable(accounts) {
     accountsTableBody.innerHTML = '';
     if (accounts.length === 0) {
-        accountsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No hay cuentas registradas. Haz clic en "+ Conectar Nueva Línea".</td></tr>';
+        accountsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">No hay cuentas registradas. Haz clic en "+ Conectar Nueva Línea".</td></tr>';
         return;
     }
 
@@ -739,6 +739,7 @@ function renderAccountsTable(accounts) {
         tr.innerHTML = `
             <td><strong>${escapeHtml(acc.title || acc.id)}</strong></td>
             <td><code>${escapeHtml(acc.id)}</code></td>
+            <td>${acc.telefono ? `<strong>+${escapeHtml(acc.telefono)}</strong>` : '<span style="color:#94a3b8;">--</span>'}</td>
             <td>${modBadge}</td>
             <td>${statusBadge}</td>
             <td>

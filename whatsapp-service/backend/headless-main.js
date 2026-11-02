@@ -527,7 +527,9 @@ class WhatsAppConnector {
                 this.pendingPairingPhone.delete(tab.id);
                 this.pairingAttempts.delete(tab.id);
                 this.pairingCodeRequested.delete(tab.id);
-                this.states.set(tab.id, { status: 'connected', qrData: null });
+                // Número de la línea vinculada (creds.me.id = '51999888777:12@s.whatsapp.net')
+                const telefono = String(sock.user?.id || state.creds.me?.id || '').split(/[:@]/)[0] || null;
+                this.states.set(tab.id, { status: 'connected', qrData: null, telefono });
                 this.quitarDesvinculada(tab.id);
                 this.server?.broadcastAccounts(this.getTabs());
 
