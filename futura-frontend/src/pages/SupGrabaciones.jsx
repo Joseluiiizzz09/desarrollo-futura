@@ -22,14 +22,20 @@ const BADGE_MAP = {
   grabado:      { cls: 'bg-revisado', label: 'GRABADO'      },
 }
 
-// Recién GRABADO (sigue su curso en Programación): Super solo supervisa con
-// APROBADO / DESAPROBADO, sin intervenir en el flujo de la venta.
+// Revisión que todavía forma parte del flujo (vuelta de Programación).
+const REVISION_FLUJO = ['programado', 'no_conforme', 'rechazado', 'audio_subido']
+
+// Toda venta grabada, esté en la etapa que esté: Super la supervisa con
+// APROBADO / DESAPROBADO sin intervenir en el flujo. Las que esperan la
+// revisión de vuelta de Programación conservan CONFORME / NO CONFORME.
 function esPrimerCiclo(v) {
   const revision = (v.estado_supgrab || '').toLowerCase()
-  return (v.estado_grab || '').toLowerCase() === 'grabado' &&
-    ['', 'sin_revisar', 'aprobado'].includes(revision) &&
-    ['VALIDADO', 'GRABADO'].includes((v.estado || '').toUpperCase()) &&
-    !v.seguimiento_ingresado_at
+  const grabada = (v.estado_grab || '').toLowerCase() === 'grabado' || Boolean(v.audio_path)
+  return grabada && !REVISION_FLUJO.includes(revision)
+}
+
+function etapaVenta(v) {
+  return String(v.estado || '').trim().toUpperCase().replace(/_/g, ' ') || '--'
 }
 
 function formatF(f) {
@@ -138,7 +144,7 @@ export default function SupGrabaciones() {
             // mientras sigue en Programación; el resultado CONFORME / NO CONFORME
             // se da cuando vuelve de Programación (PROGRAMADO).
             const revision = (v.estado_supgrab || '').toLowerCase()
-            return esPrimerCiclo(v) || ['programado', 'no_conforme', 'rechazado', 'audio_subido'].includes(revision)
+            return esPrimerCiclo(v) || REVISION_FLUJO.includes(revision)
           })
           .map(v => ({
             ...v,
@@ -148,7 +154,9 @@ export default function SupGrabaciones() {
             vendedor:         v.asesor_nombre || '',
             fechaIngreso:     (v.created_at   || '').split(' ')[0],
             primerCiclo:      esPrimerCiclo(v),
-            estadoRev:        esPrimerCiclo(v) ? 'grabado' : (v.estado_supgrab || 'sin_revisar'),
+            estadoRev:        esPrimerCiclo(v)
+              ? ((v.estado_supgrab || '').toLowerCase() === 'conforme' ? 'conforme' : 'grabado')
+              : (v.estado_supgrab || 'sin_revisar'),
             supervision:      (v.supervision_supgrab || '').toLowerCase(),
             obsSup:           v.obs_supgrab    || '',
             audioPath:        v.audio_path || '',
@@ -206,9 +214,9 @@ export default function SupGrabaciones() {
 
   const kpis = useMemo(() => ({
     total:     ventas.length,
-    aprobado:  ventas.filter(v => ['aprobado','conforme'].includes(v.estadoRev)).length,
-    noConforme:ventas.filter(v => v.estadoRev === 'no_conforme').length,
-    observado: ventas.filter(v => v.estadoRev === 'observado').length,
+    aprobado:    ventas.filter(v => v.supervision === 'aprobado').length,
+    desaprobado: ventas.filter(v => v.supervision === 'desaprobado').length,
+    sinSupervisar: ventas.filter(v => v.primerCiclo && !v.supervision).length,
   }), [ventas])
 
   const totalPag  = ventasFiltradas.length
@@ -366,15 +374,15 @@ export default function SupGrabaciones() {
         <div className="page-header">
           <div className="page-header-left">
             <h2>Supervisor de Grabaciones</h2>
-            <p>Historial de ventas supervisadas — escucha, aprueba u observa</p>
+            <p>Todas las ventas grabadas — escucha y marca aprobado o desaprobado (solo supervisión)</p>
           </div>
         </div>
 
         <div className="kpi-strip">
           <div className="kpi-item k-blue">  <div><div className="kpi-num">{kpis.total}</div>    <div className="kpi-label">Total grabadas</div></div></div>
           <div className="kpi-item k-green"> <div><div className="kpi-num">{kpis.aprobado}</div> <div className="kpi-label">Aprobadas</div></div></div>
-          <div className="kpi-item k-orange"><div><div className="kpi-num">{kpis.noConforme}</div><div className="kpi-label">No conformes</div></div></div>
-          <div className="kpi-item k-purple"><div><div className="kpi-num">{kpis.observado}</div><div className="kpi-label">Observadas</div></div></div>
+          <div className="kpi-item k-orange"><div><div className="kpi-num">{kpis.desaprobado}</div><div className="kpi-label">Desaprobadas</div></div></div>
+          <div className="kpi-item k-purple"><div><div className="kpi-num">{kpis.sinSupervisar}</div><div className="kpi-label">Sin supervisar</div></div></div>
         </div>
 
         <div className="filtros-panel">
@@ -450,6 +458,7 @@ export default function SupGrabaciones() {
                 <tr>
                   <th style={{ minWidth: '240px' }}>ACCIONES</th>
                   <th style={{ minWidth: '110px' }}>ESTADO REV.</th>
+                  <th style={{ minWidth: '120px' }}>ETAPA</th>
                   <th style={{ minWidth: '90px' }}>CANAL</th>
                   <th style={{ minWidth: '105px' }}>RESULTADO</th>
                   <th style={{ minWidth: '110px' }}>SOT</th>
@@ -467,7 +476,7 @@ export default function SupGrabaciones() {
               </thead>
               <tbody>
                 {ventasPag.length === 0 ? (
-                  <tr><td colSpan="15" className="tabla-empty">Sin ventas grabadas para revisar.</td></tr>
+                  <tr><td colSpan="16" className="tabla-empty">Sin ventas grabadas para revisar.</td></tr>
                 ) : ventasPag.map(v => {
                   const badge    = BADGE_MAP[v.estadoRev] || BADGE_MAP.sin_revisar
                   const ultimaObs = v.obsSup
@@ -487,6 +496,7 @@ export default function SupGrabaciones() {
                           {badge.label}
                         </span>
                       </td>
+                      <td style={{ fontSize: '10px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>{etapaVenta(v)}</td>
                       <td><CanalBadge canal={v.canal} /></td>
                       <td>
                         {v.primerCiclo
