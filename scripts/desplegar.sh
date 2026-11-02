@@ -33,6 +33,8 @@ as_futura() { runuser -u futura -- "$@"; }
 if ! as_futura git diff --ignore-cr-at-eol --quiet; then
   echo "Producción tiene cambios sin commitear:"; as_futura git diff --ignore-cr-at-eol --stat; exit 1
 fi
+# Lo que quede son solo diferencias de fin de línea: se descartan para que el merge no falle
+as_futura git checkout -- .
 
 OLD=$(as_futura git rev-parse HEAD)
 as_futura git fetch -q origin
