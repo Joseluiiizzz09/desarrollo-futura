@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { API, ncHeaders } from '../services/api'
+import '../styles/venta-assignment.css'
 
 function campo(label, children) {
   return (
