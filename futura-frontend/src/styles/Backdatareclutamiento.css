@@ -653,6 +653,7 @@ body{
 .badge-noapto{background:var(--brand-soft);color:var(--brand-deep);padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;}
 .rot-asesor-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px;}
 .rot-asesor-row:last-child{border-bottom:none;}
+.rot-asesor-badge{flex-shrink:0;font-weight:600;color:var(--ink-3);font-size:11px;}
 .btn-rot-toggle{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .18s var(--sp);box-shadow:0 2px 8px rgba(229,62,62,.3);}
 .btn-rot-toggle:hover{transform:scale(1.02);box-shadow:0 4px 14px rgba(229,62,62,.4);}
 .btn-rot-toggle.abierto{background:var(--ink-2);box-shadow:none;}

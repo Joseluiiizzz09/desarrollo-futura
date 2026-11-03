@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { API, ncHeaders } from '../services/api'
+import '../styles/venta-assignment.css'
 
 // Mismas opciones y mismo contrato que usa Programacion.jsx (ESTADO_BTNS +
 // guardarCambios) contra PATCH /ventas/:id?area=programacion — se reutiliza

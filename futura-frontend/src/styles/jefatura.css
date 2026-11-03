@@ -1272,6 +1272,15 @@ button.export-kpi-card:hover {
   width: min(920px, calc(100vw - 32px));
   max-width: 920px;
 }
+/* Cabecera, cuerpo y pie del detalle (esas clases solo existían en el CSS de otras áreas) */
+.eliminacion-detalle-modal { padding: 0; }
+.eliminacion-detalle-modal .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+.eliminacion-detalle-modal .modal-head-title { font-size: 13px; font-weight: 800; color: var(--dark); text-transform: uppercase; letter-spacing: .4px; }
+.eliminacion-detalle-modal .modal-close { width: 28px; height: 28px; border: none; border-radius: 8px; background: var(--bg); color: var(--soft); font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.eliminacion-detalle-modal .modal-close:hover { color: #dc2626; }
+.eliminacion-detalle-modal .modal-body { padding: 16px 20px; }
+.eliminacion-detalle-modal .modal-footer { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--border); }
+.eliminacion-detalle-modal .btn-guardar-m { padding: 9px 18px; background: var(--dark); color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; }
 
 .eliminacion-resumen {
   margin-bottom: 14px;
