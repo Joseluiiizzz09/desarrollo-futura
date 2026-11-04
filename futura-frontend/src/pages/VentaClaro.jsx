@@ -117,7 +117,6 @@ function faltantes(paso, f) {
     pedir(f.provincia, 'Provincia')
     pedir(f.distrito, 'Distrito')
     pedir(f.direccion, 'Dirección')
-    pedir(f.coordenadas, 'Coordenadas (usa el botón "Usar mi ubicación")')
   }
   if (paso === P.SERVICIO) {
     if (claro) {
@@ -913,7 +912,7 @@ export default function VentaClaro() {
                 </select>
               </Campo>
               <Campo label="Dirección"><textarea value={f.direccion} onChange={e => set('direccion', e.target.value.toUpperCase())} placeholder="Calle, número, referencia" style={{ minHeight: 90 }} /></Campo>
-              <Campo label="Coordenadas">
+              <Campo label="Coordenadas (opcional)">
                 {gpsDirecto ? (
                   <button type="button" className="vc-btn vc-btn-ubic" onClick={usarUbicacion} disabled={ubicando}>{ubicando ? 'Buscando ubicación…' : 'Usar mi ubicación'}</button>
                 ) : (
