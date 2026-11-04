@@ -469,6 +469,16 @@ export default function VentaClaro() {
   const [progresoFotos, setProgresoFotos] = useState({ actual: 0, total: 0 })
   const [fotosSubidas, setFotosSubidas] = useState(0)
   const [fotosFallidas, setFotosFallidas] = useState([])
+  // Paquetes Claro del catálogo de Jefatura; si no carga, queda la lista fija
+  const [paquetesClaroPorPlan, setPaquetesClaroPorPlan] = useState(PAQUETES_CLARO_POR_PLAN)
+  useEffect(() => {
+    fetch(`${API}/publico/paquetes-claro`).then(r => r.json()).then(d => {
+      if (d.ok && d.paquetes && Object.keys(d.paquetes).length) {
+        const planes = [...Object.keys(PAQUETES_CLARO_POR_PLAN).filter(p => d.paquetes[p]), ...Object.keys(d.paquetes).filter(p => !PAQUETES_CLARO_POR_PLAN[p])]
+        setPaquetesClaroPorPlan(Object.fromEntries(planes.map(p => [p, d.paquetes[p]])))
+      }
+    }).catch(() => {})
+  }, [])
   const [catalogoWin, setCatalogoWin] = useState(null) // { paquetes:{LIMA,PROVINCIA}, adicionales:{...} }
   const [errorWin, setErrorWin] = useState('')
 
@@ -507,7 +517,7 @@ export default function VentaClaro() {
   const provincias = f.departamento ? Object.keys(ubigeo[f.departamento] || {}) : []
   const distritos = f.departamento && f.provincia ? (ubigeo[f.departamento]?.[f.provincia] || []) : []
   const region = regionWin(f.departamento)
-  const paquetesClaro = PAQUETES_CLARO_POR_PLAN[f.hogar] || []
+  const paquetesClaro = paquetesClaroPorPlan[f.hogar] || []
   // Vivienda VERTICAL (edificio): usa la lista "Vertical" del catálogo si tiene paquetes
   const paquetesWinDe = predio => {
     if (esPeruFibra) return catalogoWin?.paquetes?.PERUFIBRA || []
@@ -949,7 +959,7 @@ export default function VentaClaro() {
               <Campo label="Claro Hogar (plan)">
                 <select value={f.hogar} onChange={e => setF(p => ({ ...p, hogar: e.target.value, paquete: '' }))}>
                   <option value="">Elegir plan</option>
-                  {Object.keys(PAQUETES_CLARO_POR_PLAN).map(p => <option key={p} value={p}>{p}</option>)}
+                  {Object.keys(paquetesClaroPorPlan).map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </Campo>
               <Campo label="Paquete">

@@ -143,6 +143,20 @@ function errorTelefonos(v) {
   return null;
 }
 
+// GET /api/publico/paquetes-claro → paquetes activos por plan, del catálogo
+// que Jefatura edita en Usuarios → Paquetes (tabla paquetes_catalogo)
+router.get('/paquetes-claro', limiteLista, async (req, res) => {
+  try {
+    const [filas] = await db.query('SELECT plan, nombre FROM paquetes_catalogo WHERE activo = 1 ORDER BY plan, orden, id');
+    const paquetes = {};
+    for (const f of filas) (paquetes[f.plan] = paquetes[f.plan] || []).push(f.nombre);
+    res.json({ ok: true, paquetes });
+  } catch (e) {
+    console.error('[publico/paquetes-claro] Error:', e.message);
+    res.status(500).json({ ok: false, mensaje: 'No se pudo cargar los paquetes' });
+  }
+});
+
 // GET /api/publico/paquetes-win → catálogo WIN de Grupo Futura (paquetes y adicionales por región)
 router.get('/paquetes-win', limiteLista, async (req, res) => {
   try {
