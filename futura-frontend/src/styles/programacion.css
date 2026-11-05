@@ -1144,34 +1144,37 @@ body{
 }
 .prog-reference-table .tabla tbody tr{height:31px!important;background:#fff!important;}
 .prog-reference-table .tabla tbody tr:hover{background:#fbfcfe!important;}
+/* Columnas: # Fecha Nombre DNI Asesor Sala Distrito Paquete Biometría Estado Canal Obs Acción */
 .prog-reference-table .tabla th:nth-child(1),
 .prog-reference-table .tabla td:nth-child(1){width:3%!important;}
 .prog-reference-table .tabla th:nth-child(2),
 .prog-reference-table .tabla td:nth-child(2){width:7%!important;}
 .prog-reference-table .tabla th:nth-child(3),
-.prog-reference-table .tabla td:nth-child(3){width:12%!important;}
+.prog-reference-table .tabla td:nth-child(3){width:11%!important;}
 .prog-reference-table .tabla th:nth-child(4),
 .prog-reference-table .tabla td:nth-child(4){width:7%!important;}
 .prog-reference-table .tabla th:nth-child(5),
-.prog-reference-table .tabla td:nth-child(5){width:14%!important;}
+.prog-reference-table .tabla td:nth-child(5){width:11%!important;}
 .prog-reference-table .tabla th:nth-child(6),
 .prog-reference-table .tabla td:nth-child(6){width:6%!important;}
 .prog-reference-table .tabla th:nth-child(7),
 .prog-reference-table .tabla td:nth-child(7){width:8%!important;}
 .prog-reference-table .tabla th:nth-child(8),
-.prog-reference-table .tabla td:nth-child(8){width:12%!important;}
+.prog-reference-table .tabla td:nth-child(8){width:9%!important;}
 .prog-reference-table .tabla th:nth-child(9),
-.prog-reference-table .tabla td:nth-child(9){width:8%!important;}
+.prog-reference-table .tabla td:nth-child(9){width:7%!important;}
 .prog-reference-table .tabla th:nth-child(10),
-.prog-reference-table .tabla td:nth-child(10){width:9%!important;}
+.prog-reference-table .tabla td:nth-child(10){width:8%!important;}
 .prog-reference-table .tabla th:nth-child(11),
-.prog-reference-table .tabla td:nth-child(11){width:8%!important;}
+.prog-reference-table .tabla td:nth-child(11){width:9%!important;}
 .prog-reference-table .tabla th:nth-child(12),
-.prog-reference-table .tabla td:nth-child(12){width:6%!important;min-width:92px!important;}
+.prog-reference-table .tabla td:nth-child(12){width:8%!important;}
+.prog-reference-table .tabla th:nth-child(13),
+.prog-reference-table .tabla td:nth-child(13){width:6%!important;min-width:92px!important;}
 .prog-reference-table .tabla td:nth-child(3){color:#1f2937!important;font-weight:800!important;}
 .prog-reference-table .tabla td:nth-child(5){color:#374151!important;text-transform:uppercase!important;}
 .prog-reference-table .tabla td:nth-child(6){color:#94a3b8!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge{
+.prog-reference-table .tabla td:nth-child(10) .badge{
   display:inline!important;
   min-width:0!important;
   min-height:0!important;
@@ -1223,7 +1226,7 @@ body{
 .prog-reference-kpis>.k-caracter{border-left-color:#8b5cf6!important;}
 .prog-reference-kpis>.k-sinagenda{border-left-color:#eab308!important;}
 
-.prog-reference-table .tabla td:nth-child(9) .badge{
+.prog-reference-table .tabla td:nth-child(10) .badge{
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -1235,13 +1238,13 @@ body{
   font-weight:750!important;
   white-space:nowrap!important;
 }
-.prog-reference-table .tabla td:nth-child(9) .badge.b-programado{background:#dcfce7!important;color:#047857!important;border:1px solid rgba(52,211,153,.45)!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge.b-bloqueado{background:#fee2e2!important;color:#b91c1c!important;border:1px solid rgba(248,113,113,.5)!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge.b-sinagenda{background:#fef9c3!important;color:#a16207!important;border:1px solid rgba(250,204,21,.55)!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge.b-caracter{background:#f5f3ff!important;color:#6d28d9!important;border:1px solid rgba(167,139,250,.55)!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge.b-fraude{background:#111827!important;color:#fff!important;border:1px solid #111827!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge.b-zona{background:#ffedd5!important;color:#c2410c!important;border:1px solid rgba(251,146,60,.52)!important;}
-.prog-reference-table .tabla td:nth-child(9) .badge.b-pendiente{background:#fff7ed!important;color:#c2410c!important;border:1px solid rgba(251,146,60,.45)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-programado{background:#dcfce7!important;color:#047857!important;border:1px solid rgba(52,211,153,.45)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-bloqueado{background:#fee2e2!important;color:#b91c1c!important;border:1px solid rgba(248,113,113,.5)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-sinagenda{background:#fef9c3!important;color:#a16207!important;border:1px solid rgba(250,204,21,.55)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-caracter{background:#f5f3ff!important;color:#6d28d9!important;border:1px solid rgba(167,139,250,.55)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-fraude{background:#111827!important;color:#fff!important;border:1px solid #111827!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-zona{background:#ffedd5!important;color:#c2410c!important;border:1px solid rgba(251,146,60,.52)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-pendiente{background:#fff7ed!important;color:#c2410c!important;border:1px solid rgba(251,146,60,.45)!important;}
 
 /* El contenido del detalle se desplaza dentro del modal; el pie nunca tapa campos. */
 .programacion-shell .modal-bg{padding:18px!important;}
@@ -1294,13 +1297,13 @@ body{
 /* Legibilidad de ESTADO y VER/EDITAR en la tabla de Programación — estaban
    en 8px por una doble cascada previa. Mismos selectores exactos (empatan en
    especificidad, gana el último declarado). Tamaño intermedio, compacto. */
-.prog-reference-table .tabla td:nth-child(9) .badge{font-size:11px!important;font-weight:600!important;line-height:1.2!important;padding:4px 10px!important;min-height:24px!important;border-radius:999px!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge{font-size:11px!important;font-weight:600!important;line-height:1.2!important;padding:4px 10px!important;min-height:24px!important;border-radius:999px!important;}
 .prog-reference-table .btn-ver-det{font-size:11px!important;font-weight:600!important;line-height:1.2!important;height:auto!important;min-height:0!important;padding:6px 10px!important;border-radius:6px!important;min-width:0!important;}
 
 /* Estado inicial "GRABADO" (calculado, no persistido) cuando una venta llega
    a Programación recién aprobada por Super de Grabaciones — mismo verde ya
    usado para GRABADO en Grabaciones/Super de Grabaciones (bg-grabado). */
-.prog-reference-table .tabla td:nth-child(9) .badge.b-grabado-prog{background:#ecfdf5!important;color:#047857!important;border:1px solid rgba(52,211,153,.45)!important;}
+.prog-reference-table .tabla td:nth-child(10) .badge.b-grabado-prog{background:#ecfdf5!important;color:#047857!important;border:1px solid rgba(52,211,153,.45)!important;}
 
 /* Selector de estados del detalle: compacto y con selección morada, igual
    que la referencia visual del módulo de Programación. */
@@ -1432,7 +1435,7 @@ body{
   line-height: 1.35 !important;
 }
 
-.prog-reference-table .tabla td:nth-child(9) .badge.b-grabada-revision {
+.prog-reference-table .tabla td:nth-child(10) .badge.b-grabada-revision {
   border: 1px solid #facc15 !important;
   background: #fef9c3 !important;
   color: #a16207 !important;
