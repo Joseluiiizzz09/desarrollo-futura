@@ -420,7 +420,8 @@ router.post('/mis-ventas', limiteLista, async (req, res) => {
       grabacion: String(v.estado_grab || '').toLowerCase(),
       programada: v.fecha_programada ? String(v.fecha_programada).substring(0, 10) : '',
       nota: ultimaNota(v.obs_validacion),
-      motivo: String(v.motivo_seguimiento || ultimaNota(v.obs_seguimiento) || '').substring(0, 200),
+      // Seguimiento deja el motivo en sus campos; Validación, en su observación
+      motivo: String(v.motivo_seguimiento || ultimaNota(v.obs_seguimiento) || ultimaNota(v.obs_validacion) || '').substring(0, 200),
       ...extra.campos,
     });
     const ventas = [
