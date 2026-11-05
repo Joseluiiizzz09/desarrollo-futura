@@ -17,10 +17,53 @@ const pool = mysql.createPool({
   dateStrings: true,  // DATE/DATETIME se entregan sin conversión ISO/UTC
 });
 
+// La BD trabaja en hora de Lima: NOW() / CURRENT_TIMESTAMP en UTC-5, sin
+// depender de la zona del VPS (compartido; está en Europe/Madrid).
+pool.pool.on('connection', c => c.query("SET time_zone = '-05:00'"));
+
+// Antes de fijar la zona, las fechas se guardaban en hora del VPS (Europe/Madrid
+// desde 2026-10-21 06:07). Se pasan a hora de Lima una sola vez. Quedan fuera las
+// fechas que llegan desde la app ya en hora de Lima (agenda_grab_at, sheets_synced_at).
+const CORTE_ZONA_VPS = '2026-10-21 06:07:30';
+const FECHAS_HORA_VPS = {
+  ventas: ['created_at', 'seguimiento_ingresado_at', 'programacion_expira_at'],
+  venta_historial: ['created_at'], venta_fotos: ['created_at'], venta_asignaciones: ['created_at'],
+  leads: ['created_at', 'masivo_fecha'], lead_ciclos_venta: ['created_at', 'cerrado_at'],
+  leads_reclutamiento: ['created_at'], ventas_reclutamiento: ['created_at', 'updated_at'],
+  reclutamiento_entrevistas: ['created_at'], frases: ['created_at'],
+  eliminaciones: ['created_at', 'restored_at'], usuarios: ['created_at'],
+  paquetes_catalogo: ['created_at', 'updated_at'], campanas_catalogo: ['created_at', 'updated_at'],
+};
+async function migrarFechasAHoraLima(conn) {
+  await conn.query(`CREATE TABLE IF NOT EXISTS app_migraciones (nombre VARCHAR(80) PRIMARY KEY, aplicada_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  const [[hecha]] = await conn.query(`SELECT nombre FROM app_migraciones WHERE nombre = 'fechas_hora_lima'`);
+  if (hecha) return;
+  await conn.beginTransaction();
+  try {
+    for (const [tabla, columnas] of Object.entries(FECHAS_HORA_VPS)) {
+      const [existentes] = await conn.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME IN (?)`,
+        [tabla, columnas]);
+      if (!existentes.length) continue;
+      // Todas las columnas en un solo UPDATE: así ON UPDATE CURRENT_TIMESTAMP no pisa updated_at
+      const sets = existentes.map(({ COLUMN_NAME: c }) =>
+        `\`${c}\` = IF(\`${c}\` >= '${CORTE_ZONA_VPS}', CONVERT_TZ(\`${c}\`, 'SYSTEM', '-05:00'), \`${c}\`)`);
+      await conn.query(`UPDATE \`${tabla}\` SET ${sets.join(', ')}`);
+    }
+    await conn.query(`INSERT INTO app_migraciones (nombre) VALUES ('fechas_hora_lima')`);
+    await conn.commit();
+    console.log('[DB] fechas guardadas en hora del VPS convertidas a hora de Lima');
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  }
+}
+
 /* â”€â”€ CREAR TABLAS â”€â”€ */
 async function initDB() {
   const conn = await pool.getConnection();
   try {
+    await conn.query("SET time_zone = '-05:00'");
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS usuarios (
@@ -626,16 +669,20 @@ async function initDB() {
       }
     }
 
+    await migrarFechasAHoraLima(conn);
+
     console.log('âœ… Base de datos MySQL iniciada correctamente');
   } finally {
     conn.release();
   }
 }
 
-initDB().catch(err => {
+const listo = initDB().catch(err => {
   console.error('âŒ Error iniciando base de datos:', err.message);
   process.exit(1);
 });
 
 module.exports = pool;
+// server.js espera a que termine (incluida la conversión de fechas) antes de escuchar
+module.exports.listo = listo;
 
