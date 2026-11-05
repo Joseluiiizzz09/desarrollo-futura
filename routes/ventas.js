@@ -2116,7 +2116,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
              obs_programacion, sot, fecha_programada, obs_validacion, obs_supgrab,
              estado_supgrab, estado_grab, audio_path, obs_seguimiento,
              tramo_seguimiento, motivo_seguimiento, seguimiento_ingresado_at,
-             supervision_supgrab, tipo_grabacion,
+             supervision_supgrab, tipo_grabacion, biometria, biometria_tipo,
              EXISTS (
                SELECT 1 FROM venta_historial vh
                 WHERE vh.venta_id = ventas.id
@@ -2286,8 +2286,22 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     if (estado_supgrab !== undefined && ['conforme', 'rechazado'].includes(String(estado_supgrab).toLowerCase())) {
       campos.push('seguimiento_ingresado_at = COALESCE(seguimiento_ingresado_at, NOW())');
     }
-    agregarCambio('estado_grab', estado_grab);
-    agregarCambio('tipo_grabacion', tipo_grabacion === undefined ? undefined : String(tipo_grabacion).toLowerCase());
+    // Venta con biometría: no requiere grabación. Al quedar VALIDADO se da por
+    // grabada (tipo biometria / biometria_aislada) y pasa directo a Programación.
+    let estadoGrabAplicar = estado_grab;
+    let tipoGrabacionAplicar = tipo_grabacion === undefined ? undefined : String(tipo_grabacion).toLowerCase();
+    if (
+      String(_estadoAplicar || '').toUpperCase() === 'VALIDADO' &&
+      String(rows[0].estado || '').toUpperCase() !== 'VALIDADO' &&
+      estado_grab === undefined && tipo_grabacion === undefined && estado_supgrab === undefined &&
+      String(rows[0].biometria || '').toUpperCase() === 'SI' &&
+      String(rows[0].estado_grab || '').toLowerCase() !== 'grabado'
+    ) {
+      estadoGrabAplicar = 'grabado';
+      tipoGrabacionAplicar = /AISLADA/i.test(rows[0].biometria_tipo || '') ? 'biometria_aislada' : 'biometria';
+    }
+    agregarCambio('estado_grab', estadoGrabAplicar);
+    agregarCambio('tipo_grabacion', tipoGrabacionAplicar);
     agregarCambio('supervision_supgrab', supervision_supgrab === undefined ? undefined : String(supervision_supgrab).toLowerCase());
     agregarCambio('obs_seguimiento', obs_seguimiento);
     agregarCambio('tramo_seguimiento', tramo_seguimiento);

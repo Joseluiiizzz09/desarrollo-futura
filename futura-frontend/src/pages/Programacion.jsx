@@ -61,6 +61,14 @@ function estadoVisible(v) {
   return raw
 }
 
+// BIOMETRÍA / BIOMETRÍA AISLADA (del formulario de venta o de Grabaciones) o NO
+function biometriaDe(v) {
+  const tipo = String(v.biometria_tipo || v.tipo_grabacion || '').toUpperCase()
+  const con = String(v.biometria || '').toUpperCase() === 'SI' || tipo.startsWith('BIOMETRIA')
+  if (!con) return 'NO'
+  return tipo.includes('AISLADA') ? 'BIOMETRÍA AISLADA' : 'BIOMETRÍA'
+}
+
 function formatF(f) {
   if (!f) return '—'
   const d = f.split('T')[0] || f
@@ -365,12 +373,12 @@ export default function Programacion() {
                 <tr>
                   <th>#</th><th>Fecha</th><th>Nombre</th><th>DNI</th>
                   <th>Asesor</th><th>Sala</th><th>Distrito</th>
-                  <th>Paquete</th><th>Estado</th><th>Canal</th><th>Obs. Programación</th><th>Acción</th>
+                  <th>Paquete</th><th>Biometría</th><th>Estado</th><th>Canal</th><th>Obs. Programación</th><th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {ventasFiltradas.length === 0 ? (
-                  <tr className="tabla-empty"><td colSpan="12">Sin registros con esos filtros.</td></tr>
+                  <tr className="tabla-empty"><td colSpan="13">Sin registros con esos filtros.</td></tr>
                 ) : ventasFiltradas.map((v, i) => {
                   const fecha = formatF((v.created_at || '').split(' ')[0])
                   const estadoRaw = estadoVisible(v)
@@ -386,6 +394,7 @@ export default function Programacion() {
                       <td style={{ fontSize: '11px', color: '#9ca3af' }}>{v.sala || '—'}</td>
                       <td style={{ fontSize: '11px' }}>{v.distrito || '—'}</td>
                       <td style={{ fontSize: '11px', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.paquete || ''}>{v.paquete || '—'}</td>
+                      <td style={{ fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap', color: biometriaDe(v) === 'NO' ? '#9ca3af' : '#6d28d9' }}>{biometriaDe(v)}</td>
                       <td><span className={`badge ${cls}`}>{estadoLabel}</span></td>
                       <td style={{ textAlign: 'center' }}><CanalBadge canal={v.canal} /></td>
                       <td style={{ fontSize: '11px', color: '#6b7280', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.obs_programacion || '—'}</td>
