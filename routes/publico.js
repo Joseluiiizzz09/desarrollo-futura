@@ -60,8 +60,9 @@ function erroresVentaClaro(v) {
     errorTexto(v.fechaNac, 'Fecha de nacimiento', { max: 10 }),
     errorFecha(v.fechaNac, 'Fecha de nacimiento'),
     errorTexto(v.lugarNac, 'Lugar de nacimiento', { max: 150 }),
-    errorTexto(v.padre, 'Nombre del padre', { requerido: true, max: 150 }),
-    errorTexto(v.madre, 'Nombre de la madre', { requerido: true, max: 150 }),
+    // Con biometría no se piden los nombres del padre y la madre.
+    errorTexto(v.padre, 'Nombre del padre', { requerido: String(v.biometria || '').toUpperCase() !== 'SI', max: 150 }),
+    errorTexto(v.madre, 'Nombre de la madre', { requerido: String(v.biometria || '').toUpperCase() !== 'SI', max: 150 }),
     errorTexto(v.telefono1, 'Teléfono de contacto', { requerido: true, max: 20 }),
     errorTexto(v.telefono2, 'Teléfono de referencia', { max: 20 }),
     errorTexto(v.email, 'Correo electrónico', { requerido: true, max: 150 }),

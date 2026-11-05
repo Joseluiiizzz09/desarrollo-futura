@@ -104,8 +104,12 @@ function faltantes(paso, f) {
       else if (!/^\d+$/.test(d)) req.push('El documento solo lleva números')
     }
     if (claro) {
-      pedir(f.padre, 'Nombre del padre')
-      pedir(f.madre, 'Nombre de la madre')
+      pedir(f.biometria, '¿Venta con biometría?')
+      if (f.biometria === 'SI') pedir(f.biometriaTipo, 'Tipo de biometría')
+      if (f.biometria === 'NO') {
+        pedir(f.padre, 'Nombre del padre')
+        pedir(f.madre, 'Nombre de la madre')
+      }
     }
   }
   if (paso === P.DIRECCION) {
@@ -126,8 +130,6 @@ function faltantes(paso, f) {
       pedir(f.predio, 'Tipo de vivienda')
       pedir(f.tec, 'Tecnología')
       pedir(f.full, 'Full Claro')
-      pedir(f.biometria, '¿Venta con biometría?')
-      if (f.biometria === 'SI') pedir(f.biometriaTipo, 'Tipo de biometría')
       pedir(f.cantMesh, 'Cantidad de mesh')
       pedir(f.plano, 'Plano')
     } else {
@@ -749,7 +751,7 @@ export default function VentaClaro() {
     ['Vendedor', vendedor?.nombre],
     ['Operador', f.operador],
     ['Cliente', f.nombre], ['Documento', `${f.tipoDoc} ${f.dni}`],
-    ...(esClaro ? [['Padre', f.padre], ['Madre', f.madre]] : []),
+    ...(esClaro && f.biometria !== 'SI' ? [['Padre', f.padre], ['Madre', f.madre]] : []),
     ['Teléfono', f.telefono1], ['Teléfono de referencia', f.telefono2 || '—'], ['Correo', f.email],
     ['Ubicación', [f.departamento, f.provincia, f.distrito].filter(Boolean).join(' / ')], ['Dirección', f.direccion],
     ['Coordenadas', f.coordenadas],
@@ -888,6 +890,12 @@ export default function VentaClaro() {
               <Campo label="Tipo de documento"><Opciones valor={f.tipoDoc} opciones={TIPOS_DOC} onChange={v => set('tipoDoc', v)} /></Campo>
               <Campo label="Número de documento"><input inputMode="numeric" value={f.dni} onChange={e => set('dni', e.target.value.replace(/\D/g, '').slice(0, 15))} autoComplete="off" /></Campo>
               {esClaro && (<>
+                <Campo label="¿Venta con biometría?"><Opciones valor={f.biometria} opciones={[['SI', 'Sí'], ['NO', 'No']]} onChange={v => { set('biometria', v); if (v !== 'SI') set('biometriaTipo', ''); if (v === 'SI') { set('padre', ''); set('madre', '') } }} /></Campo>
+                {f.biometria === 'SI' && (
+                  <Campo label="Tipo de biometría"><Opciones valor={f.biometriaTipo} opciones={[['BIOMETRIA', 'Biometría'], ['BIOMETRIA AISLADA', 'Biometría aislada']]} onChange={v => set('biometriaTipo', v)} /></Campo>
+                )}
+              </>)}
+              {esClaro && f.biometria === 'NO' && (<>
                 <Campo label="Nombre del padre"><input value={f.padre} onChange={e => set('padre', e.target.value.toUpperCase())} /></Campo>
                 <Campo label="Nombre de la madre"><input value={f.madre} onChange={e => set('madre', e.target.value.toUpperCase())} /></Campo>
               </>)}
@@ -971,10 +979,6 @@ export default function VentaClaro() {
               <Campo label="Tipo de vivienda"><Opciones valor={f.predio} opciones={VIVIENDAS} onChange={v => set('predio', v)} /></Campo>
               <Campo label="Tecnología"><Opciones valor={f.tec} opciones={TECNOLOGIAS} onChange={v => set('tec', v)} /></Campo>
               <Campo label="Full Claro"><Opciones valor={f.full} opciones={[['Si', 'Sí'], ['No', 'No']]} onChange={v => set('full', v)} /></Campo>
-              <Campo label="¿Venta con biometría?"><Opciones valor={f.biometria} opciones={[['SI', 'Sí'], ['NO', 'No']]} onChange={v => { set('biometria', v); if (v !== 'SI') set('biometriaTipo', '') }} /></Campo>
-              {f.biometria === 'SI' && (
-                <Campo label="Tipo de biometría"><Opciones valor={f.biometriaTipo} opciones={[['BIOMETRIA', 'Biometría'], ['BIOMETRIA AISLADA', 'Biometría aislada']]} onChange={v => set('biometriaTipo', v)} /></Campo>
-              )}
               <Campo label="Cantidad de decos"><Opciones valor={f.cantDecos} opciones={CANTIDADES} onChange={v => set('cantDecos', v)} /></Campo>
               <Campo label="Cantidad de mesh"><Opciones valor={f.cantMesh} opciones={CANTIDADES} onChange={v => set('cantMesh', v)} /></Campo>
               <Campo label="Plano"><input value={f.plano} onChange={e => set('plano', e.target.value.toUpperCase())} placeholder="Código de plano" /></Campo>
