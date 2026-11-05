@@ -1451,6 +1451,10 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS sala,
                u.sala AS asesor_sala_actual,
                COALESCE(g.nombre, v.grabando_por_nombre) as grabando_por_nombre,
+               -- Quién la marcó GRABADO (último cambio en historial; usa idx_vh_campo_venta_fecha)
+               (SELECT vh.usuario_nombre FROM venta_historial vh
+                 WHERE vh.campo = 'estado_grab' AND vh.venta_id = v.id AND LOWER(vh.valor_nuevo) = 'grabado'
+                 ORDER BY vh.created_at DESC, vh.id DESC LIMIT 1) AS grabado_por_nombre,
                ph.fecha_programado,
                ph_prog.estado_prog, ph_prog.usuario_prog, ph_prog.fecha_prog,
                ph_sup.fecha_sup_resultado,

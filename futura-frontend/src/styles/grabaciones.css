@@ -268,7 +268,8 @@ body{
 .tabla-search,.filtro-buscar{padding:7px 12px;border:1px solid var(--line-2);border-radius:9px;font-size:12px;font-family:inherit;outline:none;width:210px;background:var(--surf-1);transition:all .18s;}
 .tabla-search:focus,.filtro-buscar:focus{border-color:var(--brand);background:var(--surf-0);box-shadow:0 0 0 3px rgba(229,62,62,.08);}
 .pag-size select,.select-por-pagina{padding:6px 10px;border:1px solid var(--line-2);border-radius:8px;font-size:11px;font-family:inherit;outline:none;background:var(--surf-0);cursor:pointer;}
-.tabla-scroll{overflow-x:auto;max-height:calc(100vh - 300px);overflow-y:auto;}
+/* Mínimo 420px: en pantallas bajas calc() dejaba la tabla en una sola fila recortada */
+.tabla-scroll{overflow-x:auto;max-height:max(420px, calc(100vh - 300px));overflow-y:auto;}
 .tabla,.base-tabla,.bo-tabla{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
 .tabla thead th,.base-tabla thead th,.bo-tabla th{
   background:linear-gradient(180deg,#1e293b,#0f172a);

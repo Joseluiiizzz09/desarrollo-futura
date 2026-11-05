@@ -12,6 +12,9 @@ import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../ut
 import '../styles/grabaciones.css'
 
 // ── Constantes ────────────────────────────────────────────────────────────
+// Back que grabó la venta: quien la marcó GRABADO; si aún no, quien la tomó (GRABANDO)
+const backDe = v => String(v.grabado_por_nombre || v.grabando_por_nombre || '').trim().toUpperCase()
+
 const ESTADOS_GRAB = [
   { id:'pendiente',      label:'PENDIENTE',      cls:'bg-pendiente'     },
   { id:'grabando',       label:'GRABANDO',       cls:'bg-grabando'      },
@@ -224,6 +227,7 @@ export default function Grabaciones() {
   const [fEstado,  setFEstado]  = useState('')
   const [fDoc,     setFDoc]     = useState('')
   const [fVendedor,setFVendedor]= useState('')
+  const [fBack,setFBack]        = useState('')
   const [fDesde,   setFDesde]   = useState('')
   const [fHasta,   setFHasta]   = useState('')
   const [busqueda, setBusqueda] = useState('')
@@ -340,7 +344,7 @@ export default function Grabaciones() {
     return () => clearInterval(t)
   }, [])
 
-  useEffect(() => { setPagina(1) }, [fEstado, fDoc, fVendedor, fDesde, fHasta, busqueda, tabActiva])
+  useEffect(() => { setPagina(1) }, [fEstado, fDoc, fVendedor, fBack, fDesde, fHasta, busqueda, tabActiva])
 
   // ── Computed ─────────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
@@ -362,6 +366,7 @@ export default function Grabaciones() {
       : ventas.filter(v => v._fechaGrab < hoy)
     return base.filter(v => {
       if (fVendedor && !(v.vendedor||'').toLowerCase().includes(fVendedor.toLowerCase())) return false
+      if (fBack     && backDe(v) !== fBack) return false
       if (fDesde    && v.fechaIngreso < fDesde) return false
       if (fHasta    && v.fechaIngreso > fHasta) return false
       if (fDoc      && !(v.dni||'').toLowerCase().includes(fDoc.toLowerCase())) return false
@@ -372,7 +377,8 @@ export default function Grabaciones() {
       }
       return true
     })
-  }, [ventas, tabActiva, fEstado, fDoc, fVendedor, fDesde, fHasta, busqueda])
+  }, [ventas, tabActiva, fEstado, fDoc, fVendedor, fBack, fDesde, fHasta, busqueda])
+  const backs = useMemo(() => [...new Set(ventas.map(backDe).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), [ventas])
 
   const totalPags    = Math.max(1, Math.ceil(ventasFiltradas.length / porPagina))
   const pagActual    = Math.min(pagina, totalPags)
@@ -694,12 +700,19 @@ export default function Grabaciones() {
               <input value={fVendedor} onChange={e=>setFVendedor(e.target.value)} placeholder="Buscar vendedor..." />
             </div>
             <div className="fg">
+              <label>Back (grabado por)</label>
+              <select value={fBack} onChange={e=>setFBack(e.target.value)}>
+                <option value="">Todos</option>
+                {backs.map(b=><option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div className="fg">
               <label>Rango de fechas</label>
               <RangoFechasPicker desde={fDesde} hasta={fHasta}
                 onChange={v => { setFDesde(v.desde); setFHasta(v.hasta) }} />
             </div>
             <div style={{alignSelf:'flex-end'}}>
-              <button className="btn-limpiar" onClick={()=>{ setFEstado(''); setFDoc(''); setFVendedor(''); setFDesde(''); setFHasta(''); setBusqueda('') }}>✕ Limpiar</button>
+              <button className="btn-limpiar" onClick={()=>{ setFEstado(''); setFDoc(''); setFVendedor(''); setFBack(''); setFDesde(''); setFHasta(''); setBusqueda('') }}>✕ Limpiar</button>
             </div>
           </div>
         </div>
