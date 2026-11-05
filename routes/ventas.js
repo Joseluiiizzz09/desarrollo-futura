@@ -1953,7 +1953,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
     await conn.beginTransaction();
 
     const [rows] = await conn.query(
-      `SELECT id, estado, obs_validacion, canal FROM ventas WHERE id = ? FOR UPDATE`,
+      `SELECT id, estado, obs_validacion, canal, estado_grab, biometria, biometria_tipo FROM ventas WHERE id = ? FOR UPDATE`,
       [ventaId]
     );
     if (!rows.length) {
@@ -2014,6 +2014,12 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       : lineas.join('\n');
     const nuevoEstado         = tipificacion ? TIP_TO_ESTADO_VAL[tipificacion] : null;
     const estadoAnterior      = venta.estado || 'VENTA';
+    // Venta con biometría: no requiere grabación. Al validarse se da por
+    // grabada (biometria / biometria_aislada) y pasa directo a Programación.
+    const biometriaDirecta = tipificacion === 'validado'
+      && String(venta.biometria || '').toUpperCase() === 'SI'
+      && String(venta.estado_grab || '').toLowerCase() !== 'grabado';
+    const tipoBiometria = /AISLADA/i.test(venta.biometria_tipo || '') ? 'biometria_aislada' : 'biometria';
 
     if (nuevoEstado) {
       await conn.query(
@@ -2027,6 +2033,9 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
         await conn.query(
           `UPDATE ventas SET estado_grab = 'pendiente', agenda_grab_at = NULL
             WHERE id = ? AND LOWER(COALESCE(estado_grab, '')) = 'agendado'`, [ventaId]);
+      }
+      if (biometriaDirecta) {
+        await conn.query(`UPDATE ventas SET estado_grab = 'grabado', tipo_grabacion = ? WHERE id = ?`, [tipoBiometria, ventaId]);
       }
     } else {
       await conn.query(
@@ -2059,6 +2068,16 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
         : `Observación: ${obsTexto}`,
     });
 
+    if (nuevoEstado && biometriaDirecta) {
+      await registrarHistorial(conn, ventaId, actor, {
+        tipo:          'CAMBIO_VALIDACION',
+        campo:         'estado_grab',
+        etiqueta:      'Estado de grabación',
+        valorAnterior: venta.estado_grab || 'pendiente',
+        valorNuevo:    'grabado',
+        descripcion:   `Venta con ${tipoBiometria === 'biometria_aislada' ? 'biometría aislada' : 'biometría'}: pasa directo a Programación sin grabación`,
+      });
+    }
     if (canalNorm && canalNorm !== venta.canal) {
       await registrarHistorial(conn, ventaId, actor, {
         tipo:          'CAMBIO_VALIDACION',

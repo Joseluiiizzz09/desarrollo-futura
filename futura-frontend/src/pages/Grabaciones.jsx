@@ -688,6 +688,7 @@ export default function Grabaciones() {
               <label>Estado grabación</label>
               <select value={fEstado} onChange={e=>setFEstado(e.target.value)}>
                 <option value="">Todos</option>
+                <option value="agendado">AGENDADO</option>
                 {ESTADOS_GRAB.map(e=><option key={e.id} value={e.id}>{e.label}</option>)}
               </select>
             </div>

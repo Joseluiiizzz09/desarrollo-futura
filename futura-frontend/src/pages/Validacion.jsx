@@ -57,6 +57,11 @@ const TIPS_DISPLAY  = ['CORTA LLAMADA','FRAUDE','NO DESEA','NO CONTESTA','BUZON 
 const LT_COLORES    = ['#7C3AED','#2563eb','#16a34a','#d97706','#dc2626','#0891b2','#ec4899']
 
 // ── Utilidades ────────────────────────────────────────────────────────────
+// 'AAAA-MM-DD HH:MM:SS' -> 'DD/MM HH:MM' (hora en que Grabaciones debe grabar)
+function agendaCorta(fecha) {
+  const m = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
+  return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]}` : ''
+}
 function nowLabel() { return new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function formatF(f) { if(!f)return'—'; const d=(f.split('T')[0]||f); const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:f }
 
@@ -548,7 +553,7 @@ export default function Validacion() {
                               title="Click para tipificar"
                               style={{cursor:'pointer'}}
                             >
-                              {eObj.label}
+                              {mostrar === 'agendado' && v.agenda_grab_at ? `AGENDADO ${agendaCorta(v.agenda_grab_at)}` : eObj.label}
                             </span>
                           </td>
                           <td style={{textAlign:'center'}}><CanalBadge canal={v.canal} /></td>
