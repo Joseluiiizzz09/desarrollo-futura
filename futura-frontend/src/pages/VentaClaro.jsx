@@ -84,7 +84,9 @@ async function comprimirFoto(archivo) {
   throw new Error('muy grande')
 }
 
-const regionWin = dpto => !dpto ? '' : (String(dpto).trim().toUpperCase() === 'LIMA' ? 'LIMA' : 'PROVINCIA')
+// Punta Negra es distrito de Lima pero toma los planes de Provincia
+const DISTRITOS_LIMA_CON_PLAN_PROVINCIA = ['PUNTA NEGRA']
+const regionWin = (dpto, distrito) => !dpto ? '' : (String(dpto).trim().toUpperCase() === 'LIMA' && !DISTRITOS_LIMA_CON_PLAN_PROVINCIA.includes(String(distrito || '').trim().toUpperCase()) ? 'LIMA' : 'PROVINCIA')
 const esRuc20 = paquete => /^RUC\s*20/i.test(String(paquete || '').trim())
 
 // Qué falta en cada paso (mensajes simples)
@@ -522,7 +524,7 @@ export default function VentaClaro() {
   const ubigeo = esClaro ? UBIGEO_CLARO : UBIGEO
   const provincias = f.departamento ? Object.keys(ubigeo[f.departamento] || {}) : []
   const distritos = f.departamento && f.provincia ? (ubigeo[f.departamento]?.[f.provincia] || []) : []
-  const region = regionWin(f.departamento)
+  const region = regionWin(f.departamento, f.distrito)
   const paquetesClaro = paquetesClaroPorPlan[f.hogar] || []
   // Vivienda VERTICAL (edificio): usa la lista "Vertical" del catálogo si tiene paquetes
   const paquetesWinDe = predio => {
@@ -608,8 +610,16 @@ export default function VentaClaro() {
   // En WIN el departamento decide la región (Lima / Provincia) y con ella los paquetes
   function elegirDepartamento(dpto) {
     setF(p => {
-      const cambiaRegion = p.operador === 'WIN' && regionWin(p.departamento) !== regionWin(dpto)
+      const cambiaRegion = p.operador === 'WIN' && regionWin(p.departamento, p.distrito) !== regionWin(dpto)
       return { ...p, departamento: dpto, provincia: '', distrito: '', ...(cambiaRegion ? { paquete: '', adicionales: [], cuotaInstalacion: '' } : {}) }
+    })
+  }
+
+  // Entrar o salir de Punta Negra cambia la región WIN y con ella los paquetes
+  function elegirDistrito(distrito) {
+    setF(p => {
+      const cambiaRegion = p.operador === 'WIN' && regionWin(p.departamento, p.distrito) !== regionWin(p.departamento, distrito)
+      return { ...p, distrito, ...(cambiaRegion ? { paquete: '', adicionales: [], cuotaInstalacion: '' } : {}) }
     })
   }
 
@@ -922,13 +932,13 @@ export default function VentaClaro() {
                 </select>
               </Campo>
               <Campo label="Provincia">
-                <select value={f.provincia} disabled={!f.departamento} onChange={e => setF(p => ({ ...p, provincia: e.target.value, distrito: '' }))}>
+                <select value={f.provincia} disabled={!f.departamento} onChange={e => setF(p => ({ ...p, provincia: e.target.value, distrito: '', ...(p.operador === 'WIN' && regionWin(p.departamento, p.distrito) !== regionWin(p.departamento) ? { paquete: '', adicionales: [], cuotaInstalacion: '' } : {}) }))}>
                   <option value="">{f.departamento ? 'Elegir provincia' : 'Primero elige el departamento'}</option>
                   {provincias.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </Campo>
               <Campo label="Distrito">
-                <select value={f.distrito} disabled={!f.provincia} onChange={e => set('distrito', e.target.value)}>
+                <select value={f.distrito} disabled={!f.provincia} onChange={e => elegirDistrito(e.target.value)}>
                   <option value="">{f.provincia ? 'Elegir distrito' : 'Primero elige la provincia'}</option>
                   {distritos.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
