@@ -313,6 +313,9 @@ function Opciones({ valor, opciones, onChange }) {
 
 // Cómo se le muestra el estado de su venta al vendedor
 const ESTADOS_MALOS = ['CORTA_LLAMADA','FRAUDE','NO_DESEA','NO_CONTESTA','BUZON_VOZ','MALA_OFERTA','SERVICIO_ACTIVO','CAIDA','RECHAZADO','RECHAZO_CAMPO','ANULADO']
+// Estados de Seguimiento en los que el vendedor ve el motivo
+const ESTADOS_CON_MOTIVO = ['DESAPROBADO', 'CAIDA', 'RECHAZO_CAMPO', 'RECHAZO_MESA']
+
 function estadoParaVendedor(v) {
   const e = v.estado
   if (e === 'ENVIANDO') return { texto:'ENVIANDO', bg:'#f3f4f6', color:'#374151', nota:true }
@@ -427,7 +430,8 @@ function MisVentas({ ventas, cargando, error, aviso, filtro, setFiltro, onRecarg
             <div className="vc-mv-dato"><b>Fecha:</b> {v.fecha || '—'}{v.dni ? <> · <b>Doc.:</b> {v.dni}</> : null}</div>
             {v.paquete && <div className="vc-mv-dato"><b>Paquete:</b> {v.paquete}</div>}
             {v.distrito && <div className="vc-mv-dato"><b>Distrito:</b> {v.distrito}</div>}
-            {v.programada && <div className="vc-mv-dato"><b>Instalación programada:</b> {v.programada}</div>}
+            {v.programada && <div className="vc-mv-dato"><b>{v.estado === 'EN_PROGRESO' ? 'Fecha programada:' : 'Instalación programada:'}</b> {v.programada}</div>}
+            {v.motivo && ESTADOS_CON_MOTIVO.includes(v.estado) && <div className="vc-mv-dato"><b>Motivo:</b> {v.motivo}</div>}
             {e.nota && v.nota && v.nota.trim().toUpperCase() !== e.texto && <div className="vc-mv-nota">{v.nota}</div>}
           </div>
         )
