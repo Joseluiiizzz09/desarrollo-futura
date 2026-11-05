@@ -882,3 +882,4 @@ body{
 .rev-opcion.sel.rev-no_conforme{border-color:#d97706;background:#fffbeb;}
 .rev-opcion.sel.rev-rechazado{border-color:#dc2626;background:#fef2f2;}
 @media(max-width:520px){.rev-opciones{grid-template-columns:1fr;}}
+.bg-biometria    {background:#ecfeff;color:#0e7490;border:1px solid rgba(34,211,238,.5);box-shadow:0 2px 8px rgba(34,211,238,.16);}

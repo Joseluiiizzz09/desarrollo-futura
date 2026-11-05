@@ -27,6 +27,14 @@ const ESTADOS_GRAB = [
 // Estados que ya no aparecen en el selector de Back/Grabaciones pero que otros
 // módulos (Super de Grabaciones) siguen usando internamente — se conservan
 // aquí solo para que la tabla los siga rotulando correctamente.
+// Opciones del menú de estado: además de los estados, la venta puede darse por
+// grabada con BIOMETRÍA o BIOMETRÍA AISLADA, sin subir audio.
+const OPCIONES_BIOMETRIA = [
+  { id:'biometria',         label:'BIOMETRÍA',         cls:'bg-biometria' },
+  { id:'biometria_aislada', label:'BIOMETRÍA AISLADA', cls:'bg-biometria' },
+]
+const ESTADOS_GRAB_MENU = [...ESTADOS_GRAB, ...OPCIONES_BIOMETRIA]
+
 const ESTADOS_GRAB_BADGE = [
   ...ESTADOS_GRAB,
   { id:'observado', label:'OBSERVADO', cls:'bg-observado' },
@@ -143,7 +151,7 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
     const r = btnRef.current?.getBoundingClientRect()
     if (r) {
       // Abre hacia abajo; si no hay espacio suficiente, hacia arriba.
-      const alto = Math.min(ESTADOS_GRAB.length * 38 + 16, window.innerHeight - 24)
+      const alto = Math.min(ESTADOS_GRAB_MENU.length * 38 + 16, window.innerHeight - 24)
       const abajo = window.innerHeight - r.bottom - 12
       const top = abajo >= alto ? r.bottom + 6 : Math.max(12, r.top - alto - 6)
       setPos({ top, left: Math.min(r.left, window.innerWidth - 220) })
@@ -174,7 +182,7 @@ function EstadoGrabMenu({ abierto, actual, clase, etiqueta, onAbrir, onCerrar, o
       </button>
       {abierto && createPortal(
         <div ref={listaRef} className="grab-estado-menu" role="listbox" style={{ top: pos.top, left: pos.left }}>
-          {ESTADOS_GRAB.map(e => (
+          {ESTADOS_GRAB_MENU.map(e => (
             <button key={e.id} type="button" role="option" aria-selected={e.id === actual}
               className={`grab-estado-opcion${e.id === actual ? ' activo' : ''}`} onClick={() => onElegir(e.id)}>
               <span className={`badge-grab ${e.cls}`}>{e.label}</span>
@@ -378,14 +386,15 @@ export default function Grabaciones() {
     const id = idDirecto ?? modalEstado.id
     const estadoSel = estadoDirecto ?? nuevoEstadoSel
     const v = ventas.find(x=>x.id===id); if (!v) return
-    if (estadoSel === 'grabado') {
+    if (estadoSel === 'grabado' || estadoSel.startsWith('biometria')) {
       try {
         const res  = await fetch(`${API}/ventas/${v.id}`, {
           method:'PATCH', headers:ncHeaders(),
           // No se toca `estado` (campo de Validación) — solo el campo
           // independiente de Grabaciones. Super de Grabaciones lee su cola
-          // desde estado_grab, no desde estado.
-          body: JSON.stringify({ estado_grab:'grabado', estado_supgrab:'sin_revisar' }),
+          // desde estado_grab, no desde estado. BIOMETRÍA / BIOMETRÍA AISLADA
+          // cuentan como GRABADO sin audio; tipo_grabacion guarda cuál fue.
+          body: JSON.stringify({ estado_grab:'grabado', estado_supgrab:'sin_revisar', tipo_grabacion: estadoSel === 'grabado' ? 'audio' : estadoSel }),
         })
         const data = await res.json()
         if (!res.ok || !data.ok) { mostrarToast('Error: ' + (data.mensaje||'no se pudo guardar')); return }
@@ -513,16 +522,22 @@ export default function Grabaciones() {
   // Audio de la venta dentro del modal de revisión, para oírlo antes de tipificar.
   const revisarId = modalRevisar?.id
   const revisarAudio = modalRevisar?._grabAudio
+  const revisarTipo = String(modalRevisar?.tipo_grabacion || '').toLowerCase()
   useEffect(() => {
     if (!revisarId) return undefined
-    if (!revisarAudio) { setRevAudio({ src:'', cargando:false, error:'Esta venta no tiene grabación.' }); return undefined }
+    if (!revisarAudio) {
+      const sinAudio = revisarTipo === 'biometria_aislada' ? 'Venta con BIOMETRÍA AISLADA (no lleva audio).'
+        : revisarTipo === 'biometria' ? 'Venta con BIOMETRÍA (no lleva audio).' : 'Esta venta no tiene grabación.'
+      setRevAudio({ src:'', cargando:false, error:sinAudio })
+      return undefined
+    }
     let vivo = true, blobUrl = ''
     setRevAudio({ src:'', cargando:true, error:'' })
     prepararAudioUrl(revisarAudio)
       .then(url => { blobUrl = url; if (vivo) setRevAudio({ src:url, cargando:false, error:'' }); else URL.revokeObjectURL(url) })
       .catch(() => { if (vivo) setRevAudio({ src:'', cargando:false, error:'No se pudo cargar el audio. Revisa que el archivo exista.' }) })
     return () => { vivo = false; if (blobUrl) URL.revokeObjectURL(blobUrl) }
-  }, [revisarId, revisarAudio])
+  }, [revisarId, revisarAudio, revisarTipo])
 
   // ── Modal Audio ───────────────────────────────────────────────────────────
   async function prepararAudioUrl(ruta) {
@@ -861,7 +876,7 @@ export default function Grabaciones() {
             <div className="modal-campo">
               <label>Nuevo estado</label>
               <select value={nuevoEstadoSel} onChange={e=>setNuevoEstadoSel(e.target.value)}>
-                {ESTADOS_GRAB.map(e=><option key={e.id} value={e.id}>{e.label}</option>)}
+                {ESTADOS_GRAB_MENU.map(e=><option key={e.id} value={e.id}>{e.label}</option>)}
               </select>
             </div>
             <div className="modal-btns">

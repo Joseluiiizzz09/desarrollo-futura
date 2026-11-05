@@ -162,6 +162,7 @@ export default function SupGrabaciones() {
             audioPath:        v.audio_path || '',
             audioUrl:         v.audio_path ? `${NC_API}/${v.audio_path}` : null,
             audioNombre:      v.audio_path ? v.audio_path.split('/').pop() : '',
+            tipoGrabacion:    String(v.tipo_grabacion || '').toLowerCase(),
             programacionExpiraAt: v.programacion_expira_at || null,
             // Momento real en que Programación marcó PROGRAMADO.
             obsProgramacion:  String(v.estado || '').trim().toUpperCase() === 'PROGRAMADO'
@@ -521,7 +522,9 @@ export default function SupGrabaciones() {
                       <td>
                         {v.audioUrl
                           ? <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '11px' }}>OK {v.audioNombre}</span>
-                          : <span style={{ color: '#9ca3af', fontSize: '11px', fontStyle: 'italic' }}>Sin grabación</span>
+                          : v.tipoGrabacion.startsWith('biometria')
+                            ? <span style={{ color: '#0e7490', fontWeight: 700, fontSize: '11px' }}>{v.tipoGrabacion === 'biometria_aislada' ? 'BIOMETRÍA AISLADA' : 'BIOMETRÍA'}</span>
+                            : <span style={{ color: '#9ca3af', fontSize: '11px', fontStyle: 'italic' }}>Sin grabación</span>
                         }
                       </td>
                       <td style={{ fontSize: '10px', color: v.obsProgramacion ? '#c2410c' : '#9ca3af', fontWeight: v.obsProgramacion ? 700 : 400, maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.obsProgramacion || ''}>

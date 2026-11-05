@@ -26,6 +26,8 @@ function limpiarCacheVentas() {
   cacheVentas.clear();
 }
 const ESTADOS_GRAB_OK    = ['pendiente','grabando','grabado','observado','revisado','corta_llamada','suplantacion','no_desea','no_contesta','buzon','buzon_voz','esperando_tercero','corregir_sec'];
+// La biometría reemplaza al audio: una venta GRABADO por biometría no necesita MP3.
+const TIPOS_GRABACION_OK = ['audio','biometria','biometria_aislada'];
 const ESTADOS_SUPGRAB_OK = ['sin_revisar','aprobado','rechazado','observado','programado','conforme','no_conforme','audio_subido'];
 const SUPERVISION_SUPGRAB_OK = ['aprobado','desaprobado'];
 const TRAMOS_SEGUIMIENTO_OK = ['AM','PM','PM 3'];
@@ -190,6 +192,7 @@ const CAMPOS_HISTORIAL = {
   obs_seguimiento: 'Observación de Seguimiento',
   tramo_seguimiento: 'Tramo de Seguimiento',
   motivo_seguimiento: 'Motivo de Seguimiento',
+  tipo_grabacion: 'Tipo de grabación',
   audio_path: 'Archivo de audio',
   sala_atribucion: 'Sala atribuida',
   nombre: 'Nombre del cliente',
@@ -2078,7 +2081,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       obs_supgrab, estado_supgrab,
       estado_grab,
       obs_seguimiento, tramo_seguimiento, motivo_seguimiento,
-      supervision_supgrab,
+      supervision_supgrab, tipo_grabacion,
       // audio_path no se acepta aquí — solo se actualiza vía POST /:id/audio
     } = req.body;
 
@@ -2087,7 +2090,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
              obs_programacion, sot, fecha_programada, obs_validacion, obs_supgrab,
              estado_supgrab, estado_grab, audio_path, obs_seguimiento,
              tramo_seguimiento, motivo_seguimiento, seguimiento_ingresado_at,
-             supervision_supgrab,
+             supervision_supgrab, tipo_grabacion,
              EXISTS (
                SELECT 1 FROM venta_historial vh
                 WHERE vh.venta_id = ventas.id
@@ -2167,8 +2170,12 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     if (estado_supgrab !== undefined && !ESTADOS_SUPGRAB_OK.includes(String(estado_supgrab).toLowerCase()))
       return res.status(400).json({ ok: false, mensaje: 'estado_supgrab inválido' });
 
+    if (tipo_grabacion !== undefined && !TIPOS_GRABACION_OK.includes(String(tipo_grabacion).toLowerCase()))
+      return res.status(400).json({ ok: false, mensaje: 'tipo_grabacion inválido' });
+    const tipoGrabacionFinal = String(tipo_grabacion ?? rows[0].tipo_grabacion ?? '').toLowerCase();
     if (estado_grab !== undefined
         && String(estado_grab).toLowerCase() === 'grabado'
+        && !tipoGrabacionFinal.startsWith('biometria')
         && !String(rows[0].audio_path || '').trim()) {
       return res.status(400).json({ ok: false, mensaje: 'Debes subir un archivo MP3 antes de marcar la venta como GRABADO' });
     }
@@ -2254,6 +2261,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       campos.push('seguimiento_ingresado_at = COALESCE(seguimiento_ingresado_at, NOW())');
     }
     agregarCambio('estado_grab', estado_grab);
+    agregarCambio('tipo_grabacion', tipo_grabacion === undefined ? undefined : String(tipo_grabacion).toLowerCase());
     agregarCambio('supervision_supgrab', supervision_supgrab === undefined ? undefined : String(supervision_supgrab).toLowerCase());
     agregarCambio('obs_seguimiento', obs_seguimiento);
     agregarCambio('tramo_seguimiento', tramo_seguimiento);

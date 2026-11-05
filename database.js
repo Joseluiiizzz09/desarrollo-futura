@@ -468,6 +468,11 @@ async function initDB() {
         .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
     }
 
+    // Cómo se grabó la venta: 'audio' (MP3 subido), 'biometria' o
+    // 'biometria_aislada' (la biometría reemplaza al audio de grabación).
+    await conn.query(`ALTER TABLE ventas ADD COLUMN tipo_grabacion VARCHAR(20) NULL`)
+      .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
+
     // Sala atribuida a la venta. Permite corregir reportes históricos cuando
     // un asesor cambia temporalmente de sala sin mover la venta a otro asesor.
     await conn.query(`ALTER TABLE ventas ADD COLUMN sala_atribucion VARCHAR(50) NULL`)
