@@ -473,6 +473,11 @@ async function initDB() {
     await conn.query(`ALTER TABLE ventas ADD COLUMN tipo_grabacion VARCHAR(20) NULL`)
       .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
 
+    // AGENDADO (Validación): fecha y hora en que el cliente pidió que se le
+    // grabe el audio. Grabaciones la ve junto al estado AGENDADO.
+    await conn.query(`ALTER TABLE ventas ADD COLUMN agenda_grab_at DATETIME NULL`)
+      .catch(err => { if (err.code !== 'ER_DUP_FIELDNAME') throw err; });
+
     // Sala atribuida a la venta. Permite corregir reportes históricos cuando
     // un asesor cambia temporalmente de sala sin mover la venta a otro asesor.
     await conn.query(`ALTER TABLE ventas ADD COLUMN sala_atribucion VARCHAR(50) NULL`)

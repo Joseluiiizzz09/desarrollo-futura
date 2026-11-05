@@ -37,6 +37,8 @@ const ESTADOS_GRAB_MENU = [...ESTADOS_GRAB, ...OPCIONES_BIOMETRIA]
 
 const ESTADOS_GRAB_BADGE = [
   ...ESTADOS_GRAB,
+  // Viene de Validación: el cliente pidió que se le grabe más tarde.
+  { id:'agendado',  label:'AGENDADO',  cls:'bg-agendado' },
   { id:'observado', label:'OBSERVADO', cls:'bg-observado' },
 ]
 
@@ -66,6 +68,11 @@ function fechaDesdeAudioPath(path) {
   return m ? fechaPeruDesdeMs(Number(m[1])) : ''
 }
 function estadoGrab(id) { return ESTADOS_GRAB_BADGE.find(e=>e.id===id)||ESTADOS_GRAB_BADGE[0] }
+// 'AAAA-MM-DD HH:MM:SS' -> 'DD/MM HH:MM'
+function agendaCorta(fecha) {
+  const m = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
+  return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]}` : ''
+}
 function primerNombre(nombre) { return String(nombre || '').trim().split(/\s+/)[0] || '' }
 // Extrae la fecha (yyyy-mm-dd) de la última línea "[dd/mm/yyyy ... ] VALIDADO"
 // que Validación escribe en obs_validacion al tipificar. Esa línea es el único
@@ -102,7 +109,8 @@ function mapVenta(v) {
     // Fecha en que la venta entró al flujo de Grabaciones = cuándo pasó
     // Validación (no la fecha de creación de la venta). Ventas viejas sin
     // ese historial parseable caen a created_at como último recurso.
-    _fechaGrab:       fechaValidacion || fechaRaw || fechaHoy(),
+    // AGENDADO se ubica en el día en que el cliente pidió que se le grabe.
+    _fechaGrab:       (String(v.estado_grab || '').toLowerCase() === 'agendado' && v.agenda_grab_at ? String(v.agenda_grab_at).slice(0, 10) : '') || fechaValidacion || fechaRaw || fechaHoy(),
     _estadoGrab:      v.estado_grab   || 'pendiente',
     _estadoSupGrab:   String(v.estado_supgrab || '').toLowerCase(),
     _horaSupResultado:v.fecha_sup_resultado || '',
@@ -798,7 +806,7 @@ export default function Grabaciones() {
                               abierto={estadoAbiertoId === v.id}
                               actual={v._estadoGrab || 'pendiente'}
                               clase={eg.cls}
-                              etiqueta={eg.id==='grabando' && v.grabando_por_nombre ? `GRABANDO ${primerNombre(v.grabando_por_nombre).toUpperCase()}` : eg.label}
+                              etiqueta={eg.id==='grabando' && v.grabando_por_nombre ? `GRABANDO ${primerNombre(v.grabando_por_nombre).toUpperCase()}` : eg.id==='agendado' && v.agenda_grab_at ? `AGENDADO ${agendaCorta(v.agenda_grab_at)}` : eg.label}
                               onAbrir={() => setEstadoAbiertoId(estadoAbiertoId === v.id ? null : v.id)}
                               onCerrar={() => setEstadoAbiertoId(null)}
                               onElegir={nuevo => { setEstadoAbiertoId(null); if (nuevo !== (v._estadoGrab || 'pendiente')) guardarEstado(v.id, nuevo) }}

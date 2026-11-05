@@ -16,6 +16,7 @@ import '../styles/validacion.css'
 const ESTADOS_TODOS = [
   { id:'venta',          label:'VENTA',           cls:'be-venta' },
   { id:'validado',       label:'VALIDADO',        cls:'be-validado' },
+  { id:'agendado',       label:'AGENDADO',        cls:'be-agendado' },
   { id:'instalado',      label:'INSTALADO',       cls:'be-instalado' },
   { id:'programado',     label:'PROGRAMADO',      cls:'be-programado' },
   { id:'caida',          label:'CAÍDA',           cls:'be-caida' },
@@ -42,6 +43,7 @@ const TIP_BTNS = [
   { id:'corregir',        label:'CORREGIR',          cls:'be-observado' },
   { id:'mala_oferta',     label:'MALA OFERTA',       cls:'be-malaoferta' },
   { id:'venta',           label:'VENTA',             cls:'be-venta' },
+  { id:'agendado',        label:'AGENDADO',         cls:'be-agendado' },
   { id:'validado',        label:'VALIDADO',         cls:'be-validado' },
 ]
 
@@ -49,7 +51,7 @@ const CANAL_BTNS = [
   { id:'KELS',       label:'KELS',       cls:'be-canal-kels' },
 ]
 
-const ESTADOS_OK    = ['validado','instalado','programado','grabado','aprobado','en_ejecucion','caida','rechazo_campo','tecnico_casa']
+const ESTADOS_OK    = ['validado','agendado','instalado','programado','grabado','aprobado','en_ejecucion','caida','rechazo_campo','tecnico_casa']
 const TIPIF_NO_VAL  = ['corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta']
 const TIPS_DISPLAY  = ['CORTA LLAMADA','FRAUDE','NO DESEA','NO CONTESTA','BUZON DE VOZ','GRABANDO','SERVICIO ACTIVO','CORREGIR','MALA OFERTA','VENTA','VALIDADO','INSTALADO','PROGRAMADO','CAÍDA','OBSERVADO','PENDIENTE']
 const LT_COLORES    = ['#7C3AED','#2563eb','#16a34a','#d97706','#dc2626','#0891b2','#ec4899']
@@ -102,7 +104,9 @@ function mapVenta(v) {
     vendedor:           v.asesor_nombre || '',
     obsVal:             v.obs_validacion|| '',
     tipifVal:           derivarTipifVal(v.obs_validacion),
-    estadoVal:          (v.estado_validacion || 'venta').toLowerCase(),
+    // AGENDADO se guarda como VALIDADO + estado_grab 'agendado' (con su fecha).
+    estadoVal:          (v.estado_validacion || 'venta').toLowerCase() === 'validado' && String(v.estado_grab || '').toLowerCase() === 'agendado'
+      ? 'agendado' : (v.estado_validacion || 'venta').toLowerCase(),
     obsSeg:             v.obs_seguimiento || '',
     _audioPath:         v.audio_path || '',
     _audioNombre:       v.audio_path ? v.audio_path.split('/').pop() : '',
@@ -200,6 +204,7 @@ export default function Validacion() {
   const [modalEst,      setModalEst]      = useState({ open:false, id:null })
   const [tipSel,        setTipSel]        = useState('')
   const [canalSel,      setCanalSel]      = useState('')
+  const [fechaAgendaSel, setFechaAgendaSel] = useState('')
   const [nuevaObsModal, setNuevaObsModal] = useState('')
   const [guardandoTipificacion, setGuardandoTipificacion] = useState(false)
   const guardandoTipificacionRef = useRef(false)
@@ -291,6 +296,7 @@ export default function Validacion() {
     setModalEst({ open:true, id })
     setTipSel(v.estadoVal !== 'venta' ? v.estadoVal : '')
     setCanalSel(v.canal || '')
+    setFechaAgendaSel(v.agenda_grab_at ? String(v.agenda_grab_at).replace(' ', 'T').slice(0, 16) : '')
     setNuevaObsModal('')
   }
 
@@ -308,7 +314,12 @@ export default function Validacion() {
       return
     }
 
-    if ((tipSel === 'venta' || tipSel === 'validado') && !canalSel && !v.canal) {
+    if (tipSel === 'agendado' && !fechaAgendaSel) {
+      mostrarToast('Indica la fecha y hora en que se grabará el audio')
+      return
+    }
+
+    if (['venta', 'validado', 'agendado'].includes(tipSel) && !canalSel && !v.canal) {
       mostrarToast('Selecciona el canal (KELS) antes de guardar')
       return
     }
@@ -324,6 +335,7 @@ export default function Validacion() {
           observacion: nuevaObsModal.trim() || null,
           estadoAnteriorEsperado: v.estado,
           canal: canalSel || null,
+          fechaAgenda: tipSel === 'agendado' ? fechaAgendaSel : null,
         }),
       })
 
@@ -647,6 +659,20 @@ export default function Validacion() {
                   ))}
                 </div>
               </div>
+
+              {/* AGENDADO: el cliente pidió que se le grabe el audio más tarde */}
+              {tipSel === 'agendado' && (
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:.3,marginBottom:8}}>Fecha y hora para grabar *</div>
+                  <input
+                    type="datetime-local"
+                    value={fechaAgendaSel}
+                    onChange={e=>setFechaAgendaSel(e.target.value)}
+                    style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box'}}
+                  />
+                  <div style={{fontSize:11,color:'#9ca3af',marginTop:6}}>La venta pasa a Grabaciones como AGENDADO con esta fecha.</div>
+                </div>
+              )}
 
               {/* Canal de la venta */}
               <div style={{marginBottom:16}}>

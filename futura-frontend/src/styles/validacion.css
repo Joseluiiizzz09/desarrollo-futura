@@ -301,6 +301,7 @@ body{
 .bg-revisado{background:#dbeafe;color:#1e3a8a;border-color:#93c5fd;}
 .be-venta,.b-venta{background:#dbeafe;color:#1e3a8a;border-color:#93c5fd;}
 .be-validado,.b-validado{background:#ede9fe;color:#4c1d95;border-color:#c4b5fd;}
+.be-agendado{background:#ecfeff;color:#155e75;border-color:#67e8f9;}
 .be-instalado,.b-instalado{background:#d1fae5;color:#065f46;border-color:#6ee7b7;}
 .be-programado,.b-programado{background:#cffafe;color:#155e75;border-color:#67e8f9;}
 .be-caida,.b-caida{background:#fecaca;color:#7f1d1d;border-color:#fca5a5;}

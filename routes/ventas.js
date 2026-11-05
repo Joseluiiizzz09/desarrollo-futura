@@ -25,7 +25,7 @@ function cacheVentasSet(clave, payload) {
 function limpiarCacheVentas() {
   cacheVentas.clear();
 }
-const ESTADOS_GRAB_OK    = ['pendiente','grabando','grabado','observado','revisado','corta_llamada','suplantacion','no_desea','no_contesta','buzon','buzon_voz','esperando_tercero','corregir_sec'];
+const ESTADOS_GRAB_OK    = ['pendiente','agendado','grabando','grabado','observado','revisado','corta_llamada','suplantacion','no_desea','no_contesta','buzon','buzon_voz','esperando_tercero','corregir_sec'];
 // La biometría reemplaza al audio: una venta GRABADO por biometría no necesita MP3.
 const TIPOS_GRABACION_OK = ['audio','biometria','biometria_aislada'];
 const ESTADOS_SUPGRAB_OK = ['sin_revisar','aprobado','rechazado','observado','programado','conforme','no_conforme','audio_subido'];
@@ -1881,7 +1881,7 @@ router.delete('/:id/audio', auth(ROLES_VENTAS), async (req, res) => {
 // ===== PATCH /api/ventas/:id/tipificar-validacion =====
 // Endpoint dedicado para Validación: append al historial server-side,
 // control de concurrencia (estadoAnteriorEsperado), usuario desde req.user.
-const TIPS_VALIDACION = ['corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta','venta','validado'];
+const TIPS_VALIDACION = ['corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta','venta','validado','agendado'];
 const TIP_LABELS_VAL  = {
   corta_llamada:   'CORTA LLAMADA',
   fraude:          'FRAUDE',
@@ -1893,9 +1893,13 @@ const TIP_LABELS_VAL  = {
   mala_oferta:     'MALA OFERTA',
   venta:           'VENTA',
   validado:        'VALIDADO',
+  agendado:        'AGENDADO',
 };
+// AGENDADO: la venta queda validada y pasa a Grabaciones, pero con la fecha y
+// hora en que el cliente pidió que se le grabe el audio.
 const TIP_TO_ESTADO_VAL = {
   validado:        'VALIDADO',
+  agendado:        'VALIDADO',
   corta_llamada:   'CORTA_LLAMADA',
   fraude:          'FRAUDE',
   no_desea:        'NO_DESEA',
@@ -1922,7 +1926,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
   if (!Number.isInteger(ventaId) || ventaId <= 0)
     return res.status(400).json({ ok: false, mensaje: 'ID de venta no válido.' });
 
-  const { tipificacion, observacion, estadoAnteriorEsperado, canal } = req.body;
+  const { tipificacion, observacion, estadoAnteriorEsperado, canal, fechaAgenda } = req.body;
   const obsTexto = String(observacion || '').trim();
   const CANALES_VALIDOS = ['NETCONTACT', 'KELS'];
   const canalNorm = canal ? String(canal).trim().toUpperCase() : null;
@@ -1933,6 +1937,12 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
     return res.status(400).json({ ok: false, mensaje: 'Selecciona una tipificación o escribe una observación.' });
   if (canalNorm && !CANALES_VALIDOS.includes(canalNorm))
     return res.status(400).json({ ok: false, mensaje: 'Canal inválido.' });
+  // fechaAgenda llega del input datetime-local: AAAA-MM-DDTHH:mm (hora Perú).
+  const agendaMatch = String(fechaAgenda || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})$/);
+  if (tipificacion === 'agendado' && !agendaMatch)
+    return res.status(400).json({ ok: false, mensaje: 'Indica la fecha y hora en que se grabará el audio.' });
+  const agendaSql   = agendaMatch ? `${agendaMatch[1]}-${agendaMatch[2]}-${agendaMatch[3]} ${agendaMatch[4]}:${agendaMatch[5]}:00` : null;
+  const agendaLabel = agendaMatch ? `${agendaMatch[3]}/${agendaMatch[2]}/${agendaMatch[1]} ${agendaMatch[4]}:${agendaMatch[5]}` : '';
 
   const conn = await db.getConnection();
   try {
@@ -1965,7 +1975,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
 
     // El canal (NETCONTACT/KELS) es obligatorio para confirmar VENTA o
     // VALIDADO — define el origen comercial de la venta hacia adelante.
-    if ((tipificacion === 'venta' || tipificacion === 'validado') && !canalNorm && !venta.canal) {
+    if (['venta', 'validado', 'agendado'].includes(tipificacion) && !canalNorm && !venta.canal) {
       await conn.rollback();
       return res.status(400).json({ ok: false, mensaje: 'Selecciona el canal (NETCONTACT o KELS) antes de guardar.' });
     }
@@ -1988,12 +1998,16 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
     const nombreUsuario = req.user.nombre || req.user.usuario;
     const lineas       = (venta.obs_validacion || '').split('\n').filter(l => l.trim());
 
-    if (tipificacion) lineas.push(`[${ts} - ${nombreUsuario}] ${TIP_LABELS_VAL[tipificacion]}`);
+    const etiquetaTip = tipificacion === 'agendado' ? `AGENDADO para ${agendaLabel}` : TIP_LABELS_VAL[tipificacion];
+    if (tipificacion) lineas.push(`[${ts} - ${nombreUsuario}] ${etiquetaTip}`);
     if (obsTexto)     lineas.push(`[${ts} - ${nombreUsuario}] ${obsTexto}`);
 
     // VALIDADO cierra las observaciones operativas de Validación. Los cambios
     // anteriores siguen disponibles en venta_historial para auditoría.
-    const nuevoHistorialTexto = tipificacion === 'validado' ? '' : lineas.join('\n');
+    // AGENDADO también cierra las observaciones, pero deja visible para cuándo quedó.
+    const nuevoHistorialTexto = tipificacion === 'validado' ? ''
+      : tipificacion === 'agendado' ? `[${ts} - ${nombreUsuario}] ${etiquetaTip}`
+      : lineas.join('\n');
     const nuevoEstado         = tipificacion ? TIP_TO_ESTADO_VAL[tipificacion] : null;
     const estadoAnterior      = venta.estado || 'VENTA';
 
@@ -2002,6 +2016,14 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
         `UPDATE ventas SET estado = ?, obs_validacion = ?${canalNorm ? ', canal = ?' : ''} WHERE id = ?`,
         canalNorm ? [nuevoEstado, nuevoHistorialTexto, canalNorm, ventaId] : [nuevoEstado, nuevoHistorialTexto, ventaId]
       );
+      if (tipificacion === 'agendado') {
+        await conn.query(`UPDATE ventas SET estado_grab = 'agendado', agenda_grab_at = ? WHERE id = ?`, [agendaSql, ventaId]);
+      } else if (tipificacion === 'validado') {
+        // Si estaba AGENDADO y ahora se valida normal, vuelve a PENDIENTE de grabar.
+        await conn.query(
+          `UPDATE ventas SET estado_grab = 'pendiente', agenda_grab_at = NULL
+            WHERE id = ? AND LOWER(COALESCE(estado_grab, '')) = 'agendado'`, [ventaId]);
+      }
     } else {
       await conn.query(
         `UPDATE ventas SET obs_validacion = ?${canalNorm ? ', canal = ?' : ''} WHERE id = ?`,
@@ -2029,7 +2051,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       valorAnterior: estadoAnterior,
       valorNuevo:    nuevoEstado || estadoAnterior,
       descripcion:   tipificacion
-        ? `${TIP_LABELS_VAL[tipificacion]}${obsTexto ? ': ' + obsTexto : ''}`
+        ? `${etiquetaTip}${obsTexto ? ': ' + obsTexto : ''}`
         : `Observación: ${obsTexto}`,
     });
 
