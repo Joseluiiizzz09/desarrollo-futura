@@ -399,15 +399,21 @@ router.post('/mis-ventas', limiteLista, async (req, res) => {
     }
 
     // FUTURA: las ventas CLARO del usuario con el mismo `usuario` (fecha en hora de Perú)
+    // El usuario de Grupo Futura puede no coincidir con el de FUTURA (ventas
+    // cargadas por Backoffice): también se buscan por el nombre completo.
     let deFutura = [];
-    if (usuario) {
+    const usuarios = [...new Set([usuario, sesion.usuario].filter(Boolean).map(u => String(u).trim().toLowerCase()))];
+    const nombreAsesor = String(sesion.nombre || '').trim().toUpperCase();
+    const porNombre = nombreAsesor.split(/\s+/).length >= 2 ? nombreAsesor : '';
+    if (usuarios.length || porNombre) {
       [deFutura] = await db.query(`
-        SELECT v.id, DATE_FORMAT(DATE_SUB(v.created_at, INTERVAL (TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW()) + 300) MINUTE), '%Y-%m-%d %H:%i') AS created_at,
+        SELECT v.id, DATE_FORMAT(v.created_at, '%Y-%m-%d %H:%i') AS created_at,
                v.nombre, v.dni, v.distrito, v.paquete, v.claro_hogar, v.estado, v.estado_grab,
                v.fecha_programada, v.obs_validacion
-          FROM ventas v JOIN usuarios u ON u.id = v.asesor_id
-         WHERE u.usuario = ? ORDER BY v.id DESC LIMIT 200
-      `, [usuario]);
+          FROM ventas v LEFT JOIN usuarios u ON u.id = v.asesor_id
+         WHERE ${usuarios.length ? 'LOWER(u.usuario) IN (?) OR ' : ''}UPPER(TRIM(COALESCE(u.nombre, v.asesor_nombre))) = ?
+         ORDER BY v.id DESC LIMIT 200
+      `, usuarios.length ? [usuarios, porNombre || '#'] : [porNombre]);
     }
 
     const fila = (v, operador, extra = {}) => ({
