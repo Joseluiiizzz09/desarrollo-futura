@@ -25,7 +25,7 @@ const CANTIDADES = ['0', '1', '2', '3', '4', '5']
 
 const DATOS_SERVICIO = {
   cuotaInstalacion:'', hogar:'', paquete:'', predio:'', tec:'', full:'', cantDecos:'0', cantMesh:'', plano:'', obs:'', adicionales:[],
-  biometria:'', biometriaTipo:'', regionWin:'',
+  biometria:'', biometriaTipo:'', regionWin:'', winTipoPlan:'', winServicio:'',
 }
 const VACIO = {
   operador:'',
@@ -98,6 +98,12 @@ async function comprimirFoto(archivo) {
 // Punta Negra es distrito de Lima pero toma los planes de Provincia
 // Distritos de Lima (sur) donde WIN vende planes Lima y también planes Provincia:
 // el vendedor elige cuál en el paso del servicio (por defecto Lima).
+// Filtros del paquete WIN: tipo (Gamer / XGSPON / estándar) y Mono / Dúo,
+// deducidos del nombre del paquete ("+" = viene con TV, fono, DGO...)
+const tipoPlanWin = n => /gamer/i.test(n) ? 'GAMER' : /xgspon/i.test(n) ? 'XGSPON' : 'ESTANDAR'
+const servicioWin = n => String(n).includes('+') ? 'DUO' : 'MONO'
+const TIPOS_PLAN_WIN = [['ESTANDAR', 'Estándar'], ['GAMER', 'Gamer'], ['XGSPON', 'XGSPON']]
+const SERVICIOS_WIN = [['MONO', 'Mono (solo internet)'], ['DUO', 'Dúo (internet + TV/fono)']]
 const DISTRITOS_LIMA_Y_PROVINCIA = ['LURIN', 'PUNTA NEGRA', 'PUNTA HERMOSA', 'SAN BARTOLO']
 const esDistritoDoble = (dpto, distrito) => String(dpto || '').trim().toUpperCase() === 'LIMA' && DISTRITOS_LIMA_Y_PROVINCIA.includes(String(distrito || '').trim().toUpperCase())
 const regionWin = (dpto, distrito, elegida) => {
@@ -557,7 +563,18 @@ export default function VentaClaro() {
     const vertical = catalogoWin?.paquetes?.VERTICAL || []
     return predio === 'VERTICAL' && vertical.length ? vertical : (catalogoWin?.paquetes?.[region] || [])
   }
-  const paquetesWin = paquetesWinDe(f.predio)
+  const paquetesWinTodos = paquetesWinDe(f.predio)
+  const tiposPlanDisp = TIPOS_PLAN_WIN.filter(([v]) => paquetesWinTodos.some(n => tipoPlanWin(n) === v))
+  const tipoPlanAct = tiposPlanDisp.some(([v]) => v === f.winTipoPlan) ? f.winTipoPlan : ''
+  const serviciosDisp = SERVICIOS_WIN.filter(([v]) => paquetesWinTodos.some(n => servicioWin(n) === v && (!tipoPlanAct || tipoPlanWin(n) === tipoPlanAct)))
+  const servicioAct = serviciosDisp.some(([v]) => v === f.winServicio) ? f.winServicio : ''
+  const paquetesWin = paquetesWinTodos.filter(n => (!tipoPlanAct || tipoPlanWin(n) === tipoPlanAct) && (!servicioAct || servicioWin(n) === servicioAct))
+  // Al cambiar un filtro, si el paquete elegido ya no está en la lista se limpia
+  const filtrarWin = cambio => setF(p => {
+    const q = { ...p, ...cambio }
+    const sigue = !q.paquete || ((!q.winTipoPlan || tipoPlanWin(q.paquete) === q.winTipoPlan) && (!q.winServicio || servicioWin(q.paquete) === q.winServicio))
+    return sigue ? q : { ...q, paquete: '', cuotaInstalacion: '' }
+  })
   const adicionalesWin = esPeruFibra ? [] : (catalogoWin?.adicionales?.[region] || [])
 
   async function ingresar(e) {
@@ -1046,6 +1063,8 @@ export default function VentaClaro() {
               ) : (<>
                 {esWin && <Campo label="Tipo de vivienda"><Opciones valor={f.predio} opciones={VIVIENDAS}
                   onChange={v => setF(p => ({ ...p, predio: v, ...(paquetesWinDe(v).includes(p.paquete) ? {} : { paquete: '', cuotaInstalacion: '' }) }))} /></Campo>}
+                {tiposPlanDisp.length > 1 && <Campo label="Tipo de plan"><Opciones valor={tipoPlanAct} opciones={tiposPlanDisp} onChange={v => filtrarWin({ winTipoPlan: v, winServicio: '' })} /></Campo>}
+                {serviciosDisp.length > 1 && <Campo label="Mono o Dúo"><Opciones valor={servicioAct} opciones={serviciosDisp} onChange={v => filtrarWin({ winServicio: v })} /></Campo>}
                 <Campo label="Paquete">
                   <select value={f.paquete} onChange={e => setF(p => ({ ...p, paquete: e.target.value, cuotaInstalacion: esRuc20(e.target.value) ? p.cuotaInstalacion : '' }))}>
                     <option value="">Elegir paquete</option>
