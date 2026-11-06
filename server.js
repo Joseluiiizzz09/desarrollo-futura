@@ -54,6 +54,22 @@ app.get('/uploads/*', auth([]), (req, res) => {
   res.sendFile(filePath);
 });
 
+// Versión de datos: cambia con cada escritura exitosa (POST/PATCH/PUT/DELETE).
+// Las pantallas consultan /api/cambios cada pocos segundos y, si cambió,
+// recargan su listado al instante en vez de esperar al polling lento.
+const INICIO_PROCESO = Date.now().toString(36);
+let versionDatos = 0;
+app.use('/api', (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'OPTIONS' && req.method !== 'HEAD' && !req.path.startsWith('/login')) {
+    res.on('finish', () => { if (res.statusCode < 400) versionDatos += 1; });
+  }
+  next();
+});
+app.get('/api/cambios', auth([]), (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ ok: true, v: `${INICIO_PROCESO}.${versionDatos}` });
+});
+
 app.use('/api', require('./routes/auth'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/ventas', require('./routes/ventas'));
