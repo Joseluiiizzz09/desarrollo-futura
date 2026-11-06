@@ -458,6 +458,7 @@ function MisVentas({ ventas, cargando, error, aviso, filtro, setFiltro, onRecarg
             {v.distrito && <div className="vc-mv-dato"><b>Distrito:</b> {v.distrito}</div>}
             {v.programada && <div className="vc-mv-dato"><b>{v.estado === 'EN_PROGRESO' ? 'Fecha programada:' : 'Instalación programada:'}</b> {v.programada}</div>}
             {v.motivo && ESTADOS_CON_MOTIVO.includes(v.estado) && <div className="vc-mv-dato"><b>Motivo:</b> {v.motivo}</div>}
+            {v.comentario && <div className="vc-mv-dato"><b>Comentario de Programación:</b> {v.comentario}</div>}
             {e.nota && v.nota && v.nota.trim().toUpperCase() !== e.texto && <div className="vc-mv-nota">{v.nota}</div>}
           </div>
         )

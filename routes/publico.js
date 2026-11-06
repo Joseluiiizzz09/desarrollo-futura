@@ -409,7 +409,7 @@ router.post('/mis-ventas', limiteLista, async (req, res) => {
       [deFutura] = await db.query(`
         SELECT v.id, DATE_FORMAT(v.created_at, '%Y-%m-%d %H:%i') AS created_at,
                v.nombre, v.dni, v.distrito, v.paquete, v.claro_hogar, v.estado, v.estado_grab,
-               v.fecha_programada, v.obs_validacion
+               v.fecha_programada, v.obs_validacion, v.obs_programacion
           FROM ventas v LEFT JOIN usuarios u ON u.id = v.asesor_id
          WHERE ${usuarios.length ? 'LOWER(u.usuario) IN (?) OR ' : ''}UPPER(TRIM(COALESCE(u.nombre, v.asesor_nombre))) = ?
          ORDER BY v.id DESC LIMIT 200
@@ -426,6 +426,8 @@ router.post('/mis-ventas', limiteLista, async (req, res) => {
       grabacion: String(v.estado_grab || '').toLowerCase(),
       programada: v.fecha_programada ? String(v.fecha_programada).substring(0, 10) : '',
       nota: ultimaNota(v.obs_validacion),
+      // Comentario de Programación (SEC, motivo de bloqueo...) para que el vendedor haga seguimiento
+      comentario: String(v.obs_programacion || '').replace(/\s*\n\s*/g, ' · ').trim().substring(0, 300),
       // Seguimiento deja el motivo en sus campos; Validación, en su observación
       motivo: String(v.motivo_seguimiento || ultimaNota(v.obs_seguimiento) || ultimaNota(v.obs_validacion) || '').substring(0, 200),
       ...extra.campos,
