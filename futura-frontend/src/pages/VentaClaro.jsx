@@ -41,6 +41,17 @@ function leerSesionGuardada() {
   return s && s.sesion && s.vence > Date.now() ? s : null
 }
 const CLAVE_BORRADOR = 'futura_venta_publica_borrador'
+// Borrador de la venta en curso: si el celular recarga la página al cambiar de
+// app, se recupera lo escrito. Es de ese vendedor, dura 12 h y se borra al enviar
+// o al salir. Las fotos no se guardan (pesan demasiado).
+const CLAVE_BORRADOR_VENTA = 'futura_venta_borrador_v2'
+const BORRADOR_DURA_MS = 12 * 60 * 60 * 1000
+function leerBorrador() {
+  const sesion = leerSesionGuardada()
+  const b = leer(CLAVE_BORRADOR_VENTA, null)
+  if (!sesion || !b || b.vendedor !== sesion.nombre || !(Date.now() - b.at < BORRADOR_DURA_MS)) return null
+  return b
+}
 function leer(clave, porDefecto) {
   try { const v = JSON.parse(localStorage.getItem(clave) || 'null'); return v ?? porDefecto } catch { return porDefecto }
 }
@@ -460,9 +471,9 @@ export default function VentaClaro() {
   const [errorMis, setErrorMis] = useState('')
   const [avisoMis, setAvisoMis] = useState('')
   const [filtroMis, setFiltroMis] = useState('TODAS')
-  const [paso, setPaso] = useState(() => (leerSesionGuardada() ? P.OPERADOR : P.NOMBRE))
+  const [paso, setPaso] = useState(() => (leerSesionGuardada() ? (leerBorrador()?.paso ?? P.OPERADOR) : P.NOMBRE))
   // Cada venta empieza en blanco: no se guarda nada de la venta anterior
-  const [f, setF] = useState(() => ({ ...VACIO }))
+  const [f, setF] = useState(() => ({ ...VACIO, ...(leerBorrador()?.f || {}) }))
   const [faltan, setFaltan] = useState([])
   const [enviando, setEnviando] = useState(false)
   const [errorEnvio, setErrorEnvio] = useState('')
@@ -507,6 +518,12 @@ export default function VentaClaro() {
   }, [])
   // Limpia el borrador que guardaban las versiones anteriores del formulario
   useEffect(() => { guardar(CLAVE_BORRADOR, null) }, [])
+  // Guarda lo escrito mientras se llena la venta (no en el ingreso ni ya enviada)
+  useEffect(() => {
+    if (!vendedor || listo || paso === P.NOMBRE) return
+    const vacio = JSON.stringify(f) === JSON.stringify(VACIO)
+    guardar(CLAVE_BORRADOR_VENTA, vacio && paso <= P.OPERADOR ? null : { vendedor: vendedor.nombre, at: Date.now(), paso, f })
+  }, [f, paso, vendedor, listo])
   useEffect(() => { window.scrollTo(0, 0) }, [paso, listo])
 
 
@@ -587,7 +604,7 @@ export default function VentaClaro() {
   }
 
   function salir(conservarVenta = false) {
-    if (conservarVenta !== true) { setF({ ...VACIO }); setFotos([]) }
+    if (conservarVenta !== true) { setF({ ...VACIO }); setFotos([]); guardar(CLAVE_BORRADOR_VENTA, null) }
     setVista('venta')
     setMisVentas(null)
     guardar(CLAVE_SESION, null)
@@ -699,6 +716,7 @@ export default function VentaClaro() {
       }
       if (!r.ok || !d.ok) throw new Error(d.mensaje || 'No se pudo guardar la venta. Intenta de nuevo.')
       setListo(true)
+      guardar(CLAVE_BORRADOR_VENTA, null)
       // La venta ya quedó guardada; las fotos (solo WIN) se suben después, una por una
       if (esTipoWin && d.paseFotos && fotos.length) {
         setPaseFotos(d.paseFotos)
