@@ -197,6 +197,7 @@ export default function Validacion() {
   // ── Filtros ──
   const [fEstado,  setFEstado]  = useState('')
   const [fAsesor,  setFAsesor]  = useState('')
+  const [fValidador, setFValidador] = useState('')
   const [fDesde,   setFDesde]   = useState('')
   const [fHasta,   setFHasta]   = useState('')
   const [busqueda, setBusqueda] = useState('')
@@ -256,7 +257,7 @@ export default function Validacion() {
   }, [cargarVentas])
 
   // ── Reset página al cambiar filtros ──
-  useEffect(() => { setPagina(1) }, [fEstado, fAsesor, fDesde, fHasta, busqueda])
+  useEffect(() => { setPagina(1) }, [fEstado, fAsesor, fValidador, fDesde, fHasta, busqueda])
 
   // ── Derived data ─────────────────────────────────────────────────────────
   const ventasFiltradas = useMemo(() => {
@@ -267,6 +268,7 @@ export default function Validacion() {
         return false
       }
       if (fAsesor && !(v.vendedor||'').toLowerCase().includes(fAsesor.toLowerCase())) return false
+      if (fValidador && String(v.validador_nombre || '').trim().toUpperCase() !== fValidador) return false
       if (fDesde  && v.fechaIngreso < fDesde) return false
       if (fHasta  && v.fechaIngreso > fHasta) return false
       if (busqueda) {
@@ -277,7 +279,8 @@ export default function Validacion() {
     })
     vv.sort((a,b)=>(b.fechaIngreso+b.horaIngreso).localeCompare(a.fechaIngreso+a.horaIngreso))
     return vv
-  }, [ventas, fEstado, fAsesor, fDesde, fHasta, busqueda])
+  }, [ventas, fEstado, fAsesor, fValidador, fDesde, fHasta, busqueda])
+  const validadores = useMemo(() => [...new Set(ventas.map(v => String(v.validador_nombre || '').trim().toUpperCase()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), [ventas])
 
   const kpis = useMemo(() => ({
     total:       ventas.length,
@@ -379,7 +382,7 @@ export default function Validacion() {
   }
 
   function limpiarFiltros() {
-    setFEstado(''); setFAsesor(''); setFDesde(''); setFHasta(''); setBusqueda('')
+    setFEstado(''); setFAsesor(''); setFValidador(''); setFDesde(''); setFHasta(''); setBusqueda('')
   }
 
   // ── JSX ───────────────────────────────────────────────────────────────────
@@ -456,6 +459,13 @@ export default function Validacion() {
               <input value={fAsesor} onChange={e=>setFAsesor(e.target.value)} placeholder="Buscar vendedor..." />
             </div>
             <div className="fg">
+              <label>Validador</label>
+              <select value={fValidador} onChange={e=>setFValidador(e.target.value)}>
+                <option value="">Todos</option>
+                {validadores.map(n=><option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <div className="fg">
               <label>Rango de fechas</label>
               <RangoFechasPicker desde={fDesde} hasta={fHasta}
                 onChange={v => { setFDesde(v.desde); setFHasta(v.hasta) }} />
@@ -506,6 +516,7 @@ export default function Validacion() {
                   <th className="th-accion">ACCIÓN</th>
                   <th className="th-estado">ESTADO VENTA</th>
                   <th>CANAL</th>
+                  <th>VALIDADOR</th>
                   <th className="th-fecha">FECHA INGRESO</th>
                   <th className="th-nombre">NOMBRE Y APELLIDOS</th>
                   <th className="th-dni">DNI / DOC.</th>
@@ -531,7 +542,7 @@ export default function Validacion() {
               </thead>
               <tbody>
                 {paginaVentas.length === 0
-                  ? <tr className="tabla-empty"><td colSpan={24}>Sin registros.</td></tr>
+                  ? <tr className="tabla-empty"><td colSpan={25}>Sin registros.</td></tr>
                   : paginaVentas.map(v => {
                       const mostrar  = v.estadoVal
                       const eObj     = estadoObj(mostrar)
@@ -557,6 +568,11 @@ export default function Validacion() {
                             </span>
                           </td>
                           <td style={{textAlign:'center'}}><CanalBadge canal={v.canal} /></td>
+                          <td style={{fontSize:11,whiteSpace:'nowrap'}} title="Última tipificación en Validación">
+                            {v.validador_nombre
+                              ? <><span style={{fontWeight:700,color:'#374151'}}>{String(v.validador_nombre).toUpperCase()}</span><br /><span style={{color:'#9ca3af',fontFamily:'monospace',fontSize:10}}>{formatF(String(v.fecha_validador||'').split(' ')[0])} {String(v.fecha_validador||'').split(' ')[1]?.slice(0,5) || ''}</span></>
+                              : <span style={{color:'#9ca3af'}}>—</span>}
+                          </td>
                           <td style={{color:'#185FA5',fontWeight:700,fontFamily:'monospace',fontSize:10,whiteSpace:'nowrap'}}>
                             {formatF(v.fechaIngreso)}<br />
                             <span style={{color:'#9ca3af',fontWeight:400}}>{v.horaIngreso||''}</span>
