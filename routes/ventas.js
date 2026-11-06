@@ -1429,6 +1429,24 @@ router.get('/validacion-listado', auth(['validacion','jefatura']), async (req, r
   }
 });
 
+// Historial completo de tipificaciones de Validación. obs_validacion se limpia
+// al VALIDAR/AGENDAR, pero cada tipificación queda en venta_historial.
+router.get('/:id/historial-validacion', auth(['validacion','jefatura']), async (req, res) => {
+  const ventaId = Number(req.params.id);
+  if (!Number.isInteger(ventaId) || ventaId <= 0) return res.status(400).json({ ok: false, mensaje: 'Venta no válida.' });
+  try {
+    const [data] = await db.query(`
+      SELECT descripcion, usuario_nombre, created_at
+        FROM venta_historial
+       WHERE venta_id = ? AND tipo = 'CAMBIO_VALIDACION' AND campo = 'obs_validacion'
+       ORDER BY id`, [ventaId]);
+    res.json({ ok: true, data });
+  } catch (e) {
+    console.error('[GET /ventas/:id/historial-validacion]', e.message || e);
+    res.status(500).json({ ok: false, mensaje: 'No se pudo obtener el historial' });
+  }
+});
+
 // ===== GET /api/ventas =====
 router.get('/', auth(ROLES_VENTAS), async (req, res) => {
   try {

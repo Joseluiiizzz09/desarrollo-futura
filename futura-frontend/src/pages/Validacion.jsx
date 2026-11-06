@@ -72,6 +72,24 @@ function esEstadoNoValidado(estado) {
   return valor === 'no_validado' || TIPIF_NO_VAL.includes(valor)
 }
 
+// Filas de venta_historial -> mismas líneas "[fecha - usuario] texto" que obs_validacion
+function lineasDesdeHistorial(filas) {
+  const out = []
+  for (const r of filas || []) {
+    const m = String(r.created_at || '').match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
+    const meta = `[${m ? `${m[3]}/${m[2]}/${m[1]}, ${m[4]}:${m[5]}` : ''} - ${r.usuario_nombre || '—'}]`
+    const d = String(r.descripcion || '').trim()
+    if (!d) continue
+    const i = d.indexOf(': ')
+    const cab = i >= 0 ? d.slice(0, i) : d
+    const resto = i >= 0 ? d.slice(i + 2) : ''
+    if (cab === 'Observación') { out.push(`${meta} ${resto}`); continue }
+    out.push(`${meta} ${cab}`)
+    if (resto) out.push(`${meta} ${resto}`)
+  }
+  return out
+}
+
 function parsearHistorial(obs) { return (obs||'').split('\n').filter(l=>l.trim()).map(l=>l.trim()) }
 
 function getObsDisplay(obsVal) {
@@ -217,6 +235,7 @@ export default function Validacion() {
 
   // ── Modal historial ──
   const [modalObs, setModalObs] = useState({ open:false, id:null })
+  const [histValidacion, setHistValidacion] = useState(null) // { id, lineas }
   const [mediaVenta, setMediaVenta] = useState(null)
 
   // ── Toast ──
@@ -310,6 +329,11 @@ export default function Validacion() {
 
   function abrirModalObs(id) {
     setModalObs({ open:true, id })
+    setHistValidacion(null)
+    fetch(`${API}/ventas/${id}/historial-validacion`, { headers: ncHeaders() })
+      .then(r => r.json())
+      .then(d => setHistValidacion({ id, lineas: d.ok ? lineasDesdeHistorial(d.data) : null }))
+      .catch(() => setHistValidacion({ id, lineas: null }))
   }
 
   async function guardarTipificacion() {
@@ -746,7 +770,10 @@ export default function Validacion() {
       {modalObs.open && (() => {
         const v = ventas.find(x=>x.id===modalObs.id)
         if (!v) return null
-        const histLineas = parsearHistorial(v.obsVal)
+        // Historial completo desde el servidor; si no hay, lo que quede en la observación
+        const hv = histValidacion?.id === v.id ? histValidacion.lineas : null
+        const histLineas = hv && hv.length ? hv : parsearHistorial(v.obsVal)
+        const cargandoHist = !histValidacion || histValidacion.id !== v.id
         return (
           <div
             className="modal-bg open"
@@ -756,7 +783,9 @@ export default function Validacion() {
               <div className="modal-title">Historial de tipificaciones</div>
               <div className="modal-sub">{v.nombreApellidos||'—'}</div>
               <div style={{padding:'8px 0',maxHeight:400,overflowY:'auto'}}>
-                <LineaTiempo lineas={histLineas} />
+                {cargandoHist && !histLineas.length
+                  ? <div style={{color:'#9ca3af',fontSize:12,padding:'8px 0'}}>Cargando historial…</div>
+                  : <LineaTiempo lineas={histLineas} />}
               </div>
               <div className="modal-btns">
                 <button className="btn-guardar" onClick={()=>setModalObs({open:false,id:null})}>Cerrar</button>
