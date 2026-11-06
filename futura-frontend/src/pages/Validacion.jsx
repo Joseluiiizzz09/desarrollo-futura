@@ -516,7 +516,6 @@ export default function Validacion() {
                   <th className="th-accion">ACCIÓN</th>
                   <th className="th-estado">ESTADO VENTA</th>
                   <th>CANAL</th>
-                  <th>VALIDADOR</th>
                   <th className="th-fecha">FECHA INGRESO</th>
                   <th className="th-nombre">NOMBRE Y APELLIDOS</th>
                   <th className="th-dni">DNI / DOC.</th>
@@ -542,7 +541,7 @@ export default function Validacion() {
               </thead>
               <tbody>
                 {paginaVentas.length === 0
-                  ? <tr className="tabla-empty"><td colSpan={25}>Sin registros.</td></tr>
+                  ? <tr className="tabla-empty"><td colSpan={24}>Sin registros.</td></tr>
                   : paginaVentas.map(v => {
                       const mostrar  = v.estadoVal
                       const eObj     = estadoObj(mostrar)
@@ -566,13 +565,13 @@ export default function Validacion() {
                             >
                               {mostrar === 'agendado' && v.agenda_grab_at ? `AGENDADO ${agendaCorta(v.agenda_grab_at)}` : eObj.label}
                             </span>
+                            {v.validador_nombre && (
+                              <div className="val-por" title={`Última tipificación: ${String(v.fecha_validador || '').slice(0, 16)}`}>
+                                POR {String(v.validador_nombre).toUpperCase()}
+                              </div>
+                            )}
                           </td>
                           <td style={{textAlign:'center'}}><CanalBadge canal={v.canal} /></td>
-                          <td style={{fontSize:11,whiteSpace:'nowrap'}} title="Última tipificación en Validación">
-                            {v.validador_nombre
-                              ? <><span style={{fontWeight:700,color:'#374151'}}>{String(v.validador_nombre).toUpperCase()}</span><br /><span style={{color:'#9ca3af',fontFamily:'monospace',fontSize:10}}>{formatF(String(v.fecha_validador||'').split(' ')[0])} {String(v.fecha_validador||'').split(' ')[1]?.slice(0,5) || ''}</span></>
-                              : <span style={{color:'#9ca3af'}}>—</span>}
-                          </td>
                           <td style={{color:'#185FA5',fontWeight:700,fontFamily:'monospace',fontSize:10,whiteSpace:'nowrap'}}>
                             {formatF(v.fechaIngreso)}<br />
                             <span style={{color:'#9ca3af',fontWeight:400}}>{v.horaIngreso||''}</span>

@@ -1393,7 +1393,8 @@ router.get('/validacion-listado', auth(['validacion','jefatura']), async (req, r
     // endpoint cuando crecía el historial.
     const [data] = await db.query(`
       SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre, u.sala,
-             COALESCE(LOWER(cv.valor_nuevo), 'venta') AS estado_validacion
+             COALESCE(LOWER(cv.valor_nuevo), 'venta') AS estado_validacion,
+             tv.usuario_nombre AS validador_nombre, tv.created_at AS fecha_validador
         FROM ventas v
         LEFT JOIN usuarios u ON v.asesor_id = u.id
         LEFT JOIN (
@@ -1407,6 +1408,18 @@ router.get('/validacion-listado', auth(['validacion','jefatura']), async (req, r
                GROUP BY venta_id
             ) ult ON ult.ultimo_id = vh.id
         ) cv ON cv.venta_id = v.id
+        LEFT JOIN (
+          -- Validador: quien hizo la última tipificación/observación en Validación
+          SELECT vh.venta_id, vh.usuario_nombre, vh.created_at
+            FROM venta_historial vh
+            INNER JOIN (
+              SELECT venta_id, MAX(id) AS ultimo_id
+                FROM venta_historial
+               WHERE campo = 'obs_validacion'
+                 AND tipo = 'CAMBIO_VALIDACION'
+               GROUP BY venta_id
+            ) ultv ON ultv.ultimo_id = vh.id
+        ) tv ON tv.venta_id = v.id
        ORDER BY v.created_at DESC
     `);
     res.json({ ok: true, data });
@@ -1462,7 +1475,6 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                ph_caida.fecha_caida,
                ph_wa.fecha_whatsapp_enviado,
                COALESCE(LOWER(cv.estado_validacion), 'venta') AS estado_validacion,
-               tv.validador_nombre, tv.fecha_validador,
                (SELECT l.campana FROM leads l
                   WHERE l.n1_normalizado = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(v.telefono1, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', '')
                   ORDER BY ABS(DATEDIFF(l.fecha, DATE(v.created_at))) ASC, l.created_at DESC
@@ -1536,17 +1548,6 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                    GROUP BY venta_id
                  ) lcv ON vh.id = lcv.max_id
                ) cv ON cv.venta_id = v.id
-               LEFT JOIN (
-                 -- Validador: quien hizo la última tipificación/observación en Validación
-                 SELECT vh.venta_id, vh.usuario_nombre AS validador_nombre, vh.created_at AS fecha_validador
-                 FROM venta_historial vh
-                 INNER JOIN (
-                   SELECT venta_id, MAX(id) AS max_id
-                   FROM venta_historial
-                   WHERE campo = 'obs_validacion' AND tipo = 'CAMBIO_VALIDACION'
-                   GROUP BY venta_id
-                 ) ltv ON vh.id = ltv.max_id
-               ) tv ON tv.venta_id = v.id
                WHERE 1=1`;
     const params = [];
 

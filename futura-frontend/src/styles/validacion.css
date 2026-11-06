@@ -762,3 +762,6 @@ body{
 .badge-estado.be-tecnico{background:#fce7f3!important;color:#be185d!important;border-color:rgba(244,114,182,.5)!important;}
 .badge-estado.be-bloqueado{background:#eff6ff!important;color:#2563eb!important;border-color:rgba(96,165,250,.45)!important;}
 @media (max-width:1100px){.validacion-page .filtros-grid{grid-template-columns:1fr 1fr;}.validacion-page .kpi-strip{grid-template-columns:1fr;}}
+
+/* Quién hizo la última tipificación, debajo del estado */
+.validacion-page .val-por{margin-top:4px;font-size:9px;font-weight:800;letter-spacing:.3px;color:#64748b;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;margin-left:auto;margin-right:auto;}
