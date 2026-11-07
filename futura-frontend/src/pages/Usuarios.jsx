@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
+import { esAcceso } from '../utils/rutas'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import JefaturaViewControls from '../components/JefaturaViewControls'
 import PaquetesCatalogo from '../components/PaquetesCatalogo'
@@ -131,8 +132,10 @@ export default function Usuarios() {
   // MODAL EDITAR
   function abrirModalEditar(u) {
     setEditandoId(u.id)
-    const cargo2 = permisosDeUsuario(u).find(c => c !== u.cargo) || ''
-    setForm({ nombre: u.nombre || '', usuario: u.usuario || '', pass: '', pass2: '', cargo: u.cargo || '', cargo2, sala: u.sala || '', genero: u.genero || 'M', activo: !!u.activo })
+    const cargo2 = permisosDeUsuario(u).find(c => c !== u.cargo && !esAcceso(c)) || ''
+    // Los accesos puntuales (Paquetes, Campañas) se conservan al guardar
+    const accesos = permisosDeUsuario(u).filter(esAcceso)
+    setForm({ nombre: u.nombre || '', usuario: u.usuario || '', pass: '', pass2: '', cargo: u.cargo || '', cargo2, accesos, sala: u.sala || '', genero: u.genero || 'M', activo: !!u.activo })
     setErrores({})
     setModalOpen(true)
   }
@@ -169,7 +172,7 @@ export default function Usuarios() {
     try {
       let res, data
       if (editandoId) {
-        const body = { nombre: form.nombre, usuario: form.usuario, cargo: form.cargo, sala: form.sala, genero: form.genero, permisos: form.cargo2 ? [form.cargo2] : [] }
+        const body = { nombre: form.nombre, usuario: form.usuario, cargo: form.cargo, sala: form.sala, genero: form.genero, permisos: [form.cargo2, ...(form.accesos || [])].filter(Boolean) }
         if (form.pass) body.password = form.pass
         res  = await fetch(`${API}/usuarios/${editandoId}`, { method: 'PATCH', headers: ncHeaders(), body: JSON.stringify(body) })
         data = await res.json()

@@ -10,7 +10,7 @@ const router  = express.Router();
 const db      = require('../database');
 const auth    = require('../middleware/auth');
 
-const ROLES_EDICION = ['jefatura', 'usuarios'];
+const ROLES_EDICION = ['jefatura', 'usuarios', 'paquetes'];
 
 // Lista inicial: la misma que estaba fija en el frontend (PAQUETES_POR_PLAN).
 // Los planes son fijos; lo editable son los paquetes de cada plan.

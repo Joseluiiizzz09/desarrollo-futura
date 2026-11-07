@@ -17,8 +17,13 @@ function normalizarPermisos(permisos) {
   return [...new Set(permisos.map(p => String(p).trim().toLowerCase()).filter(Boolean))];
 }
 
+// Accesos puntuales (subcargos): dan una función concreta sin ser un cargo
+// (no se pueden elegir como cargo principal). Ej.: 'paquetes' edita el catálogo
+// de paquetes sin ver Usuarios.
+const ACCESOS_VALIDOS = ['paquetes','campanas'];
+
 function permisosSonValidos(permisos) {
-  return permisos.every(p => CARGOS_VALIDOS.includes(p));
+  return permisos.every(p => CARGOS_VALIDOS.includes(p) || ACCESOS_VALIDOS.includes(p));
 }
 
 function normalizarNombrePersonal(nombre) {

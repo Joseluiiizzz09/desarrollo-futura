@@ -13,6 +13,7 @@ import CanalBadge from '../components/CanalBadge'
 import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
+import { ACCESOS, esAcceso } from '../utils/rutas'
 import { useCampanas } from '../utils/campanas'
 import PaquetesCatalogo from '../components/PaquetesCatalogo'
 import CampanasCatalogo from '../components/CampanasCatalogo'
@@ -234,7 +235,7 @@ function fechaHoy()    { const d=new Date(); return `${d.getFullYear()}-${String
 function horaAhora()   { return new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',hour12:false}) }
 function mesActual()   { return fechaHoy().slice(0,7) }
 function formatF(f)    { if(!f)return'—'; const p=f.split('-'); return `${p[2]}/${p[1]}/${p[0]}` }
-function cargoObj(id)  { return CARGOS.find(c=>c.id===id)||{label:id,cls:'bc-default'} }
+function cargoObj(id)  { const a = ACCESOS.find(x=>x.id===id); return CARGOS.find(c=>c.id===id)||(a?{label:`+ ${a.label}`,cls:'bc-default'}:{label:id,cls:'bc-default'}) }
 function colorAvatar(n){ const c=["#3b82f6","#8b5cf6","#22c55e","#f97316","#ef4444","#06b6d4","#ec4899","#f59e0b"]; let s=0; for(const ch of n) s+=ch.charCodeAt(0); return c[s%c.length] }
 function iniciales(n)  { return n.trim().split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase() }
 function mapSeg(e)     { const s=(e||'').toLowerCase(); if(SEG_MAP[s])return SEG_MAP[s]; if(s.includes('tecnico'))return'tecnico'; if(s.includes('rechazo'))return'rechazo'; if(s.includes('ejecucion'))return'ejecucion'; return null }
@@ -347,7 +348,7 @@ function flujoLabelEstado(estado) {
   })[e] || (estado || 'Venta subida')
 }
 
-const MOD_FORM_VACIO = { nombre:'', usuario:'', cargo:'', cargo2:'', cargo3:'', sala:'', salaManual:true, pass:'', pass2:'' }
+const MOD_FORM_VACIO = { nombre:'', usuario:'', cargo:'', cargo2:'', cargo3:'', accesos:[], sala:'', salaManual:true, pass:'', pass2:'' }
 
 // Valores únicos y ordenados para poblar selects dinámicos (Asesor/Sala/Distrito/Plan) —
 // nunca hardcodeados, siempre derivados de los datos reales ya cargados.
@@ -1781,11 +1782,12 @@ export default function Jefatura() {
   }
   function abrirModalEditar(u) {
     setEditandoId(u.id)
-    const permisosExtra = permisosDeUsuario(u).filter(c => c !== u.cargo)
+    const permisosExtra = permisosDeUsuario(u).filter(c => c !== u.cargo && !esAcceso(c))
+    const accesos = permisosDeUsuario(u).filter(esAcceso)
     const cargo2 = permisosExtra[0] || ''
     const cargo3 = permisosExtra[1] || ''
     const salaActual = String(u.sala || '').trim()
-    setModForm({ nombre:u.nombre||'', usuario:u.usuario||'', cargo:u.cargo||'', cargo2, cargo3, sala:salaActual, salaManual:!salaActual || !SALAS.includes(salaActual), pass:'', pass2:'' })
+    setModForm({ nombre:u.nombre||'', usuario:u.usuario||'', cargo:u.cargo||'', cargo2, cargo3, accesos, sala:salaActual, salaManual:!salaActual || !SALAS.includes(salaActual), pass:'', pass2:'' })
     setModErrores({}); setModalUsu(true)
   }
   function cerrarModalUsu() { setModalUsu(false); setEditandoId(null); setModForm(MOD_FORM_VACIO); setModErrores({}) }
@@ -1814,7 +1816,7 @@ export default function Jefatura() {
     if (pass && pass !== pass2)      { errs.pass2  = true; primerError ||= 'Las contraseñas no coinciden.' }
     if (Object.keys(errs).length) { setModErrores(errs); mostrarToast(primerError); return }
 
-    const permisos = [cargo2, cargo3].filter(Boolean)
+    const permisos = [cargo2, cargo3, ...(modForm.accesos || [])].filter(Boolean)
     setGuardandoUsu(true)
     try {
       const loginNorm = usuario.trim().toLowerCase().replace(/\s+/g, '.')
@@ -3266,6 +3268,23 @@ export default function Jefatura() {
                   <option value="">— Sin cargo adicional —</option>
                   {CARGOS.filter(c=>c.id!==modForm.cargo && c.id!==modForm.cargo2 && c.id!=='jefatura').map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
+              </div>
+              <div className="modal-campo span2">
+                <label>Accesos puntuales (opcional)</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                  {ACCESOS.map(a => {
+                    const on = (modForm.accesos || []).includes(a.id)
+                    return (
+                      <button key={a.id} type="button" title={a.ayuda}
+                        onClick={()=>setModForm(f=>({...f, accesos: on ? f.accesos.filter(x=>x!==a.id) : [...(f.accesos||[]), a.id]}))}
+                        style={{padding:'7px 14px',borderRadius:8,fontSize:12,fontWeight:700,fontFamily:'inherit',cursor:'pointer',
+                          border: on ? '1.5px solid #0f172a' : '1.5px solid #e5e7eb', background: on ? '#0f172a' : '#fff', color: on ? '#fff' : '#374151'}}>
+                        {on ? '✓ ' : ''}{a.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{fontSize:11,color:'#9ca3af'}}>Dan solo esa función (ej. Paquetes: agregar y editar paquetes) sin acceso a Usuarios.</div>
               </div>
               <div className="modal-campo">
                 <label>Sala / Equipo</label>

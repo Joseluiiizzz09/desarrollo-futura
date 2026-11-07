@@ -22,6 +22,9 @@ export const RUTAS = {
   entrevistas:         '/backdata-reclutamiento',
   capacitador:         '/backdata-reclutamiento',
   marketing:           '/marketing-leads',
+  // Accesos puntuales (subcargos)
+  paquetes:            '/catalogo?v=paquetes',
+  campanas:            '/catalogo?v=campanas',
 }
 export const CARGO_LABELS = {
   asesor: 'Asesor',
@@ -43,4 +46,13 @@ export const CARGO_LABELS = {
   entrevistas: 'Entrevistas',
   capacitador: 'Capacitación',
   marketing: 'Marketing',
+  paquetes: 'Paquetes',
+  campanas: 'Campañas',
 }
+
+// Accesos puntuales que se marcan aparte de los cargos al editar un usuario
+export const ACCESOS = [
+  { id: 'paquetes', label: 'Paquetes', ayuda: 'Agregar y editar paquetes de venta' },
+  { id: 'campanas', label: 'Campañas', ayuda: 'Agregar y editar campañas' },
+]
+export const esAcceso = id => ACCESOS.some(a => a.id === id)
