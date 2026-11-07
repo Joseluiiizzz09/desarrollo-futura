@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { API, ncHeaders } from '../services/api'
+import CatalogoCambios from './CatalogoCambios'
 import { useCatalogoPaquetes, fijarCatalogoPaquetes, recargarPaquetes, PLANES } from '../utils/paquetes'
 
 // Usuarios → Paquetes: edición manual del catálogo de paquetes por plan que
@@ -111,6 +112,9 @@ export default function PaquetesCatalogo({ mostrarToast }) {
 
   return (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <CatalogoCambios catalogo="paquetes" titulo="Cambios en paquetes" />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16 }}>
         {PLANES.map(plan => {
           const lista = filas.filter(p => p.plan === plan).sort((a, b) => (a.orden - b.orden) || (a.id - b.id))

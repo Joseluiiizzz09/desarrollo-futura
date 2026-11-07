@@ -9,6 +9,7 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../database');
 const auth    = require('../middleware/auth');
+const { registrarCambio, listarCambios } = require('./catalogo-cambios');
 
 const ROLES_EDICION = ['jefatura', 'usuarios', 'paquetes'];
 
@@ -83,6 +84,16 @@ router.get('/', auth([]), async (req, res) => {
   }
 });
 
+// GET /api/paquetes/cambios — historial: quién agregó, editó o eliminó
+router.get('/cambios', auth(ROLES_EDICION), async (req, res) => {
+  try {
+    res.json({ ok: true, data: await listarCambios('paquetes') });
+  } catch (e) {
+    console.error('[GET /paquetes/cambios]', e.message || e);
+    res.status(500).json({ ok: false, mensaje: 'Error al obtener el historial' });
+  }
+});
+
 // POST /api/paquetes — { plan, nombre }
 router.post('/', auth(ROLES_EDICION), async (req, res) => {
   try {
@@ -98,6 +109,7 @@ router.post('/', auth(ROLES_EDICION), async (req, res) => {
       'INSERT INTO paquetes_catalogo (plan, nombre, orden) VALUES (?, ?, ?)',
       [plan, nombre, Number(maximo) + 1]
     );
+    await registrarCambio(req, 'paquetes', 'AGREGÓ', plan, nombre);
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ ok: false, mensaje: 'Ese paquete ya existe en ese plan' });
@@ -119,9 +131,16 @@ router.patch('/:id', auth(ROLES_EDICION), async (req, res) => {
     }
     if (req.body?.activo !== undefined) { campos.push('activo = ?'); valores.push(req.body.activo ? 1 : 0); }
     if (!campos.length) return res.status(400).json({ ok: false, mensaje: 'Nada que actualizar' });
+    const [[antes]] = await db.query('SELECT plan, nombre, activo FROM paquetes_catalogo WHERE id = ?', [req.params.id]);
     valores.push(req.params.id);
     const [r] = await db.query(`UPDATE paquetes_catalogo SET ${campos.join(', ')} WHERE id = ?`, valores);
     if (!r.affectedRows) return res.status(404).json({ ok: false, mensaje: 'Paquete no encontrado' });
+    if (antes) {
+      const nuevoNombre = req.body?.nombre !== undefined ? limpiarNombre(req.body.nombre) : antes.nombre;
+      if (nuevoNombre !== antes.nombre) await registrarCambio(req, 'paquetes', 'EDITÓ', antes.plan, `${antes.nombre} → ${nuevoNombre}`);
+      if (req.body?.activo !== undefined && Boolean(req.body.activo) !== Boolean(antes.activo))
+        await registrarCambio(req, 'paquetes', req.body.activo ? 'ACTIVÓ' : 'DESACTIVÓ', antes.plan, nuevoNombre);
+    }
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ ok: false, mensaje: 'Ese paquete ya existe en ese plan' });
@@ -138,7 +157,7 @@ router.post('/:id/mover', auth(ROLES_EDICION), async (req, res) => {
     const direccion = req.body?.direccion === 'arriba' ? 'arriba' : 'abajo';
     conn = await db.getConnection();
     await conn.beginTransaction();
-    const [[actual]] = await conn.query('SELECT id, plan FROM paquetes_catalogo WHERE id = ? FOR UPDATE', [req.params.id]);
+    const [[actual]] = await conn.query('SELECT id, plan, nombre FROM paquetes_catalogo WHERE id = ? FOR UPDATE', [req.params.id]);
     if (!actual) { await conn.rollback(); return res.status(404).json({ ok: false, mensaje: 'Paquete no encontrado' }); }
     const [lista] = await conn.query(
       'SELECT id FROM paquetes_catalogo WHERE plan = ? ORDER BY orden, id FOR UPDATE', [actual.plan]
@@ -154,6 +173,7 @@ router.post('/:id/mover', auth(ROLES_EDICION), async (req, res) => {
       }
     }
     await conn.commit();
+    if (j >= 0 && j < ids.length) await registrarCambio(req, 'paquetes', 'MOVIÓ', actual.plan, `${actual.nombre} (${direccion === 'arriba' ? 'hacia arriba' : 'hacia abajo'})`);
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     if (conn) await conn.rollback().catch(() => {});
@@ -168,8 +188,10 @@ router.post('/:id/mover', auth(ROLES_EDICION), async (req, res) => {
 router.delete('/:id', auth(ROLES_EDICION), async (req, res) => {
   try {
     await asegurarTabla();
+    const [[antes]] = await db.query('SELECT plan, nombre FROM paquetes_catalogo WHERE id = ?', [req.params.id]);
     const [r] = await db.query('DELETE FROM paquetes_catalogo WHERE id = ?', [req.params.id]);
     if (!r.affectedRows) return res.status(404).json({ ok: false, mensaje: 'Paquete no encontrado' });
+    if (antes) await registrarCambio(req, 'paquetes', 'ELIMINÓ', antes.plan, antes.nombre);
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     console.error('[DELETE /paquetes]', e.message || e);

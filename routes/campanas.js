@@ -9,6 +9,8 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../database');
 const auth    = require('../middleware/auth');
+const { registrarCambio, listarCambios } = require('./catalogo-cambios');
+const TIPO_LABEL = { backdata: 'BACK DATA', reclutamiento: 'RECLUTAMIENTO' };
 
 const ROLES_EDICION = ['jefatura', 'usuarios', 'campanas'];
 const TIPOS = ['backdata', 'reclutamiento'];
@@ -140,6 +142,16 @@ router.get('/', auth([]), async (req, res) => {
   }
 });
 
+// GET /api/campanas/cambios — historial: quién agregó, editó o eliminó
+router.get('/cambios', auth(ROLES_EDICION), async (req, res) => {
+  try {
+    res.json({ ok: true, data: await listarCambios('campanas') });
+  } catch (e) {
+    console.error('[GET /campanas/cambios]', e.message || e);
+    res.status(500).json({ ok: false, mensaje: 'Error al obtener el historial' });
+  }
+});
+
 // POST /api/campanas — { tipo, nombre, color_fondo?, color_texto? }
 router.post('/', auth(ROLES_EDICION), async (req, res) => {
   try {
@@ -155,6 +167,7 @@ router.post('/', auth(ROLES_EDICION), async (req, res) => {
       'INSERT INTO campanas_catalogo (tipo, nombre, orden, color_fondo, color_texto) VALUES (?, ?, ?, ?, ?)',
       [tipo, nombre, Number(maximo) + 1, limpiarColor(req.body?.color_fondo), limpiarColor(req.body?.color_texto)]
     );
+    await registrarCambio(req, 'campanas', 'AGREGÓ', TIPO_LABEL[tipo], nombre);
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ ok: false, mensaje: 'Esa campaña ya existe' });
@@ -180,9 +193,20 @@ router.patch('/:id', auth(ROLES_EDICION), async (req, res) => {
     }
     if (req.body?.color_texto !== undefined) { campos.push('color_texto = ?'); valores.push(limpiarColor(req.body.color_texto)); }
     if (!campos.length) return res.status(400).json({ ok: false, mensaje: 'Nada que actualizar' });
+    const [[antes]] = await db.query('SELECT tipo, nombre, activo, color_fondo, color_texto FROM campanas_catalogo WHERE id = ?', [req.params.id]);
     valores.push(req.params.id);
     const [r] = await db.query(`UPDATE campanas_catalogo SET ${campos.join(', ')} WHERE id = ?`, valores);
     if (!r.affectedRows) return res.status(404).json({ ok: false, mensaje: 'Campaña no encontrada' });
+    if (antes) {
+      const grupo = TIPO_LABEL[antes.tipo] || antes.tipo;
+      const nuevoNombre = req.body?.nombre !== undefined ? limpiarNombre(req.body.nombre) : antes.nombre;
+      if (nuevoNombre !== antes.nombre) await registrarCambio(req, 'campanas', 'EDITÓ', grupo, `${antes.nombre} → ${nuevoNombre}`);
+      if (req.body?.activo !== undefined && Boolean(req.body.activo) !== Boolean(antes.activo))
+        await registrarCambio(req, 'campanas', req.body.activo ? 'ACTIVÓ' : 'DESACTIVÓ', grupo, nuevoNombre);
+      const cambioColor = (req.body?.color_fondo !== undefined && limpiarColor(req.body.color_fondo) !== (antes.color_fondo || null))
+        || (req.body?.color_texto !== undefined && limpiarColor(req.body.color_texto) !== (antes.color_texto || null));
+      if (cambioColor) await registrarCambio(req, 'campanas', 'EDITÓ', grupo, `${nuevoNombre} (color)`);
+    }
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ ok: false, mensaje: 'Esa campaña ya existe' });
@@ -199,7 +223,7 @@ router.post('/:id/mover', auth(ROLES_EDICION), async (req, res) => {
     const direccion = req.body?.direccion === 'arriba' ? 'arriba' : 'abajo';
     conn = await db.getConnection();
     await conn.beginTransaction();
-    const [[actual]] = await conn.query('SELECT id, tipo FROM campanas_catalogo WHERE id = ? FOR UPDATE', [req.params.id]);
+    const [[actual]] = await conn.query('SELECT id, tipo, nombre FROM campanas_catalogo WHERE id = ? FOR UPDATE', [req.params.id]);
     if (!actual) { await conn.rollback(); return res.status(404).json({ ok: false, mensaje: 'Campaña no encontrada' }); }
     const [lista] = await conn.query(
       'SELECT id FROM campanas_catalogo WHERE tipo = ? ORDER BY orden, id FOR UPDATE', [actual.tipo]
@@ -214,6 +238,7 @@ router.post('/:id/mover', auth(ROLES_EDICION), async (req, res) => {
       }
     }
     await conn.commit();
+    if (j >= 0 && j < ids.length) await registrarCambio(req, 'campanas', 'MOVIÓ', TIPO_LABEL[actual.tipo], `${actual.nombre} (${direccion === 'arriba' ? 'hacia arriba' : 'hacia abajo'})`);
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     if (conn) await conn.rollback().catch(() => {});
@@ -228,8 +253,10 @@ router.post('/:id/mover', auth(ROLES_EDICION), async (req, res) => {
 router.delete('/:id', auth(ROLES_EDICION), async (req, res) => {
   try {
     await asegurarTabla();
+    const [[antes]] = await db.query('SELECT tipo, nombre FROM campanas_catalogo WHERE id = ?', [req.params.id]);
     const [r] = await db.query('DELETE FROM campanas_catalogo WHERE id = ?', [req.params.id]);
     if (!r.affectedRows) return res.status(404).json({ ok: false, mensaje: 'Campaña no encontrada' });
+    if (antes) await registrarCambio(req, 'campanas', 'ELIMINÓ', TIPO_LABEL[antes.tipo], antes.nombre);
     res.json({ ok: true, data: await listar() });
   } catch (e) {
     console.error('[DELETE /campanas]', e.message || e);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { API, ncHeaders } from '../services/api'
+import CatalogoCambios from './CatalogoCambios'
 import { useCatalogoCampanas, fijarCatalogoCampanas, recargarCampanas, colorTextoPara } from '../utils/campanas'
 
 // Usuarios → Campañas: edición manual de las campañas de Back Data (leads) y
@@ -144,6 +145,9 @@ export default function CampanasCatalogo({ mostrarToast }) {
 
   return (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <CatalogoCambios catalogo="campanas" titulo="Cambios en campañas" />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16 }}>
         {TIPOS.map(t => {
           const lista = filas.filter(c => c.tipo === t.id).sort((a, b) => (a.orden - b.orden) || (a.id - b.id))
