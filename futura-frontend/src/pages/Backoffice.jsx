@@ -143,7 +143,7 @@ const TIPIF_FILTRO_OPCIONES = [...TIPIF_VEND_OPCIONES, 'INSTALADO', 'VENTA CAIDA
 // tipificación vigente puede volver a trabajarse después de 2 horas.
 const TIPIF_PROHIBIDAS_ROTACION = new Set(['VENTA CERRADA','NO TOCAR','SH NO TOCAR','NO ROTAR','SH NO ROTAR','TERNA'])
 const TIPIF_EXCLUIDAS_ROTACION  = new Set(['VENTA CERRADA','NO TOCAR','SH NO TOCAR','NO ROTAR','SH NO ROTAR','INSTALADO','TERNA'])
-const ESTADOS_AMARILLOS_VENTA = new Set(['RECHAZO_CAMPO','RECHAZADA','RECHAZADO','CORTA_LLAMADA','FRAUDE','NO_DESEA','NO_CONTESTA','BUZON_VOZ','SERVICIO_ACTIVO','MALA_OFERTA','CORREGIR'])
+const ESTADOS_AMARILLOS_VENTA = new Set(['RECHAZO_CAMPO','RECHAZADA','RECHAZADO','CORTA_LLAMADA','FRAUDE','NO_DESEA','NO_CONTESTA','BUZON_VOZ','SERVICIO_ACTIVO','MALA_OFERTA','CORREGIR','DESAPROBADO'])
 const ESTADOS_AMARILLOS_GRAB  = new Set(['CORTA_LLAMADA','SUPLANTACION','NO_DESEA','NO_CONTESTA','BUZON','BUZON_VOZ'])
 const ESTADOS_AMARILLOS_SUPGRAB = new Set(['RECHAZADO','NO_CONFORME','OBSERVADO'])
 function normalizarNumero(valor) {
@@ -2427,7 +2427,7 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
     const todasVentas = Object.values(ventasPorNumero)
     const ventasPeriodo = todasVentas.filter(v => fechaIncluida(v.created_at))
     const estadosCaidos = new Set(['CAIDA','RECHAZO','RECHAZO_CAMPO','RECHAZO CAMPO','RECHAZO_MESA','RECHAZO MESA','RECHAZADA','RECHAZADO','ANULADA','SERVICIO_ACTIVO','SERVICIO ACTIVO'])
-    const validacionesCaidas = new Set(['CORTA LLAMADA','BUZON DE VOZ','CORREGIR','FRAUDE','MALA OFERTA','NO CONTESTA','NO DESEA','SERVICIO ACTIVO'])
+    const validacionesCaidas = new Set(['CORTA LLAMADA','BUZON DE VOZ','CORREGIR','FRAUDE','MALA OFERTA','NO CONTESTA','NO DESEA','SERVICIO ACTIVO','DESAPROBADO'])
     const estadosInstalados = new Set(['INSTALADO','INSTALADO_NO_VALIDADO','INSTALADO NO VALIDADO','REASIGNACION'])
     const asesoresFiltrados = asesores.filter(a => {
       if (rendFiltroSala && String(a.sala || '').trim() !== rendFiltroSala) return false

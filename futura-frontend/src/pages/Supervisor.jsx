@@ -64,11 +64,11 @@ function colorFor(n) { let s=0; for(const c of (n||'')) s+=c.charCodeAt(0); retu
 function iniciales(n) { return (n||'?').trim().split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase() }
 function primerNombre(n) { return String(n||'').trim().split(/\s+/)[0] || '' }
 function normalizarSala(s) { return String(s||'').trim().toUpperCase() }
-const TIPIFICACIONES_VALIDACION = new Set(['CORTA LLAMADA','FRAUDE','NO DESEA','NO CONTESTA','BUZÓN DE VOZ','BUZON DE VOZ','SERVICIO ACTIVO','CORREGIR','MALA OFERTA','VENTA','VALIDADO'])
+const TIPIFICACIONES_VALIDACION = new Set(['CORTA LLAMADA','FRAUDE','NO DESEA','NO CONTESTA','BUZÓN DE VOZ','BUZON DE VOZ','SERVICIO ACTIVO','CORREGIR','MALA OFERTA','DESAPROBADO','BIOMETRÍA','VENTA','VALIDADO'])
 const ESTADO_POR_TIPIFICACION_VALIDACION = {
   'CORTA LLAMADA':'corta_llamada', FRAUDE:'fraude', 'NO DESEA':'no_desea',
   'NO CONTESTA':'no_contesta', 'BUZÓN DE VOZ':'buzon_voz', 'BUZON DE VOZ':'buzon_voz',
-  'SERVICIO ACTIVO':'servicio_activo', CORREGIR:'corregir', 'MALA OFERTA':'mala_oferta',
+  'SERVICIO ACTIVO':'servicio_activo', CORREGIR:'corregir', 'MALA OFERTA':'mala_oferta', DESAPROBADO:'desaprobado',
 }
 function getTipificacionValidacion(obs) {
   const lineas = String(obs||'').split('\n').map(l=>l.trim()).filter(Boolean)

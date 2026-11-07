@@ -248,7 +248,7 @@ function normEstado(v) {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
 }
-const FLUJO_NO_VALIDA = new Set(['venta','corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','no_validado','bloqueado','zona_restringida','caracter_especial','sin_agenda','corregir','mala_oferta'])
+const FLUJO_NO_VALIDA = new Set(['venta','corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','no_validado','bloqueado','zona_restringida','caracter_especial','sin_agenda','corregir','mala_oferta','desaprobado'])
 const FLUJO_GRABADA = new Set(['grabado','grabada','aprobado','programado','en_ejecucion','instalado','caida','rechazo_campo','tecnico_casa','levantar_sot','tecnicos_camino','instalado_no_validado','reasignacion','derivado_planta_externa'])
 const FLUJO_SEGUIMIENTO = new Set(['en_ejecucion','instalado','caida','rechazo_campo','tecnico_casa','levantar_sot','tecnicos_camino','instalado_no_validado','reasignacion','derivado_planta_externa','servicio_activo'])
 function estadoSeguimiento(v) {
@@ -280,7 +280,7 @@ function flujoGrabada(v) {
 function flujoNoGrabada(v) { return flujoValidada(v) && !flujoGrabada(v) }
 const ESTADOS_PROPIOS_VALIDACION = new Set([
   'venta','validado','no_validado','corta_llamada','fraude','no_desea',
-  'no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta',
+  'no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta','desaprobado',
 ])
 function estadoValidacion(v) {
   // La validación tiene un estado histórico propio. Nunca debe heredar el

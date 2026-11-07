@@ -43,7 +43,7 @@ const ESTADOS_VALIDOS_PATCH = [
   'CARACTER_ESPECIAL','FRAUDE','ZONA_RESTRINGIDA',
   'ANULADA','OBSERVADA','REPROGRAMADA','NO CONTACTO','RECHAZADA','RECHAZADO',
   'NO_DESEA','NO_CONTESTA','SERVICIO_ACTIVO','BUZON_VOZ','CORTA_LLAMADA',
-  'CORREGIR','MALA_OFERTA','RECHAZO_MESA',
+  'CORREGIR','MALA_OFERTA','RECHAZO_MESA','DESAPROBADO',
 ];
 const ESTADOS_PROGRAMACION = [
   'APROBADO','PROGRAMADO','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL',
@@ -230,7 +230,7 @@ function normalizarEstadoCRM(valor) {
 }
 
 const ESTADOS_VENTA_CAIDA_SEGUIMIENTO = new Set(['CAIDA','RECHAZO','RECHAZO CAMPO','RECHAZO EN CAMPO','RECHAZO MESA','RECHAZO EN MESA','SERVICIO ACTIVO']);
-const ESTADOS_VENTA_CAIDA_VALIDACION = new Set(['CORTA LLAMADA','BUZON DE VOZ','CORREGIR','FRAUDE','MALA OFERTA','NO CONTESTA','NO DESEA','SERVICIO ACTIVO']);
+const ESTADOS_VENTA_CAIDA_VALIDACION = new Set(['CORTA LLAMADA','BUZON DE VOZ','CORREGIR','FRAUDE','MALA OFERTA','NO CONTESTA','NO DESEA','SERVICIO ACTIVO','DESAPROBADO']);
 // "pendiente" es el estado inicial de la grabación, no una venta caída.
 const ESTADOS_VENTA_CAIDA_GRABACION = new Set(['BUZON DE VOZ','BUZON','CORREGIR SEC','CORTA LLAMADA','ESPERANDO TERCERO','NO CONTESTA','NO DESEA','SUPLANTACION']);
 
@@ -1916,7 +1916,7 @@ router.delete('/:id/audio', auth(ROLES_VENTAS), async (req, res) => {
 // ===== PATCH /api/ventas/:id/tipificar-validacion =====
 // Endpoint dedicado para Validación: append al historial server-side,
 // control de concurrencia (estadoAnteriorEsperado), usuario desde req.user.
-const TIPS_VALIDACION = ['corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta','venta','validado','agendado'];
+const TIPS_VALIDACION = ['corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta','venta','validado','agendado','biometria','desaprobado'];
 const TIP_LABELS_VAL  = {
   corta_llamada:   'CORTA LLAMADA',
   fraude:          'FRAUDE',
@@ -1929,6 +1929,8 @@ const TIP_LABELS_VAL  = {
   venta:           'VENTA',
   validado:        'VALIDADO',
   agendado:        'AGENDADO',
+  biometria:       'BIOMETRÍA',
+  desaprobado:     'DESAPROBADO',
 };
 // AGENDADO: la venta queda validada y pasa a Grabaciones, pero con la fecha y
 // hora en que el cliente pidió que se le grabe el audio.
@@ -1944,6 +1946,9 @@ const TIP_TO_ESTADO_VAL = {
   corregir:        'CORREGIR',
   mala_oferta:     'MALA_OFERTA',
   venta:           'VENTA',
+  // BIOMETRÍA: validada con biometría, pasa directo a Programación sin grabar
+  biometria:       'VALIDADO',
+  desaprobado:     'DESAPROBADO',
 };
 
 function nowPeruLabel() {
@@ -2010,7 +2015,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
 
     // El canal (NETCONTACT/KELS) es obligatorio para confirmar VENTA o
     // VALIDADO — define el origen comercial de la venta hacia adelante.
-    if (['venta', 'validado', 'agendado'].includes(tipificacion) && !canalNorm && !venta.canal) {
+    if (['venta', 'validado', 'agendado', 'biometria'].includes(tipificacion) && !canalNorm && !venta.canal) {
       await conn.rollback();
       return res.status(400).json({ ok: false, mensaje: 'Selecciona el canal (NETCONTACT o KELS) antes de guardar.' });
     }
@@ -2040,16 +2045,16 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
     // VALIDADO cierra las observaciones operativas de Validación. Los cambios
     // anteriores siguen disponibles en venta_historial para auditoría.
     // AGENDADO también cierra las observaciones, pero deja visible para cuándo quedó.
-    const nuevoHistorialTexto = tipificacion === 'validado' ? ''
+    const nuevoHistorialTexto = (tipificacion === 'validado' || tipificacion === 'biometria') ? ''
       : tipificacion === 'agendado' ? `[${ts} - ${nombreUsuario}] ${etiquetaTip}`
       : lineas.join('\n');
     const nuevoEstado         = tipificacion ? TIP_TO_ESTADO_VAL[tipificacion] : null;
     const estadoAnterior      = venta.estado || 'VENTA';
     // Venta con biometría: no requiere grabación. Al validarse se da por
     // grabada (biometria / biometria_aislada) y pasa directo a Programación.
-    const biometriaDirecta = tipificacion === 'validado'
-      && String(venta.biometria || '').toUpperCase() === 'SI'
-      && String(venta.estado_grab || '').toLowerCase() !== 'grabado';
+    const biometriaDirecta = String(venta.estado_grab || '').toLowerCase() !== 'grabado'
+      && (tipificacion === 'biometria'
+        || (tipificacion === 'validado' && String(venta.biometria || '').toUpperCase() === 'SI'));
     const tipoBiometria = /AISLADA/i.test(venta.biometria_tipo || '') ? 'biometria_aislada' : 'biometria';
 
     if (nuevoEstado) {
@@ -2059,14 +2064,14 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       );
       if (tipificacion === 'agendado') {
         await conn.query(`UPDATE ventas SET estado_grab = 'agendado', agenda_grab_at = ? WHERE id = ?`, [agendaSql, ventaId]);
-      } else if (tipificacion === 'validado') {
+      } else if (tipificacion === 'validado' || tipificacion === 'biometria') {
         // Si estaba AGENDADO y ahora se valida normal, vuelve a PENDIENTE de grabar.
         await conn.query(
           `UPDATE ventas SET estado_grab = 'pendiente', agenda_grab_at = NULL
             WHERE id = ? AND LOWER(COALESCE(estado_grab, '')) = 'agendado'`, [ventaId]);
       }
       if (biometriaDirecta) {
-        await conn.query(`UPDATE ventas SET estado_grab = 'grabado', tipo_grabacion = ? WHERE id = ?`, [tipoBiometria, ventaId]);
+        await conn.query(`UPDATE ventas SET estado_grab = 'grabado', tipo_grabacion = ?, biometria = 'SI' WHERE id = ?`, [tipoBiometria, ventaId]);
       }
     } else {
       await conn.query(

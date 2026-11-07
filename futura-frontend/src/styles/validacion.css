@@ -308,6 +308,8 @@ body{
 .be-observado{background:#fef3c7;color:#78350f;border-color:#fcd34d;}
 .be-pendiente,.b-pendiente{background:#e2e8f0;color:#1e293b;border-color:#cbd5e1;}
 .be-fraude{background:#fecaca;color:#7f1d1d;border-color:#f87171;}
+.be-biometria{background:#f0fdf4;color:#166534;border-color:#86efac;}
+.be-desaprobado{background:#fef2f2;color:#7f1d1d;border-color:#f87171;}
 .be-malaoferta{background:#ffedd5;color:#9a3412;border-color:#fdba74;}
 .be-nodesea{background:#fecdd3;color:#881337;border-color:#fda4af;}
 .be-nocontesta{background:#fef08a;color:#713f12;border-color:#fde047;}
