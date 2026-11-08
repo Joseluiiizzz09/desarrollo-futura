@@ -49,12 +49,16 @@ const CARGOS = [
   { id:'marketing',     label:'Marketing',     cls:'bc-marketing'     },
 ]
 // CAMPO 1–10: equipos de Supervisor Campo; sus asesores de campo usan el mismo equipo.
-// Tipo de venta: CAMPO si la subió un asesor de campo / supervisor campo o su
-// sala es un equipo CAMPO; si no, DIGITAL (salas y Vexa).
+// Tipo de venta: CAMPO si la subió un asesor de campo / supervisor campo, su
+// sala es un equipo CAMPO, o viene de un vendedor de Grupo Futura (llega por
+// Grupo Futura, queda sin usuario de FUTURA, o su usuario se generó desde
+// Grupo Futura y no tiene sala). DIGITAL: asesores de las salas.
 function tipoVentaFlujo(v) {
   const cargo = String(v.asesor_cargo || '').trim().toLowerCase()
   const sala = String(v.sala || '').trim().toUpperCase()
-  return cargo === 'campo' || cargo === 'supcampo' || sala.startsWith('CAMPO') ? 'CAMPO' : 'DIGITAL'
+  const deGrupoFutura = !v.asesor_id || !!v.origen_grupo_futura_id
+    || String(v.observacion || '').startsWith('[Grupo Futura]') || !sala
+  return cargo === 'campo' || cargo === 'supcampo' || sala.startsWith('CAMPO') || deGrupoFutura ? 'CAMPO' : 'DIGITAL'
 }
 function TipoVentaBadge({ tipo }) {
   const campo = tipo === 'CAMPO'
