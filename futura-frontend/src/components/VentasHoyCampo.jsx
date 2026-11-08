@@ -6,7 +6,8 @@ import { API, ncHeaders } from '../services/api'
 // `filas`: [{ sala, label, n }] de los equipos con ventas Claro; `total`.
 const SIN_JEFE = 'SIN JEFE ASIGNADO'
 
-export default function VentasHoyCampo({ filas, total, titulo = 'Ventas del día — Campo', subtitulo = 'ingresadas hoy' }) {
+export default function VentasHoyCampo({ datos, titulo = 'Ventas del día — Campo', subtitulo = 'ingresadas hoy' }) {
+  const { filas, total, totH = 0, totV = 0 } = datos
   const [jerarquia, setJerarquia] = useState([])
   const [abiertos, setAbiertos] = useState(() => new Set())
 
@@ -25,12 +26,12 @@ export default function VentasHoyCampo({ filas, total, titulo = 'Ventas del día
       const e = porEquipo.get(String(f.label || '').toUpperCase()) || porEquipo.get(String(f.sala || '').toUpperCase())
       const jefe = e?.jefe_comercial?.nombre || SIN_JEFE
       const area = e?.jefe_area?.nombre || ''
-      if (!jefes.has(jefe)) jefes.set(jefe, { nombre: jefe, n: 0, areas: new Map() })
+      if (!jefes.has(jefe)) jefes.set(jefe, { nombre: jefe, n: 0, h: 0, vt: 0, areas: new Map() })
       const j = jefes.get(jefe)
-      j.n += f.n
-      if (!j.areas.has(area)) j.areas.set(area, { nombre: area, n: 0, equipos: [] })
+      j.n += f.n; j.h += f.h || 0; j.vt += f.vt || 0
+      if (!j.areas.has(area)) j.areas.set(area, { nombre: area, n: 0, h: 0, vt: 0, equipos: [] })
       const a = j.areas.get(area)
-      a.n += f.n
+      a.n += f.n; a.h += f.h || 0; a.vt += f.vt || 0
       a.equipos.push(f)
     }
     const orden = (x, y) => (y.n - x.n) || x.nombre.localeCompare(y.nombre, 'es')
@@ -46,7 +47,7 @@ export default function VentasHoyCampo({ filas, total, titulo = 'Ventas del día
     return s
   })
 
-  const fila = (clave, nivel, texto, n, desplegable, abierto, rol) => (
+  const fila = (clave, nivel, texto, c, desplegable, abierto, rol) => (
     <tr key={clave} className={`vhc-n${nivel}${desplegable ? ' vhc-click' : ''}`} onClick={desplegable ? () => alternar(clave) : undefined}>
       <td title={texto}>
         <span style={{ paddingLeft: nivel * 18 }}>
@@ -54,7 +55,7 @@ export default function VentasHoyCampo({ filas, total, titulo = 'Ventas del día
           {rol && <span className="vhc-rol">{rol}</span>}{texto}
         </span>
       </td>
-      <td>{n}</td>
+      <td>{c.h || 0}</td><td>{c.vt || 0}</td><td>{c.n}</td>
     </tr>
   )
 
@@ -62,30 +63,31 @@ export default function VentasHoyCampo({ filas, total, titulo = 'Ventas del día
   for (const j of arbol) {
     const kj = `j:${j.nombre}`
     const abiertoJ = abiertos.has(kj)
-    filasTabla.push(fila(kj, 0, j.nombre, j.n, true, abiertoJ, j.nombre === SIN_JEFE ? '' : 'JEFE'))
+    filasTabla.push(fila(kj, 0, j.nombre, j, true, abiertoJ, j.nombre === SIN_JEFE ? '' : 'JEFE'))
     if (!abiertoJ) continue
     for (const a of j.areas) {
       if (!a.nombre) {
         // Supervisores que reportan directo al Jefe (sin Jefe de Área)
-        a.equipos.forEach(f => filasTabla.push(fila(`${kj}|e:${f.sala}`, 1, f.label, f.n, false)))
+        a.equipos.forEach(f => filasTabla.push(fila(`${kj}|e:${f.sala}`, 1, f.label, f, false)))
         continue
       }
       const ka = `${kj}|a:${a.nombre}`
       const abiertoA = abiertos.has(ka)
-      filasTabla.push(fila(ka, 1, a.nombre, a.n, true, abiertoA, 'SUB JEFE'))
-      if (abiertoA) a.equipos.forEach(f => filasTabla.push(fila(`${ka}|e:${f.sala}`, 2, f.label, f.n, false)))
+      filasTabla.push(fila(ka, 1, a.nombre, a, true, abiertoA, 'SUB JEFE'))
+      if (abiertoA) a.equipos.forEach(f => filasTabla.push(fila(`${ka}|e:${f.sala}`, 2, f.label, f, false)))
     }
   }
 
   return (
     <div className="ventas-hoy-card">
       <div className="ventas-hoy-head"><span>{titulo}</span><small>{subtitulo} · clic para desglosar</small></div>
-      <table className="ventas-hoy-tabla">
+      <table className="ventas-hoy-tabla vh-hv">
+        <thead><tr><th>Equipo</th><th title="Horizontal">Horiz.</th><th title="Vertical">Vert.</th><th>Total</th></tr></thead>
         <tbody>
           {filasTabla}
-          {filasTabla.length === 0 && <tr><td colSpan="2" className="ventas-hoy-vacio">Sin equipos</td></tr>}
+          {filasTabla.length === 0 && <tr><td colSpan="4" className="ventas-hoy-vacio">Sin equipos</td></tr>}
         </tbody>
-        <tfoot><tr><td>Total</td><td>{total}</td></tr></tfoot>
+        <tfoot><tr><td>Total</td><td>{totH}</td><td>{totV}</td><td>{total}</td></tr></tfoot>
       </table>
     </div>
   )

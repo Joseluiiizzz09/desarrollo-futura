@@ -1572,4 +1572,17 @@ button.export-kpi-card:hover {
 /* Dashboard: rango de fechas de los cuadros por equipo/sala */
 .ventas-hoy-rango { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .ventas-hoy-rango > span { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: #94a3b8; margin-right: auto; }
-.ventas-hoy-rango > div { min-width: 220px; }
+.ventas-hoy-rango > div { flex: 0 0 260px; width: 260px; max-width: 100%; }
+
+/* Dashboard: columnas Horizontal / Vertical / Total */
+.ventas-hoy-tabla.vh-hv th { padding: 6px 10px; font-size: 10px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: #94a3b8; text-align: right; }
+.ventas-hoy-tabla.vh-hv th:first-child { text-align: left; }
+.ventas-hoy-tabla.vh-hv th:not(:first-child),
+.ventas-hoy-tabla.vh-hv td:not(:first-child) { width: 62px; text-align: right; }
+.ventas-hoy-tabla.vh-hv td:nth-child(2),
+.ventas-hoy-tabla.vh-hv td:nth-child(3) { font-size: 13px; font-weight: 700; color: #64748b; }
+/* Dashboard: selectores Campo/Digital y Horizontal/Vertical */
+.dash-selectores { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.dash-seg { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; }
+.dash-seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #64748b; cursor: pointer; font-family: inherit; }
+.dash-seg button.on { background: #fff; color: #dc2626; box-shadow: 0 1px 3px rgba(15,23,42,.12); }

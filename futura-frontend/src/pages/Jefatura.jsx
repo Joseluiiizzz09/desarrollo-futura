@@ -62,6 +62,11 @@ function tipoVentaFlujo(v) {
     || String(v.observacion || '').startsWith('[Grupo Futura]') || !sala
   return cargo === 'campo' || cargo === 'supcampo' || sala.startsWith('CAMPO') || deGrupoFutura ? 'CAMPO' : 'DIGITAL'
 }
+// Tipo de predio de la venta: HORIZONTAL (casa) / VERTICAL (edificio) / '' sin dato
+function predioVenta(v) {
+  const p = String(v.predio || '').trim().toUpperCase()
+  return p.startsWith('VERT') ? 'VERTICAL' : p.startsWith('HORIZ') ? 'HORIZONTAL' : ''
+}
 function TipoVentaBadge({ tipo }) {
   const campo = tipo === 'CAMPO'
   return <span style={{ display:'inline-block', padding:'3px 9px', borderRadius:999, fontSize:10.5, fontWeight:800, letterSpacing:.3,
@@ -551,6 +556,9 @@ export default function Jefatura() {
   const [fvDesde,      setFvDesde]      = useState('')
   // Dashboard: rango de los cuadros de ventas por equipo/sala ('' = hoy)
   const [vhDesde, setVhDesde] = useState('')
+  // Dashboard: filtro Campo/Digital y Horizontal/Vertical ('' = todos)
+  const [dashTipo, setDashTipo] = useState('')
+  const [dashPredio, setDashPredio] = useState('')
   const [vhHasta, setVhHasta] = useState('')
   const [fvHasta,      setFvHasta]      = useState('')
   const [fvProgDesde,  setFvProgDesde]  = useState('')
@@ -1154,20 +1162,25 @@ export default function Jefatura() {
   // El dashboard representa el ciclo del mes actual según la fecha real de
   // cada evento. Una venta puede haberse creado antes y programarse o instalarse
   // este mes; en ese caso cuenta en la métrica del evento, no en la de altas.
+  // Ventas que mira el Dashboard según el selector Campo/Digital y Horizontal/Vertical
+  const ventasDash = useMemo(() => ventasCache.filter(v =>
+    (!dashTipo || tipoVentaFlujo(v) === dashTipo) && (!dashPredio || predioVenta(v) === dashPredio)
+  ), [ventasCache, dashTipo, dashPredio])
+
   const cicloDashboardMes = useMemo(() => {
     const mes = mesReporte || mesActual()
     const esMes = valor => String(soloFecha(valor) || '').slice(0, 7) === mes
-    const ventasNuevas = ventasCache.filter(v => esMes(v._fecha || v.fecha_ingreso || v.fecha || v.created_at))
-    const programaciones = ventasCache.filter(v => esMes(v.fecha_programada))
-    const instalaciones = ventasCache.filter(v => esMes(v.fecha_instalado) && ventaAlcanzoInstalacion(v))
-    const caidasMes = ventasCache.filter(v => esMes(v.fecha_programada) && ['CAIDA', 'RECHAZO_CAMPO'].includes(String(v.estado || '').toUpperCase()))
+    const ventasNuevas = ventasDash.filter(v => esMes(v._fecha || v.fecha_ingreso || v.fecha || v.created_at))
+    const programaciones = ventasDash.filter(v => esMes(v.fecha_programada))
+    const instalaciones = ventasDash.filter(v => esMes(v.fecha_instalado) && ventaAlcanzoInstalacion(v))
+    const caidasMes = ventasDash.filter(v => esMes(v.fecha_programada) && ['CAIDA', 'RECHAZO_CAMPO'].includes(String(v.estado || '').toUpperCase()))
     return {
       ventasNuevas,
       programaciones,
       instalaciones,
       caidasMes,
     }
-  }, [ventasCache, mesReporte])
+  }, [ventasDash, mesReporte])
 
   /* charts — siempre en DOM; solo recrear cuando estamos en dashboard */
   useEffect(() => {
@@ -1205,16 +1218,20 @@ export default function Jefatura() {
       destroy('salas')
       const mesUsar   = mesReporte || mesActual()
       const esMesSeleccionado = valor => String(soloFecha(valor) || '').slice(0, 7) === mesUsar
-      const salas     = SALAS_OFICINA
+      // Campo: sus equipos con movimiento en el mes; si no, las salas de oficina
+      const salas     = dashTipo === 'CAMPO'
+        ? [...new Set(ventasDash.filter(v => esMesSeleccionado(v._fecha || v.created_at) || esMesSeleccionado(v.fecha_instalado) || esMesSeleccionado(v.fecha_programada))
+            .map(v => String(v.sala || '').trim().toUpperCase()).filter(Boolean))].sort().slice(0, 12)
+        : SALAS_OFICINA
       // Se agrupa por v.sala (ya resuelve sala_atribucion en el backend), no
       // por la sala ACTUAL del asesor en usuarios: si no, una venta que un
       // asesor hizo para otra sala y que luego se movio de sala seguia
       // contando para su sala nueva en vez de la sala a la que se atribuyo.
       const instaladas = salas.map(s =>
-        ventasCache.filter(v=>String(v.sala||'').toUpperCase()===s&&esMesSeleccionado(v.fecha_instalado)&&ventaAlcanzoInstalacion(v)).length
+        ventasDash.filter(v=>String(v.sala||'').toUpperCase()===s&&esMesSeleccionado(v.fecha_instalado)&&ventaAlcanzoInstalacion(v)).length
       )
       const caidas = salas.map(s =>
-        ventasCache.filter(v=>String(v.sala||'').toUpperCase()===s&&esMesSeleccionado(v.fecha_programada)&&(v.estado||'').toLowerCase()==='caida').length
+        ventasDash.filter(v=>String(v.sala||'').toUpperCase()===s&&esMesSeleccionado(v.fecha_programada)&&(v.estado||'').toLowerCase()==='caida').length
       )
       chartInst.current.salas = new Chart(canvasSalas.current, {
         type: 'bar',
@@ -1231,10 +1248,12 @@ export default function Jefatura() {
       destroy('diario')
       const dias = []
       for (let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); dias.push(d.toISOString().split('T')[0]) }
-      const salas  = SALAS_OFICINA
+      const salas  = dashTipo === 'CAMPO'
+        ? [...new Set(ventasDash.filter(v => dias.includes(v._fecha)).map(v => String(v.sala || '').trim().toUpperCase()).filter(Boolean))].sort().slice(0, 7)
+        : SALAS_OFICINA
       const colors = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#06b6d4','#f43f5e','#eab308']
       const datasets = salas.map((s,i) =>
-        ({ label:s, data:dias.map(d=>ventasCache.filter(v=>v._fecha===d&&String(v.sala||'').toUpperCase()===s).length), borderColor:colors[i], backgroundColor:colors[i]+'22', fill:true, tension:.4, borderWidth:2, pointRadius:4 })
+        ({ label:s, data:dias.map(d=>ventasDash.filter(v=>v._fecha===d&&String(v.sala||'').toUpperCase()===s).length), borderColor:colors[i], backgroundColor:colors[i]+'22', fill:true, tension:.4, borderWidth:2, pointRadius:4 })
       )
       chartInst.current.diario = new Chart(canvasDiario.current, {
         type: 'line',
@@ -1244,7 +1263,7 @@ export default function Jefatura() {
     }
 
     return () => { destroy('estados'); destroy('salas'); destroy('diario') }
-  }, [seccion, ventasCache, cicloDashboardMes, usuarios, mesReporte])
+  }, [seccion, ventasDash, dashTipo, cicloDashboardMes, usuarios, mesReporte])
 
   /* ── navegación ── */
   function irSeccion(id) {
@@ -1636,15 +1655,24 @@ export default function Jefatura() {
       const sup = supDeEquipo.get(s)
       return sup ? `SUP. CAMPO ${String(sup).trim().toUpperCase().split(/\s+/).slice(0, 2).join(' ')}` : s
     }
+    // Cada renglón: total (n) y cuántas son Horizontal (h) / Vertical (vt)
     const armar = (ventas, base, etiqueta) => {
-      const cuenta = new Map(base.map(s => [s, 0]))
-      ventas.forEach(v => { const s = salaDe(v) || 'SIN SALA'; cuenta.set(s, (cuenta.get(s) || 0) + 1) })
-      const filas = [...cuenta].map(([sala, n]) => ({ sala, label: etiqueta(sala), n }))
+      const cuenta = new Map(base.map(s => [s, { n: 0, h: 0, vt: 0 }]))
+      const tot = { n: 0, h: 0, vt: 0 }
+      ventas.forEach(v => {
+        const s = salaDe(v) || 'SIN SALA'
+        if (!cuenta.has(s)) cuenta.set(s, { n: 0, h: 0, vt: 0 })
+        const c = cuenta.get(s), p = predioVenta(v)
+        c.n++; tot.n++
+        if (p === 'HORIZONTAL') { c.h++; tot.h++ }
+        if (p === 'VERTICAL') { c.vt++; tot.vt++ }
+      })
+      const filas = [...cuenta].map(([sala, c]) => ({ sala, label: etiqueta(sala), ...c }))
         .sort((a, b) => a.label.localeCompare(b.label, 'es', { numeric:true }))
-      return { filas, total: ventas.length }
+      return { filas, total: tot.n, totH: tot.h, totV: tot.vt }
     }
-    const recientes = ventasCache.filter(v => fechaDe(v) >= hace30 && fechaDe(v) <= hasta)
-    const deHoy = ventasCache.filter(v => enRango(fechaDe(v)))
+    const recientes = ventasDash.filter(v => fechaDe(v) >= hace30 && fechaDe(v) <= hasta)
+    const deHoy = ventasDash.filter(v => enRango(fechaDe(v)))
     // Solo equipos que venden CLARO: los que tienen ventas en FUTURA (todas son
     // Claro) en los últimos 30 días; un equipo sin ventas Claro no aparece.
     const equiposCampo = [...new Set(
@@ -1658,7 +1686,7 @@ export default function Jefatura() {
       campo: armar(deHoy.filter(v => tipoVentaFlujo(v) === 'CAMPO'), equiposCampo, etiquetaCampo),
       digital: armar(deHoy.filter(v => tipoVentaFlujo(v) !== 'CAMPO'), salasDigital, s => s),
     }
-  }, [ventasCache, usuarios, vhDesde, vhHasta])
+  }, [ventasDash, usuarios, vhDesde, vhHasta])
 
   const resumenFlujoVentas = useMemo(() => ({
     todas: ventasFlujoBase.length,
@@ -2062,12 +2090,22 @@ export default function Jefatura() {
           {/* ===== DASHBOARD ===== */}
           <section className={`section${seccion==='dashboard'?' active':''}`}>
             <div className="sec-header">
-              <div><h2>Dashboard General</h2><p>Métricas del mes seleccionado</p></div>
+              <div><h2>Dashboard General</h2><p>Métricas del mes seleccionado{dashTipo || dashPredio ? ` · ${[dashTipo, dashPredio].filter(Boolean).join(' · ')}` : ''}</p></div>
+              <div className="dash-selectores">
+                <div className="dash-seg" role="group" aria-label="Campo o Digital">
+                  {[['', 'Todos'], ['CAMPO', 'Campo'], ['DIGITAL', 'Digital']].map(([v, l]) =>
+                    <button key={l} type="button" className={dashTipo === v ? 'on' : ''} onClick={() => setDashTipo(v)}>{l}</button>)}
+                </div>
+                <div className="dash-seg" role="group" aria-label="Horizontal o Vertical">
+                  {[['', 'Todos'], ['HORIZONTAL', 'Horizontal'], ['VERTICAL', 'Vertical']].map(([v, l]) =>
+                    <button key={l} type="button" className={dashPredio === v ? 'on' : ''} onClick={() => setDashPredio(v)}>{l}</button>)}
+                </div>
               <select value={mesReporte} onChange={e=>setMesReporte(e.target.value)}
                 aria-label="Mes de las métricas del dashboard"
                 style={{padding:'8px 12px',border:'1px solid #e5e7eb',borderRadius:'9px',fontSize:'12px',fontFamily:'inherit',outline:'none',color:'#374151',cursor:'pointer',background:'#fff'}}>
                 {MESES_SALAS.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
+              </div>
             </div>
 
             <div className="kpi-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))'}}>
@@ -2092,17 +2130,18 @@ export default function Jefatura() {
               {(vhDesde || vhHasta) && <button type="button" className="flujo-clear" onClick={() => { setVhDesde(''); setVhHasta('') }}>Hoy</button>}
             </div>
             <div className="ventas-hoy-grid">
-              <VentasHoyCampo filas={ventasHoyPorEquipo.campo.filas} total={ventasHoyPorEquipo.campo.total}
-                titulo={ventasHoyPorEquipo.esHoy ? 'Ventas del día — Campo' : 'Ventas — Campo'} subtitulo={ventasHoyPorEquipo.subtitulo} />
-              {[[ventasHoyPorEquipo.esHoy ? 'Ventas del día — Digital' : 'Ventas — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
+              {dashTipo !== 'DIGITAL' && <VentasHoyCampo datos={ventasHoyPorEquipo.campo}
+                titulo={ventasHoyPorEquipo.esHoy ? 'Ventas del día — Campo' : 'Ventas — Campo'} subtitulo={ventasHoyPorEquipo.subtitulo} />}
+              {dashTipo !== 'CAMPO' && [[ventasHoyPorEquipo.esHoy ? 'Ventas del día — Digital' : 'Ventas — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
                 <div key={titulo} className="ventas-hoy-card">
                   <div className="ventas-hoy-head"><span>{titulo}</span><small>{ventasHoyPorEquipo.subtitulo}</small></div>
-                  <table className="ventas-hoy-tabla">
+                  <table className="ventas-hoy-tabla vh-hv">
+                    <thead><tr><th>Sala</th><th title="Horizontal">Horiz.</th><th title="Vertical">Vert.</th><th>Total</th></tr></thead>
                     <tbody>
-                      {d.filas.map(f => <tr key={f.sala}><td title={f.label}>{f.label}</td><td>{f.n}</td></tr>)}
-                      {d.filas.length === 0 && <tr><td colSpan="2" className="ventas-hoy-vacio">Sin equipos</td></tr>}
+                      {d.filas.map(f => <tr key={f.sala}><td title={f.label}>{f.label}</td><td>{f.h}</td><td>{f.vt}</td><td>{f.n}</td></tr>)}
+                      {d.filas.length === 0 && <tr><td colSpan="4" className="ventas-hoy-vacio">Sin salas</td></tr>}
                     </tbody>
-                    <tfoot><tr><td>Total</td><td>{d.total}</td></tr></tfoot>
+                    <tfoot><tr><td>Total</td><td>{d.totH}</td><td>{d.totV}</td><td>{d.total}</td></tr></tfoot>
                   </table>
                 </div>
               ))}
