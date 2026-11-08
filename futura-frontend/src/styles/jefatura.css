@@ -1558,3 +1558,13 @@ button.export-kpi-card:hover {
 .ventas-hoy-tabla tbody tr:nth-child(even) td { background: #f8fafc; }
 .ventas-hoy-tabla tfoot td { font-weight: 800; color: #0f172a; background: #f8fafc; border-top: 1px solid #e5e7eb; }
 .ventas-hoy-vacio { text-align: center; color: #94a3b8 !important; font-weight: 500 !important; }
+
+/* Ventas del día — Campo: Jefe → Sub jefe → Supervisor */
+.ventas-hoy-tabla tr.vhc-click { cursor: pointer; }
+.ventas-hoy-tabla tr.vhc-click:hover td { background: #fef2f2; }
+.ventas-hoy-tabla tr.vhc-n0 td:first-child { font-weight: 800; color: #0f172a; }
+.ventas-hoy-tabla tr.vhc-n1 td:first-child { font-weight: 700; color: #334155; }
+.ventas-hoy-tabla tr.vhc-n2 td:first-child { font-weight: 600; color: #475569; }
+.vhc-flecha { display: inline-block; width: 14px; color: #dc2626; }
+.vhc-punto { display: inline-block; width: 14px; color: #cbd5e1; }
+.vhc-rol { display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 5px; background: #f1f5f9; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .3px; }

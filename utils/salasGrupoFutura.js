@@ -29,6 +29,30 @@ async function vendedoresGrupoFutura() {
   }
 }
 
+// Jerarquía de los equipos de campo de Grupo Futura (equipo → Jefe de Área →
+// Jefe Comercial), con caché de 5 minutos. null si Grupo Futura no responde.
+let cacheEquipos = { t: 0, datos: null };
+async function equiposCampoGrupoFutura() {
+  if (cacheEquipos.datos && Date.now() - cacheEquipos.t < CADA_MS) return cacheEquipos.datos;
+  const clave = process.env.INTERNAL_GRUPOFUTURA_KEY;
+  if (!clave) return null;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(`${GF_API_URL}/api/interno/equipos-campo`, {
+      headers: { 'X-Internal-Key': clave }, signal: ctrl.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok || !Array.isArray(data.equipos)) return cacheEquipos.datos;
+    cacheEquipos = { t: Date.now(), datos: data.equipos };
+    return data.equipos;
+  } catch {
+    return cacheEquipos.datos;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 let enCurso = false;
 async function completarSalasGrupoFutura() {
   if (enCurso) return;
@@ -81,4 +105,4 @@ function iniciarSalasGrupoFutura() {
   setInterval(completarSalasGrupoFutura, CADA_MS).unref?.();
 }
 
-module.exports = { completarSalasGrupoFutura, iniciarSalasGrupoFutura };
+module.exports = { completarSalasGrupoFutura, iniciarSalasGrupoFutura, equiposCampoGrupoFutura };

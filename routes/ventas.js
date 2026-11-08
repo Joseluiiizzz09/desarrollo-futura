@@ -1448,6 +1448,17 @@ router.get('/:id/historial-validacion', auth(['validacion','jefatura']), async (
 });
 
 // ===== GET /api/ventas =====
+// GET /api/ventas/equipos-campo → jerarquía de los equipos de campo de Grupo
+// Futura (Jefe Comercial → Jefe de Área → Supervisor) para el Dashboard.
+router.get('/equipos-campo', auth(['jefatura','usuarios']), async (req, res) => {
+  try {
+    const equipos = await require('../utils/salasGrupoFutura').equiposCampoGrupoFutura();
+    res.json({ ok: true, equipos: equipos || [] });
+  } catch (e) {
+    res.json({ ok: true, equipos: [] });
+  }
+});
+
 router.get('/', auth(ROLES_VENTAS), async (req, res) => {
   try {
     const { dni, estado, desde, hasta, asesor_id, programacion, alcance, area, seguimiento_campo } = req.query;

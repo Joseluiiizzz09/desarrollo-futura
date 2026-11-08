@@ -10,6 +10,7 @@ import ObsSeguimientoCell from '../components/ObsSeguimientoCell'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import CanalBadge from '../components/CanalBadge'
+import VentasHoyCampo from '../components/VentasHoyCampo'
 import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { permisosDeUsuario, usuarioTieneCargo } from '../utils/roles'
@@ -2076,7 +2077,8 @@ export default function Jefatura() {
               <div className="kpi-card k-orange"><div className="kpi-num">{kpis.supervisores}</div>  <div className="kpi-label">Supervisores</div>       <div className="kpi-sub">activos</div></div>
             </div>
             <div className="ventas-hoy-grid">
-              {[['Ventas del día — Campo', ventasHoyPorEquipo.campo], ['Ventas del día — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
+              <VentasHoyCampo filas={ventasHoyPorEquipo.campo.filas} total={ventasHoyPorEquipo.campo.total} />
+              {[['Ventas del día — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
                 <div key={titulo} className="ventas-hoy-card">
                   <div className="ventas-hoy-head"><span>{titulo}</span><small>ingresadas hoy</small></div>
                   <table className="ventas-hoy-tabla">
