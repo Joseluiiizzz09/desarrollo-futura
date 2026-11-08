@@ -500,26 +500,15 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
     let dueno;
     if (m[1] === 'gf') {
       // Vendedor de Grupo Futura: se asigna al usuario de FUTURA con su mismo
-      // `usuario`; si no existe se crea (contraseña aleatoria, la cambia Jefatura).
+      // `usuario` si existe. Si no existe NO se crea (los vendedores de Grupo
+      // Futura no deben aparecer como usuarios de FUTURA): la venta queda a su
+      // nombre (asesor_nombre) sin asesor_id; "Mis ventas" y Grupo Futura la
+      // encuentran por ese nombre.
       const usuarioVendedor = String(sesion.usuario || '').trim().toLowerCase().substring(0, 100);
       if (!usuarioVendedor) return res.status(401).json({ ok: false, mensaje: 'Vuelve a ingresar con tu usuario y contraseña.', sesionVencida: true });
-      const buscar = () => db.query('SELECT id, nombre, sala FROM usuarios WHERE usuario = ? LIMIT 1', [usuarioVendedor]);
-      let [existentes] = await buscar();
-      if (!existentes.length) {
-        const nombreVendedor = String(sesion.nombre || usuarioVendedor).split(' ').filter(Boolean).join(' ').toUpperCase().substring(0, 150);
-        const hash = bcrypt.hashSync(require('crypto').randomBytes(18).toString('base64url'), 10);
-        try {
-          await db.query(
-            `INSERT INTO usuarios (nombre, usuario, password, cargo, sala, genero, activo, permisos) VALUES (?, ?, ?, 'asesor', NULL, 'M', 1, '[]')`,
-            [nombreVendedor, usuarioVendedor, hash]
-          );
-          console.log(`[publico/venta-claro] usuario creado en FUTURA: ${usuarioVendedor}`);
-        } catch (e) {
-          if (e.code !== 'ER_DUP_ENTRY') throw e; // otro envío lo creó a la vez
-        }
-        [existentes] = await buscar();
-      }
-      dueno = existentes[0];
+      const [existentes] = await db.query('SELECT id, nombre, sala FROM usuarios WHERE usuario = ? LIMIT 1', [usuarioVendedor]);
+      const nombreVendedor = String(sesion.nombre || usuarioVendedor).split(' ').filter(Boolean).join(' ').toUpperCase().substring(0, 150);
+      dueno = existentes[0] || { id: null, nombre: nombreVendedor, sala: null };
     } else {
       const [usuarios] = await db.query(
         `SELECT id, nombre, sala FROM usuarios WHERE id = ? AND activo = 1 AND cargo IN (?) LIMIT 1`,
@@ -548,7 +537,7 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
       String(v.biometria || '').toUpperCase() || null,
       String(v.biometria || '').toUpperCase() === 'SI' ? String(v.biometriaTipo || '').toUpperCase() || null : null,
     ]);
-    console.log(`[publico/venta-claro] venta ${result.insertId} -> usuario ${dueno.id}`);
+    console.log(`[publico/venta-claro] venta ${result.insertId} -> ${dueno.id ? `usuario ${dueno.id}` : `vendedor de Grupo Futura ${dueno.nombre}`}`);
     res.json({ ok: true });
   } catch (e) {
     console.error('[publico/venta-claro] Error:', e);

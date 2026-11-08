@@ -196,22 +196,12 @@ router.post('/venta-grupo-futura', verificarClaveInternaGrupoFutura, async (req,
       return res.json({ ok: true, id: previas[0].id, asesor_id: previas[0].asesor_id, ya_existia: true });
     }
 
-    // Usuario de FUTURA con el mismo `usuario` (sin importar su cargo); si no existe, se crea
-    const [usuarios] = await conn.query('SELECT id, nombre, sala FROM usuarios WHERE usuario = ? LIMIT 1 FOR UPDATE', [usuario]);
-    let dueno = usuarios[0] || null;
-    let usuarioCreado = false;
-    if (!dueno) {
-      const cargo = String(asesor.cargo || '').toLowerCase() === 'campo' ? 'campo' : 'asesor';
-      const genero = String(asesor.genero || '').toUpperCase() === 'F' ? 'F' : 'M';
-      // Contraseña aleatoria: Jefatura/Usuarios de FUTURA la cambian para darle acceso
-      const hash = bcrypt.hashSync(crypto.randomBytes(18).toString('base64url'), 10);
-      const [ins] = await conn.query(
-        `INSERT INTO usuarios (nombre, usuario, password, cargo, sala, genero, activo, permisos) VALUES (?, ?, ?, ?, NULL, ?, 1, '[]')`,
-        [nombreAsesor, usuario, hash, cargo, genero]
-      );
-      dueno = { id: ins.insertId, nombre: nombreAsesor, sala: null };
-      usuarioCreado = true;
-    }
+    // Usuario de FUTURA con el mismo `usuario` (sin importar su cargo). Si no
+    // existe NO se crea: la venta queda a nombre del vendedor de Grupo Futura
+    // (asesor_nombre) sin asesor_id.
+    const [usuarios] = await conn.query('SELECT id, nombre, sala FROM usuarios WHERE usuario = ? LIMIT 1', [usuario]);
+    const dueno = usuarios[0] || { id: null, nombre: nombreAsesor, sala: null };
+    const usuarioCreado = false;
 
     const [result] = await conn.query(`
       INSERT INTO ventas (
