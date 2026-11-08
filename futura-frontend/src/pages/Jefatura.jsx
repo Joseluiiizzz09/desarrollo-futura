@@ -549,6 +549,9 @@ export default function Jefatura() {
   // ingreso de la venta y la fecha de programación.
   const [fvTipoFecha,  setFvTipoFecha]  = useState('venta')
   const [fvDesde,      setFvDesde]      = useState('')
+  // Dashboard: rango de los cuadros de ventas por equipo/sala ('' = hoy)
+  const [vhDesde, setVhDesde] = useState('')
+  const [vhHasta, setVhHasta] = useState('')
   const [fvHasta,      setFvHasta]      = useState('')
   const [fvProgDesde,  setFvProgDesde]  = useState('')
   const [fvProgHasta,  setFvProgHasta]  = useState('')
@@ -1615,7 +1618,13 @@ export default function Jefatura() {
   // Las salas en uso y los equipos con ventas Claro recientes salen aunque lleven 0 hoy.
   const ventasHoyPorEquipo = useMemo(() => {
     const hoy = new Date().toLocaleDateString('en-CA', { timeZone:'America/Lima' })
-    const hace30 = new Date(Date.now() - 30 * 864e5).toLocaleDateString('en-CA', { timeZone:'America/Lima' })
+    // Rango elegido (sin rango = hoy; solo "desde" = ese día)
+    const desde = vhDesde || hoy
+    const hasta = vhHasta || desde
+    const enRango = f => f >= desde && f <= hasta
+    const esHoy = desde === hoy && hasta === hoy
+    const subtitulo = esHoy ? 'ingresadas hoy' : desde === hasta ? `ingresadas el ${formatF(desde)}` : `del ${formatF(desde)} al ${formatF(hasta)}`
+    const hace30 = new Date(new Date(`${desde}T12:00:00`).getTime() - 30 * 864e5).toISOString().slice(0, 10)
     const fechaDe = v => v._fecha || String(v.created_at || '').split(' ')[0]
     const salaDe = v => String(v.sala || '').trim().toUpperCase()
     const activos = usuarios.filter(u => Number(u.activo) !== 0)
@@ -1634,8 +1643,8 @@ export default function Jefatura() {
         .sort((a, b) => a.label.localeCompare(b.label, 'es', { numeric:true }))
       return { filas, total: ventas.length }
     }
-    const recientes = ventasCache.filter(v => fechaDe(v) >= hace30)
-    const deHoy = ventasCache.filter(v => fechaDe(v) === hoy)
+    const recientes = ventasCache.filter(v => fechaDe(v) >= hace30 && fechaDe(v) <= hasta)
+    const deHoy = ventasCache.filter(v => enRango(fechaDe(v)))
     // Solo equipos que venden CLARO: los que tienen ventas en FUTURA (todas son
     // Claro) en los últimos 30 días; un equipo sin ventas Claro no aparece.
     const equiposCampo = [...new Set(
@@ -1645,10 +1654,11 @@ export default function Jefatura() {
       .filter(u => u.cargo === 'asesor').map(u => String(u.sala || '').trim().toUpperCase())
       .filter(s => s && !s.includes('CAMPO'))])]
     return {
+      esHoy, subtitulo,
       campo: armar(deHoy.filter(v => tipoVentaFlujo(v) === 'CAMPO'), equiposCampo, etiquetaCampo),
       digital: armar(deHoy.filter(v => tipoVentaFlujo(v) !== 'CAMPO'), salasDigital, s => s),
     }
-  }, [ventasCache, usuarios])
+  }, [ventasCache, usuarios, vhDesde, vhHasta])
 
   const resumenFlujoVentas = useMemo(() => ({
     todas: ventasFlujoBase.length,
@@ -2076,11 +2086,17 @@ export default function Jefatura() {
               <div className="kpi-card k-blue">  <div className="kpi-num">{kpis.asesores}</div>      <div className="kpi-label">Asesores</div>           <div className="kpi-sub">activos</div></div>
               <div className="kpi-card k-orange"><div className="kpi-num">{kpis.supervisores}</div>  <div className="kpi-label">Supervisores</div>       <div className="kpi-sub">activos</div></div>
             </div>
+            <div className="ventas-hoy-rango">
+              <span>Ventas por equipo y sala</span>
+              <RangoFechasPicker desde={vhDesde} hasta={vhHasta} onChange={({ desde, hasta }) => { setVhDesde(desde || ''); setVhHasta(hasta || '') }} />
+              {(vhDesde || vhHasta) && <button type="button" className="flujo-clear" onClick={() => { setVhDesde(''); setVhHasta('') }}>Hoy</button>}
+            </div>
             <div className="ventas-hoy-grid">
-              <VentasHoyCampo filas={ventasHoyPorEquipo.campo.filas} total={ventasHoyPorEquipo.campo.total} />
-              {[['Ventas del día — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
+              <VentasHoyCampo filas={ventasHoyPorEquipo.campo.filas} total={ventasHoyPorEquipo.campo.total}
+                titulo={ventasHoyPorEquipo.esHoy ? 'Ventas del día — Campo' : 'Ventas — Campo'} subtitulo={ventasHoyPorEquipo.subtitulo} />
+              {[[ventasHoyPorEquipo.esHoy ? 'Ventas del día — Digital' : 'Ventas — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
                 <div key={titulo} className="ventas-hoy-card">
-                  <div className="ventas-hoy-head"><span>{titulo}</span><small>ingresadas hoy</small></div>
+                  <div className="ventas-hoy-head"><span>{titulo}</span><small>{ventasHoyPorEquipo.subtitulo}</small></div>
                   <table className="ventas-hoy-tabla">
                     <tbody>
                       {d.filas.map(f => <tr key={f.sala}><td title={f.label}>{f.label}</td><td>{f.n}</td></tr>)}

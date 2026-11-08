@@ -1568,3 +1568,8 @@ button.export-kpi-card:hover {
 .vhc-flecha { display: inline-block; width: 14px; color: #dc2626; }
 .vhc-punto { display: inline-block; width: 14px; color: #cbd5e1; }
 .vhc-rol { display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 5px; background: #f1f5f9; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .3px; }
+
+/* Dashboard: rango de fechas de los cuadros por equipo/sala */
+.ventas-hoy-rango { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.ventas-hoy-rango > span { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: #94a3b8; margin-right: auto; }
+.ventas-hoy-rango > div { min-width: 220px; }

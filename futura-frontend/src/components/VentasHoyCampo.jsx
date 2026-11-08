@@ -6,7 +6,7 @@ import { API, ncHeaders } from '../services/api'
 // `filas`: [{ sala, label, n }] de los equipos con ventas Claro; `total`.
 const SIN_JEFE = 'SIN JEFE ASIGNADO'
 
-export default function VentasHoyCampo({ filas, total }) {
+export default function VentasHoyCampo({ filas, total, titulo = 'Ventas del día — Campo', subtitulo = 'ingresadas hoy' }) {
   const [jerarquia, setJerarquia] = useState([])
   const [abiertos, setAbiertos] = useState(() => new Set())
 
@@ -79,7 +79,7 @@ export default function VentasHoyCampo({ filas, total }) {
 
   return (
     <div className="ventas-hoy-card">
-      <div className="ventas-hoy-head"><span>Ventas del día — Campo</span><small>ingresadas hoy · clic para desglosar</small></div>
+      <div className="ventas-hoy-head"><span>{titulo}</span><small>{subtitulo} · clic para desglosar</small></div>
       <table className="ventas-hoy-tabla">
         <tbody>
           {filasTabla}
