@@ -2134,15 +2134,6 @@ export default function Jefatura() {
             <div className="ventas-hoy-filtros">
               <span className="ventas-hoy-filtros-titulo">Ventas por equipo y sala</span>
               <div className="dash-selector">
-                <span>Vivienda</span>
-                <div className="dash-segmento" role="group" aria-label="Vivienda">
-                  {[['', 'Todas'], ['HORIZONTAL', 'Horizontal'], ['VERTICAL', 'Vertical']].map(([id, label]) => (
-                    <button key={id || 'todas'} type="button" aria-pressed={dashPredio === id}
-                      className={dashPredio === id ? 'activo' : ''} onClick={() => setDashPredio(id)}>{label}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="dash-selector">
                 <span>Rango de fechas</span>
                 <RangoFechasPicker className="eq-rango-btn" placeholder="Hoy" desde={vhDesde} hasta={vhHasta}
                   onChange={({ desde, hasta }) => { setVhDesde(desde || ''); setVhHasta(hasta || '') }} />

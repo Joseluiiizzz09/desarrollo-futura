@@ -1592,3 +1592,6 @@ button.export-kpi-card:hover {
 .eq-rango-btn { min-width: 150px; text-align: left; }
 .eq-hoy-btn { color: #475569; }
 .eq-rango-btn:hover, .eq-hoy-btn:hover { border-color: #cbd5e1; }
+
+/* El selector de rango no se estira: ancho según su texto */
+.ventas-hoy-filtros .dash-selector > div { flex: 0 0 auto; width: auto; }
