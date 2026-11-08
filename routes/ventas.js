@@ -1080,7 +1080,7 @@ router.post('/cobranza-codigos-masivo', auth(['jefatura']), async (req, res) => 
       if (codigoPago.length > 60) { resultados.push({ documento, sot, fecha_oficial: fechaOficial, codigo_pago: codigoPago, estado: 'codigo_muy_largo' }); continue; }
 
       const [ventas] = await db.query(`
-        SELECT v.id, v.nombre, v.telefono1, v.telefono2, u.sala,
+        SELECT v.id, v.nombre, v.telefono1, v.telefono2, COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS sala,
                COALESCE(u.nombre, v.asesor_nombre) AS vendedor_nombre,
                cb.codigo_pago AS codigo_pago_actual
           FROM ventas v
@@ -1392,7 +1392,7 @@ router.get('/validacion-listado', auth(['validacion','jefatura']), async (req, r
     // recorría venta_historial una vez por cada venta y terminaba bloqueando el
     // endpoint cuando crecía el historial.
     const [data] = await db.query(`
-      SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre, u.sala,
+      SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre, COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS sala,
              COALESCE(LOWER(cv.valor_nuevo), 'venta') AS estado_validacion,
              tv.usuario_nombre AS validador_nombre, tv.created_at AS fecha_validador
         FROM ventas v
@@ -2139,7 +2139,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
     await conn.commit();
 
     const [ventaRows] = await conn.query(`
-      SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre, u.sala,
+      SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) AS asesor_nombre, COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS sala,
              COALESCE(LOWER((
                SELECT vh.valor_nuevo
                  FROM venta_historial vh
