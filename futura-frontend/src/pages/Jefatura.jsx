@@ -534,6 +534,9 @@ export default function Jefatura() {
   // Los reportes abren en el mes vigente; el histórico completo queda como
   // una consulta explícita mediante el botón "Ver todos".
   const [mesReporte, setMesReporte] = useState(() => mesActual())
+  // Reportes Globales: Digital (por sala) o Campo (por equipo de supervisor)
+  const [repCanal, setRepCanal] = useState('DIGITAL')
+  const [repEquipo, setRepEquipo] = useState('todas')
   const [busqUsuarios, setBusqUsuarios] = useState('')
   const [filtroUsuarioCargo, setFiltroUsuarioCargo] = useState('')
   const [filtroUsuarioSala, setFiltroUsuarioSala] = useState('')
@@ -1790,14 +1793,16 @@ export default function Jefatura() {
   }
 
   /* ── reportes ── */
-  const { reporteData, repKpis } = useMemo(() => {
+  const { reporteData, repKpis, repEquipos } = useMemo(() => {
     const esMesReporte = valor => String(soloFecha(valor) || '').slice(0, 7) === mesReporte
+    // Solo las ventas del canal elegido (Digital o Campo)
+    const ventasCanal = ventasCache.filter(v => (tipoVentaFlujo(v) === 'CAMPO') === (repCanal === 'CAMPO'))
     const ventasDelMes = mesReporte
-      ? ventasCache.filter(v => {
+      ? ventasCanal.filter(v => {
           const fecha = soloFecha(v._fecha || v.fecha_ingreso || v.fecha || v.created_at)
           return fecha && String(fecha).slice(0, 7) === mesReporte
         })
-      : ventasCache
+      : ventasCanal
     // Instaladas pertenecen al mes en que Seguimiento las marco como
     // instaladas. Asi coincide con el filtro "Fecha de instalacion" de
     // Ventas generales y no mezcla instalaciones reales con fecha programada.
@@ -1811,12 +1816,52 @@ export default function Jefatura() {
       return estado === 'INSTALADO' || estado === 'INSTALADO NO VALIDADO' || estado === 'REASIGNACION'
     }
     const instaladasDelMes = mesReporte
-      ? ventasCache.filter(v => esMesReporte(v.fecha_instalado) && esInstaladaDelMes(v))
-      : ventasCache.filter(ventaAlcanzoInstalacion)
+      ? ventasCanal.filter(v => esMesReporte(v.fecha_instalado) && esInstaladaDelMes(v))
+      : ventasCanal.filter(ventaAlcanzoInstalacion)
     const caidasDelMes = mesReporte
-      ? ventasCache.filter(v => esMesReporte(v.fecha_programada) && ['CAIDA', 'RECHAZO_CAMPO'].includes(String(v.estado || '').trim().toUpperCase()))
-      : ventasCache.filter(v => String(v.estado || '').trim().toUpperCase() === 'CAIDA')
-    let asesFilt = usuarios.filter(u=>usuarioTieneCargo(u,'asesor'))
+      ? ventasCanal.filter(v => esMesReporte(v.fecha_programada) && ['CAIDA', 'RECHAZO_CAMPO'].includes(String(v.estado || '').trim().toUpperCase()))
+      : ventasCanal.filter(v => String(v.estado || '').trim().toUpperCase() === 'CAIDA')
+    const fila = (nombre, base, ventasF, instF, caidF) => {
+      const mis   = ventasF.filter(v=>(v.asesor_nombre||'')===nombre)
+      const inst2 = instF.filter(v=>(v.asesor_nombre||'')===nombre).length
+      const caid  = caidF.filter(v=>(v.asesor_nombre||'')===nombre).length
+      const ef    = (inst2 + caid) ? Math.round(inst2/(inst2+caid)*100) : 0
+      return { ...base, totalVentas:mis.length, instaladas:inst2, caidas:caid, efectividad:ef }
+    }
+    const ordenRanking = (a,b)=>
+      b.instaladas-a.instaladas ||
+      b.efectividad-a.efectividad ||
+      b.totalVentas-a.totalVentas ||
+      String(a.nombre||'').localeCompare(String(b.nombre||''))
+
+    if (repCanal === 'CAMPO') {
+      // Campo: un equipo por supervisor (sala de la venta, p. ej. "SUP. CAMPO …").
+      // Los asesores salen de las ventas: los vendedores de Grupo Futura no son
+      // usuarios de FUTURA. Equipos = los que tienen movimiento en el periodo.
+      const salaDe = v => String(v.sala || '').trim().toUpperCase() || 'CAMPO'
+      const todas = [...ventasDelMes, ...instaladasDelMes, ...caidasDelMes]
+      const equipos = [...new Set(todas.map(salaDe))].sort((a, b) => a.localeCompare(b, 'es', { numeric:true }))
+      const deEquipo = l => repEquipo === 'todas' ? l : l.filter(v => salaDe(v) === repEquipo)
+      const ventasF = deEquipo(ventasDelMes), instF = deEquipo(instaladasDelMes), caidF = deEquipo(caidasDelMes)
+      const nombres = new Map()
+      ;[...ventasF, ...instF, ...caidF].forEach(v => {
+        const n = v.asesor_nombre || ''
+        if (n && !nombres.has(n)) nombres.set(n, salaDe(v))
+      })
+      // Asesores de campo de FUTURA del equipo, aunque no tengan ventas
+      usuarios.filter(u => u.activo && usuarioTieneCargo(u, 'campo'))
+        .filter(u => repEquipo === 'todas' ? false : String(u.sala || '').trim().toUpperCase() === repEquipo)
+        .forEach(u => { if (!nombres.has(u.nombre)) nombres.set(u.nombre, repEquipo) })
+      const rend = [...nombres].map(([nombre, sala]) => {
+        const u = usuarios.find(x => x.nombre === nombre)
+        return fila(nombre, { id: u?.id, nombre, usuario: u?.usuario || '', sala }, ventasF, instF, caidF)
+      }).sort(ordenRanking)
+      const i2 = instF.length, c2 = caidF.length
+      const ef2 = (i2 + c2) ? Math.round(i2/(i2+c2)*100) : 0
+      return { reporteData: rend, repKpis: { total: ventasF.length, inst: i2, caidas: c2, efect: ef2+'%' }, repEquipos: equipos }
+    }
+    // Digital: asesores de sala (sin sala = usuario generado desde Grupo Futura, es de campo)
+    let asesFilt = usuarios.filter(u=>usuarioTieneCargo(u,'asesor') && String(u.sala||'').trim() && !String(u.sala).toUpperCase().includes('CAMPO'))
     if (salaReporte !== 'todas') asesFilt = asesFilt.filter(u=>u.sala===salaReporte)
     // Al filtrar por sala, se agrupa por v.sala (sala ATRIBUIDA de la venta,
     // ver PATCH /ventas/:id/sala-atribucion) y no por la sala actual del
@@ -1848,20 +1893,9 @@ export default function Jefatura() {
             const u = usuarios.find(u=>u.nombre===n)
             return u ? { ...u, sala: salaReporte } : { nombre:n, sala:salaReporte, usuario:'' }
           })]
-    const rendData = filasBase.map(a => {
-      const mis   = ventasFilt.filter(v=>(v.asesor_nombre||'')===a.nombre)
-      const inst2 = instaladasFilt.filter(v=>(v.asesor_nombre||'')===a.nombre).length
-      const caid  = caidasFilt.filter(v=>(v.asesor_nombre||'')===a.nombre).length
-      const ef    = (inst2 + caid) ? Math.round(inst2/(inst2+caid)*100) : 0
-      return { ...a, totalVentas:mis.length, instaladas:inst2, caidas:caid, efectividad:ef }
-    }).sort((a,b)=>
-      b.instaladas-a.instaladas ||
-      b.efectividad-a.efectividad ||
-      b.totalVentas-a.totalVentas ||
-      String(a.nombre||'').localeCompare(String(b.nombre||''))
-    )
-    return { reporteData:rendData, repKpis:{ total:ventasFilt.length, inst, caidas, efect:efect+'%' } }
-  }, [usuarios, ventasCache, salaReporte, mesReporte])
+    const rendData = filasBase.map(a => fila(a.nombre, a, ventasFilt, instaladasFilt, caidasFilt)).sort(ordenRanking)
+    return { reporteData:rendData, repKpis:{ total:ventasFilt.length, inst, caidas, efect:efect+'%' }, repEquipos: [] }
+  }, [usuarios, ventasCache, salaReporte, mesReporte, repCanal, repEquipo])
 
   /* ── usuarios filtrados ── */
   const salasUsuariosDisponibles = useMemo(() => [...new Set(usuarios.map(u=>u.sala).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), [usuarios])
@@ -3056,7 +3090,7 @@ export default function Jefatura() {
           {/* ===== REPORTES ===== */}
           <section className={`section${seccion==='reportes'?' active':''}`}>
             <div className="sec-header reportes-header">
-              <div><h2>Reportes Globales</h2><p>Rendimiento por sala y asesor — solo asesores</p></div>
+              <div><h2>Reportes Globales</h2><p>Rendimiento por sala (Digital) o por equipo de supervisor (Campo)</p></div>
               <div className="reporte-periodo">
                 <label htmlFor="mes-reporte">Periodo</label>
                 <div className="reporte-periodo-controls">
@@ -3071,6 +3105,26 @@ export default function Jefatura() {
                 </div>
               </div>
             </div>
+            <div className="dash-selectores">
+              <div className="dash-selector">
+                <span>Canal</span>
+                <div className="dash-segmento" role="group" aria-label="Canal">
+                  {[['DIGITAL', 'Digital'], ['CAMPO', 'Campo']].map(([id, label]) => (
+                    <button key={id} type="button" aria-pressed={repCanal === id} className={repCanal === id ? 'activo' : ''}
+                      onClick={() => { setRepCanal(id); setRepEquipo('todas') }}>{label}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {repCanal === 'CAMPO' ? (
+            <div className="sala-tabs sala-tabs-pro" style={{flexWrap:'wrap'}}>
+              {[{ id:'todas', label:'Todos los equipos' }, ...repEquipos.map(s => ({ id:s, label:s }))].map(tab => (
+                <button key={tab.id} className={`sala-tab${repEquipo===tab.id?' active':''}`} onClick={() => setRepEquipo(tab.id)}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            ) : (
             <div className="sala-tabs sala-tabs-pro">
               {[
                 { id:'todas', label:'Todas las salas' },
@@ -3083,6 +3137,7 @@ export default function Jefatura() {
                 </button>
               ))}
             </div>
+            )}
             <div className="kpi-grid reportes-kpis" style={{gridTemplateColumns:'repeat(4,1fr)',margin:'16px 0'}}>
               <div className="kpi-card k-blue"> <div className="kpi-num">{repKpis.total}</div>  <div className="kpi-label">Total ventas</div></div>
               <div className="kpi-card k-green"><div className="kpi-num">{repKpis.inst}</div>   <div className="kpi-label">Instaladas</div></div>
@@ -3099,7 +3154,7 @@ export default function Jefatura() {
               </div>
               <div style={{overflowX:'auto'}}>
                 <table className="tabla tabla-ranking-pro">
-                  <thead><tr><th style={{width:'60px'}}>RANK</th><th>ASESOR</th><th>SALA</th><th>VENTAS INSTALADAS</th><th>TOTAL VENTAS</th><th>CAÍDAS</th><th>EFECTIVIDAD</th></tr></thead>
+                  <thead><tr><th style={{width:'60px'}}>RANK</th><th>ASESOR</th><th>{repCanal === 'CAMPO' ? 'EQUIPO' : 'SALA'}</th><th>VENTAS INSTALADAS</th><th>TOTAL VENTAS</th><th>CAÍDAS</th><th>EFECTIVIDAD</th></tr></thead>
                   <tbody>
                     {reporteData.length === 0
                       ? <tr><td colSpan="7" className="tabla-empty">Sin datos.</td></tr>
