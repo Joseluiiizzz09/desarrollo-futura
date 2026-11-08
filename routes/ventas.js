@@ -1481,6 +1481,7 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
     let sql = `SELECT v.*, COALESCE(u.nombre, v.asesor_nombre) as asesor_nombre,
                COALESCE(NULLIF(v.sala_atribucion, ''), u.sala) AS sala,
                u.sala AS asesor_sala_actual,
+               u.cargo AS asesor_cargo,
                COALESCE(g.nombre, v.grabando_por_nombre) as grabando_por_nombre,
                -- Quién la marcó GRABADO (último cambio en historial; usa idx_vh_campo_venta_fecha)
                (SELECT vh.usuario_nombre FROM venta_historial vh

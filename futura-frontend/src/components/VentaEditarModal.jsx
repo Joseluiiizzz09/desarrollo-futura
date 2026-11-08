@@ -139,7 +139,7 @@ export function VentaEditarModal({ venta, onClose, onSuccess }) {
           {campo('Canal',
             <select style={{ ...inputStyle }} value={form.canal} onChange={e => set('canal', e.target.value)}>
               <option value="">— Sin canal —</option>
-              <option value="NETCONTACT">NETCONTACT</option>
+              {form.canal === 'NETCONTACT' && <option value="NETCONTACT">NETCONTACT</option>}
               <option value="KELS">KELS</option>
             </select>
           )}
