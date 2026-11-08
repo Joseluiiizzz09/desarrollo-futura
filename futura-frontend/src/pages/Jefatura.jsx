@@ -348,7 +348,7 @@ function flujoLabelEstado(estado) {
   })[e] || (estado || 'Venta subida')
 }
 
-const MOD_FORM_VACIO = { nombre:'', usuario:'', cargo:'', cargo2:'', cargo3:'', accesos:[], sala:'', salaManual:true, pass:'', pass2:'' }
+const MOD_FORM_VACIO = { nombre:'', usuario:'', cargo:'', cargo2:'', cargo3:'', cargo4:'', accesos:[], sala:'', salaManual:true, pass:'', pass2:'' }
 
 // Valores únicos y ordenados para poblar selects dinámicos (Asesor/Sala/Distrito/Plan) —
 // nunca hardcodeados, siempre derivados de los datos reales ya cargados.
@@ -1786,8 +1786,9 @@ export default function Jefatura() {
     const accesos = permisosDeUsuario(u).filter(esAcceso)
     const cargo2 = permisosExtra[0] || ''
     const cargo3 = permisosExtra[1] || ''
+    const cargo4 = permisosExtra[2] || ''
     const salaActual = String(u.sala || '').trim()
-    setModForm({ nombre:u.nombre||'', usuario:u.usuario||'', cargo:u.cargo||'', cargo2, cargo3, accesos, sala:salaActual, salaManual:!salaActual || !SALAS.includes(salaActual), pass:'', pass2:'' })
+    setModForm({ nombre:u.nombre||'', usuario:u.usuario||'', cargo:u.cargo||'', cargo2, cargo3, cargo4, accesos, sala:salaActual, salaManual:!salaActual || !SALAS.includes(salaActual), pass:'', pass2:'' })
     setModErrores({}); setModalUsu(true)
   }
   function cerrarModalUsu() { setModalUsu(false); setEditandoId(null); setModForm(MOD_FORM_VACIO); setModErrores({}) }
@@ -1802,7 +1803,7 @@ export default function Jefatura() {
   }
 
   async function guardarUsuario() {
-    const { nombre, usuario, cargo, cargo2, cargo3, sala, pass, pass2 } = modForm
+    const { nombre, usuario, cargo, cargo2, cargo3, cargo4, sala, pass, pass2 } = modForm
     const errs = {}
     let primerError = ''
     if (!nombre.trim())              { errs.nombre = true; primerError ||= 'El nombre completo es obligatorio.' }
@@ -1811,12 +1812,13 @@ export default function Jefatura() {
     if (cargo2 && cargo2 === cargo)  { errs.cargo2 = true; primerError ||= 'El cargo adicional debe ser diferente al principal.' }
     if (cargo3 && cargo3 === cargo)  { errs.cargo3 = true; primerError ||= 'El segundo cargo adicional debe ser diferente al principal.' }
     if (cargo3 && cargo3 === cargo2) { errs.cargo3 = true; primerError ||= 'El segundo cargo adicional debe ser diferente al primero.' }
+    if (cargo4 && [cargo, cargo2, cargo3].includes(cargo4)) { errs.cargo4 = true; primerError ||= 'El tercer cargo adicional debe ser diferente a los demás.' }
     if (!editandoId && !pass)        { errs.pass   = true; primerError ||= 'La contraseña es obligatoria.' }
     if (pass && pass.length < 6)     { errs.pass   = true; primerError ||= 'La contraseña debe tener al menos 6 caracteres.' }
     if (pass && pass !== pass2)      { errs.pass2  = true; primerError ||= 'Las contraseñas no coinciden.' }
     if (Object.keys(errs).length) { setModErrores(errs); mostrarToast(primerError); return }
 
-    const permisos = [cargo2, cargo3, ...(modForm.accesos || [])].filter(Boolean)
+    const permisos = [cargo2, cargo3, cargo4, ...(modForm.accesos || [])].filter(Boolean)
     setGuardandoUsu(true)
     try {
       const loginNorm = usuario.trim().toLowerCase().replace(/\s+/g, '.')
@@ -3267,6 +3269,13 @@ export default function Jefatura() {
                 <select value={modForm.cargo3} onChange={e=>setField('cargo3',e.target.value)} className={modErrores.cargo3?'error':''}>
                   <option value="">— Sin cargo adicional —</option>
                   {CARGOS.filter(c=>c.id!==modForm.cargo && c.id!==modForm.cargo2 && c.id!=='jefatura').map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+              <div className={`modal-campo${modErrores.cargo4?' error':''}`}>
+                <label>Tercer cargo adicional (opcional)</label>
+                <select value={modForm.cargo4} onChange={e=>setField('cargo4',e.target.value)} className={modErrores.cargo4?'error':''}>
+                  <option value="">— Sin cargo adicional —</option>
+                  {CARGOS.filter(c=>![modForm.cargo, modForm.cargo2, modForm.cargo3, 'jefatura'].includes(c.id)).map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
               </div>
               <div className="modal-campo span2">
