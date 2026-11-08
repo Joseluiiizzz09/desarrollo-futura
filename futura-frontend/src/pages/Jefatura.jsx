@@ -2090,22 +2090,29 @@ export default function Jefatura() {
           {/* ===== DASHBOARD ===== */}
           <section className={`section${seccion==='dashboard'?' active':''}`}>
             <div className="sec-header">
-              <div><h2>Dashboard General</h2><p>Métricas del mes seleccionado{dashTipo || dashPredio ? ` · ${[dashTipo, dashPredio].filter(Boolean).join(' · ')}` : ''}</p></div>
-              <div className="dash-selectores">
-                <div className="dash-seg" role="group" aria-label="Campo o Digital">
-                  {[['', 'Todos'], ['CAMPO', 'Campo'], ['DIGITAL', 'Digital']].map(([v, l]) =>
-                    <button key={l} type="button" className={dashTipo === v ? 'on' : ''} onClick={() => setDashTipo(v)}>{l}</button>)}
-                </div>
-                <div className="dash-seg" role="group" aria-label="Horizontal o Vertical">
-                  {[['', 'Todos'], ['HORIZONTAL', 'Horizontal'], ['VERTICAL', 'Vertical']].map(([v, l]) =>
-                    <button key={l} type="button" className={dashPredio === v ? 'on' : ''} onClick={() => setDashPredio(v)}>{l}</button>)}
-                </div>
+              <div><h2>Dashboard General</h2><p>Métricas del mes seleccionado</p></div>
               <select value={mesReporte} onChange={e=>setMesReporte(e.target.value)}
                 aria-label="Mes de las métricas del dashboard"
                 style={{padding:'8px 12px',border:'1px solid #e5e7eb',borderRadius:'9px',fontSize:'12px',fontFamily:'inherit',outline:'none',color:'#374151',cursor:'pointer',background:'#fff'}}>
                 {MESES_SALAS.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
-              </div>
+            </div>
+
+            <div className="dash-selectores">
+              {[
+                ['Canal', dashTipo, setDashTipo, [['', 'Todos'], ['CAMPO', 'Campo'], ['DIGITAL', 'Digital']]],
+                ['Vivienda', dashPredio, setDashPredio, [['', 'Todas'], ['HORIZONTAL', 'Horizontal'], ['VERTICAL', 'Vertical']]],
+              ].map(([titulo, valor, cambiar, opciones]) => (
+                <div key={titulo} className="dash-selector">
+                  <span>{titulo}</span>
+                  <div className="dash-segmento" role="group" aria-label={titulo}>
+                    {opciones.map(([id, label]) => (
+                      <button key={id || 'todos'} type="button" aria-pressed={valor === id}
+                        className={valor === id ? 'activo' : ''} onClick={() => cambiar(id)}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="kpi-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))'}}>
@@ -2124,10 +2131,23 @@ export default function Jefatura() {
               <div className="kpi-card k-blue">  <div className="kpi-num">{kpis.asesores}</div>      <div className="kpi-label">Asesores</div>           <div className="kpi-sub">activos</div></div>
               <div className="kpi-card k-orange"><div className="kpi-num">{kpis.supervisores}</div>  <div className="kpi-label">Supervisores</div>       <div className="kpi-sub">activos</div></div>
             </div>
-            <div className="ventas-hoy-rango">
-              <span>Ventas por equipo y sala</span>
-              <RangoFechasPicker desde={vhDesde} hasta={vhHasta} onChange={({ desde, hasta }) => { setVhDesde(desde || ''); setVhHasta(hasta || '') }} />
-              {(vhDesde || vhHasta) && <button type="button" className="flujo-clear" onClick={() => { setVhDesde(''); setVhHasta('') }}>Hoy</button>}
+            <div className="ventas-hoy-filtros">
+              <span className="ventas-hoy-filtros-titulo">Ventas por equipo y sala</span>
+              <div className="dash-selector">
+                <span>Vivienda</span>
+                <div className="dash-segmento" role="group" aria-label="Vivienda">
+                  {[['', 'Todas'], ['HORIZONTAL', 'Horizontal'], ['VERTICAL', 'Vertical']].map(([id, label]) => (
+                    <button key={id || 'todas'} type="button" aria-pressed={dashPredio === id}
+                      className={dashPredio === id ? 'activo' : ''} onClick={() => setDashPredio(id)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="dash-selector">
+                <span>Rango de fechas</span>
+                <RangoFechasPicker className="eq-rango-btn" placeholder="Hoy" desde={vhDesde} hasta={vhHasta}
+                  onChange={({ desde, hasta }) => { setVhDesde(desde || ''); setVhHasta(hasta || '') }} />
+                {(vhDesde || vhHasta) && <button type="button" className="eq-hoy-btn" onClick={() => { setVhDesde(''); setVhHasta('') }}>Hoy</button>}
+              </div>
             </div>
             <div className="ventas-hoy-grid">
               {dashTipo !== 'DIGITAL' && <VentasHoyCampo datos={ventasHoyPorEquipo.campo}

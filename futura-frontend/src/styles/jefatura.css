@@ -1569,10 +1569,6 @@ button.export-kpi-card:hover {
 .vhc-punto { display: inline-block; width: 14px; color: #cbd5e1; }
 .vhc-rol { display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 5px; background: #f1f5f9; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .3px; }
 
-/* Dashboard: rango de fechas de los cuadros por equipo/sala */
-.ventas-hoy-rango { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.ventas-hoy-rango > span { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: #94a3b8; margin-right: auto; }
-.ventas-hoy-rango > div { flex: 0 0 260px; width: 260px; max-width: 100%; }
 
 /* Dashboard: columnas Horizontal / Vertical / Total */
 .ventas-hoy-tabla.vh-hv th { padding: 6px 10px; font-size: 10px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: #94a3b8; text-align: right; }
@@ -1581,8 +1577,18 @@ button.export-kpi-card:hover {
 .ventas-hoy-tabla.vh-hv td:not(:first-child) { width: 62px; text-align: right; }
 .ventas-hoy-tabla.vh-hv td:nth-child(2),
 .ventas-hoy-tabla.vh-hv td:nth-child(3) { font-size: 13px; font-weight: 700; color: #64748b; }
-/* Dashboard: selectores Campo/Digital y Horizontal/Vertical */
-.dash-selectores { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-.dash-seg { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; }
-.dash-seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #64748b; cursor: pointer; font-family: inherit; }
-.dash-seg button.on { background: #fff; color: #dc2626; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+/* Dashboard: selectores Canal (Campo/Digital) y Vivienda (Horizontal/Vertical) */
+.dash-selectores { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; }
+.dash-selector { display: flex; align-items: center; gap: 10px; }
+.dash-selector > span { font-size: 10px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: #64748b; }
+.dash-segmento { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; }
+.dash-segmento button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #475569; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.dash-segmento button:hover { color: #0f172a; }
+.dash-segmento button.activo { background: #0f172a; color: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.2); }
+/* Fila "Ventas por equipo y sala": título, vivienda y rango alineados */
+.ventas-hoy-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin: 4px 0 12px; }
+.ventas-hoy-filtros-titulo { font-size: 14px; font-weight: 800; color: #0f172a; margin-right: auto; }
+.eq-rango-btn, .eq-hoy-btn { height: 34px; padding: 0 12px; border: 1px solid #e5e7eb; border-radius: 9px; background: #fff; color: #0f172a; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; line-height: 1; }
+.eq-rango-btn { min-width: 150px; text-align: left; }
+.eq-hoy-btn { color: #475569; }
+.eq-rango-btn:hover, .eq-hoy-btn:hover { border-color: #cbd5e1; }

@@ -10,7 +10,9 @@ function formatFechaDDMMYYYY(f) {
 // Selector de rango de fechas en un solo control — un calendario donde se
 // elige inicio y fin (primer clic = desde, segundo clic = hasta), en vez de
 // dos campos separados.
-export default function RangoFechasPicker({ desde, hasta, onChange }) {
+// `className` reemplaza el estilo de campo de formulario (p. ej. para usarlo
+// como una pestaña más) y `placeholder` el texto sin rango elegido.
+export default function RangoFechasPicker({ desde, hasta, onChange, className, placeholder = 'Seleccionar rango' }) {
   const [open, setOpen] = useState(false)
   const [mesVista, setMesVista] = useState(() => {
     const base = desde ? new Date(desde+'T00:00:00') : new Date()
@@ -31,7 +33,8 @@ export default function RangoFechasPicker({ desde, hasta, onChange }) {
 
   function abrir() {
     const r = btnRef.current.getBoundingClientRect()
-    setPos({ top:r.bottom+4, left:r.left })
+    // El calendario (~276 px) no debe salirse de la pantalla por la derecha
+    setPos({ top:r.bottom+4, left:Math.max(8, Math.min(r.left, window.innerWidth - 284)) })
     setOpen(v=>!v)
   }
 
@@ -49,11 +52,12 @@ export default function RangoFechasPicker({ desde, hasta, onChange }) {
   for (let i=0;i<offsetSemana;i++) celdas.push(null)
   for (let d=1; d<=diasEnMes; d++) celdas.push(new Date(mesVista.getFullYear(), mesVista.getMonth(), d))
 
-  const resumen = desde && hasta ? `${formatFechaDDMMYYYY(desde)} – ${formatFechaDDMMYYYY(hasta)}` : desde ? `${formatFechaDDMMYYYY(desde)} – …` : 'Seleccionar rango'
+  const resumen = desde && hasta ? `${formatFechaDDMMYYYY(desde)} – ${formatFechaDDMMYYYY(hasta)}` : desde ? `${formatFechaDDMMYYYY(desde)} – …` : placeholder
 
   return (
     <>
-      <button ref={btnRef} type="button" className="form-control" style={{textAlign:'left',cursor:'pointer',background:'#fff',width:'100%'}} onClick={abrir}>
+      <button ref={btnRef} type="button" className={className || 'form-control'}
+        style={className ? undefined : {textAlign:'left',cursor:'pointer',background:'#fff',width:'100%'}} onClick={abrir}>
         {resumen}
       </button>
       {open && createPortal(
