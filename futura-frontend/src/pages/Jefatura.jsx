@@ -1609,6 +1609,45 @@ export default function Jefatura() {
     return lista
   }, [ventasCache, ventasFlujoMes, busqFlujoVentas, fvEstados, fvValidacion, fvGrabacion, fvCanal, fvTipoVenta, fvCampana, fvAsesor, fvSala, fvDistrito, fvTipoFecha, fvDesde, fvHasta, fvProgDesde, fvProgHasta])
 
+  // Ventas ingresadas hoy: Campo (un renglón por equipo: CAMPO n de FUTURA con
+  // su supervisor, o "SUP. CAMPO …" de Grupo Futura) y Digital (uno por sala).
+  // Los equipos/salas en uso salen aunque lleven 0 hoy.
+  const ventasHoyPorEquipo = useMemo(() => {
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone:'America/Lima' })
+    const hace30 = new Date(Date.now() - 30 * 864e5).toLocaleDateString('en-CA', { timeZone:'America/Lima' })
+    const fechaDe = v => v._fecha || String(v.created_at || '').split(' ')[0]
+    const salaDe = v => String(v.sala || '').trim().toUpperCase()
+    const activos = usuarios.filter(u => Number(u.activo) !== 0)
+    const supDeEquipo = new Map()
+    activos.filter(u => u.cargo === 'supcampo' && /^CAMPO \d+$/.test(String(u.sala || '').trim().toUpperCase()))
+      .forEach(u => { const s = String(u.sala).trim().toUpperCase(); if (!supDeEquipo.has(s)) supDeEquipo.set(s, u.nombre) })
+    const etiquetaCampo = s => {
+      if (s === 'SIN SALA' || s === 'CAMPO') return 'CAMPO — sin equipo'
+      const sup = supDeEquipo.get(s)
+      return sup ? `SUP. CAMPO ${String(sup).trim().toUpperCase().split(/\s+/).slice(0, 2).join(' ')}` : s
+    }
+    const armar = (ventas, base, etiqueta) => {
+      const cuenta = new Map(base.map(s => [s, 0]))
+      ventas.forEach(v => { const s = salaDe(v) || 'SIN SALA'; cuenta.set(s, (cuenta.get(s) || 0) + 1) })
+      const filas = [...cuenta].map(([sala, n]) => ({ sala, label: etiqueta(sala), n }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es', { numeric:true }))
+      return { filas, total: ventas.length }
+    }
+    const recientes = ventasCache.filter(v => fechaDe(v) >= hace30)
+    const deHoy = ventasCache.filter(v => fechaDe(v) === hoy)
+    const equiposCampo = [...new Set([
+      ...supDeEquipo.keys(),
+      ...recientes.filter(v => tipoVentaFlujo(v) === 'CAMPO').map(salaDe).filter(s => s && s !== 'CAMPO'),
+    ])]
+    const salasDigital = [...new Set(['SALA 1', 'SALA 2', ...activos
+      .filter(u => u.cargo === 'asesor').map(u => String(u.sala || '').trim().toUpperCase())
+      .filter(s => s && !s.includes('CAMPO'))])]
+    return {
+      campo: armar(deHoy.filter(v => tipoVentaFlujo(v) === 'CAMPO'), equiposCampo, etiquetaCampo),
+      digital: armar(deHoy.filter(v => tipoVentaFlujo(v) !== 'CAMPO'), salasDigital, s => s),
+    }
+  }, [ventasCache, usuarios])
+
   const resumenFlujoVentas = useMemo(() => ({
     todas: ventasFlujoBase.length,
     validadas: ventasFlujoBase.filter(flujoValidada).length,
@@ -2034,6 +2073,20 @@ export default function Jefatura() {
               <div className="kpi-card k-yellow"><div className="kpi-num">{kpis.activos}</div>       <div className="kpi-label">Activos</div>            <div className="kpi-sub">en el sistema</div></div>
               <div className="kpi-card k-blue">  <div className="kpi-num">{kpis.asesores}</div>      <div className="kpi-label">Asesores</div>           <div className="kpi-sub">activos</div></div>
               <div className="kpi-card k-orange"><div className="kpi-num">{kpis.supervisores}</div>  <div className="kpi-label">Supervisores</div>       <div className="kpi-sub">activos</div></div>
+            </div>
+            <div className="ventas-hoy-grid">
+              {[['Ventas del día — Campo', ventasHoyPorEquipo.campo], ['Ventas del día — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
+                <div key={titulo} className="ventas-hoy-card">
+                  <div className="ventas-hoy-head"><span>{titulo}</span><small>ingresadas hoy</small></div>
+                  <table className="ventas-hoy-tabla">
+                    <tbody>
+                      {d.filas.map(f => <tr key={f.sala}><td title={f.label}>{f.label}</td><td>{f.n}</td></tr>)}
+                      {d.filas.length === 0 && <tr><td colSpan="2" className="ventas-hoy-vacio">Sin equipos</td></tr>}
+                    </tbody>
+                    <tfoot><tr><td>Total</td><td>{d.total}</td></tr></tfoot>
+                  </table>
+                </div>
+              ))}
             </div>
             <div className="charts-grid">
               <div className="chart-card">
