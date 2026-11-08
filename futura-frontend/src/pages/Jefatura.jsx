@@ -1611,7 +1611,7 @@ export default function Jefatura() {
 
   // Ventas ingresadas hoy: Campo (un renglón por equipo: CAMPO n de FUTURA con
   // su supervisor, o "SUP. CAMPO …" de Grupo Futura) y Digital (uno por sala).
-  // Los equipos/salas en uso salen aunque lleven 0 hoy.
+  // Las salas en uso y los equipos con ventas Claro recientes salen aunque lleven 0 hoy.
   const ventasHoyPorEquipo = useMemo(() => {
     const hoy = new Date().toLocaleDateString('en-CA', { timeZone:'America/Lima' })
     const hace30 = new Date(Date.now() - 30 * 864e5).toLocaleDateString('en-CA', { timeZone:'America/Lima' })
@@ -1635,10 +1635,11 @@ export default function Jefatura() {
     }
     const recientes = ventasCache.filter(v => fechaDe(v) >= hace30)
     const deHoy = ventasCache.filter(v => fechaDe(v) === hoy)
-    const equiposCampo = [...new Set([
-      ...supDeEquipo.keys(),
-      ...recientes.filter(v => tipoVentaFlujo(v) === 'CAMPO').map(salaDe).filter(s => s && s !== 'CAMPO'),
-    ])]
+    // Solo equipos que venden CLARO: los que tienen ventas en FUTURA (todas son
+    // Claro) en los últimos 30 días; un equipo sin ventas Claro no aparece.
+    const equiposCampo = [...new Set(
+      recientes.filter(v => tipoVentaFlujo(v) === 'CAMPO').map(salaDe).filter(s => s && s !== 'CAMPO')
+    )]
     const salasDigital = [...new Set(['SALA 1', 'SALA 2', ...activos
       .filter(u => u.cargo === 'asesor').map(u => String(u.sala || '').trim().toUpperCase())
       .filter(s => s && !s.includes('CAMPO'))])]
