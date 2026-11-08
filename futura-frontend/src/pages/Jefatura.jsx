@@ -2775,8 +2775,8 @@ export default function Jefatura() {
                           <td>{formatF(v._fecha || v.fecha_ingreso || v.fecha || v.created_at)}</td>
                           <td className="flujo-cliente">{v.nombre || v.nombre_apellidos || v.cliente || '—'}</td>
                           <td>{v.dni || v.documento || '—'}</td>
-                          <td>{String(v.asesor_nombre || v.asesor || v.vendedor || '—').toLocaleUpperCase('es-PE')}</td>
-                          <td>{v.sala || '—'}</td>
+                          <td title={String(v.asesor_nombre || v.asesor || v.vendedor || '').toLocaleUpperCase('es-PE')}>{String(v.asesor_nombre || v.asesor || v.vendedor || '—').toLocaleUpperCase('es-PE')}</td>
+                          <td title={v.sala || ''}>{v.sala || '—'}</td>
                           <td><CanalBadge canal={v.canal} /></td>
                           <td><TipoVentaBadge tipo={tipoVentaFlujo(v)} /></td>
                           <td><span className={flujoValidada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoValidacion(v)}</span></td>

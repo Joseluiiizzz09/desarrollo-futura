@@ -1348,26 +1348,21 @@ button.export-kpi-card:hover {
    Cliente/Estado/Acciones). */
 .flujo-tabla .tabla {
   table-layout: fixed;
-  width: max(100%, 1520px);
+  width: max(100%, 1975px);
 }
-.flujo-tabla .tabla th:nth-child(1),  .flujo-tabla .tabla td:nth-child(1)  { width: 40px; text-align: center; }
-.flujo-tabla .tabla th:nth-child(2),  .flujo-tabla .tabla td:nth-child(2)  { width: 105px; }
-.flujo-tabla .tabla th:nth-child(3),  .flujo-tabla .tabla td:nth-child(3)  { width: 180px; }
-.flujo-tabla .tabla th:nth-child(4),  .flujo-tabla .tabla td:nth-child(4)  { width: 110px; }
-.flujo-tabla .tabla th:nth-child(5),  .flujo-tabla .tabla td:nth-child(5)  { width: 110px; }
-.flujo-tabla .tabla th:nth-child(6),  .flujo-tabla .tabla td:nth-child(6)  { width: 90px; }
-.flujo-tabla .tabla th:nth-child(7),  .flujo-tabla .tabla td:nth-child(7)  { width: 120px; }
-.flujo-tabla .tabla th:nth-child(8),  .flujo-tabla .tabla td:nth-child(8)  { width: 140px; }
-.flujo-tabla .tabla th:nth-child(9),  .flujo-tabla .tabla td:nth-child(9)  {
-  width: 140px;
-  overflow: visible;
-  text-overflow: clip;
-}
-.flujo-tabla .tabla th:nth-child(10), .flujo-tabla .tabla td:nth-child(10) { width: 150px; }
-.flujo-tabla .tabla th:nth-child(11), .flujo-tabla .tabla td:nth-child(11) { width: 130px; }
-.flujo-tabla .tabla th:nth-child(12), .flujo-tabla .tabla td:nth-child(12) {
-  width: 480px; overflow: visible; text-overflow: clip;
-}
+.flujo-tabla .tabla th:nth-child(1), .flujo-tabla .tabla td:nth-child(1) { width: 40px; text-align: center; }
+.flujo-tabla .tabla th:nth-child(2), .flujo-tabla .tabla td:nth-child(2) { width: 100px; }
+.flujo-tabla .tabla th:nth-child(3), .flujo-tabla .tabla td:nth-child(3) { width: 190px; }
+.flujo-tabla .tabla th:nth-child(4), .flujo-tabla .tabla td:nth-child(4) { width: 95px; }
+.flujo-tabla .tabla th:nth-child(5), .flujo-tabla .tabla td:nth-child(5) { width: 160px; }
+.flujo-tabla .tabla th:nth-child(6), .flujo-tabla .tabla td:nth-child(6) { width: 190px; }
+.flujo-tabla .tabla th:nth-child(7), .flujo-tabla .tabla td:nth-child(7) { width: 80px; }
+.flujo-tabla .tabla th:nth-child(8), .flujo-tabla .tabla td:nth-child(8) { width: 90px; }
+.flujo-tabla .tabla th:nth-child(9), .flujo-tabla .tabla td:nth-child(9) { width: 130px; }
+.flujo-tabla .tabla th:nth-child(10), .flujo-tabla .tabla td:nth-child(10) { width: 130px; overflow: visible; text-overflow: clip; }
+.flujo-tabla .tabla th:nth-child(11), .flujo-tabla .tabla td:nth-child(11) { width: 160px; }
+.flujo-tabla .tabla th:nth-child(12), .flujo-tabla .tabla td:nth-child(12) { width: 130px; }
+.flujo-tabla .tabla th:nth-child(13), .flujo-tabla .tabla td:nth-child(13) { width: 480px; overflow: visible; text-overflow: clip; }
 
 /* Botones de Acciones más compactos, solo dentro de Ventas generales —
    .venta-action-btn es compartido con Supervisor (venta-assignment.css),
@@ -1398,6 +1393,8 @@ button.export-kpi-card:hover {
   width: 100%;
   min-width: 1795px;
 }
+/* Ventas generales: 13 columnas (con Tipo) y Sala ancha para "SUP. CAMPO …" */
+.flujo-tabla .flujo-tabla-scroll .tabla { min-width: 1975px; }
 
 .flujo-tabla-scroll::-webkit-scrollbar {
   height: 11px;
