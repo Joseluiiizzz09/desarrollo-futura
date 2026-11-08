@@ -222,7 +222,8 @@ router.post('/venta-grupo-futura', verificarClaveInternaGrupoFutura, async (req,
       v.paquete || null, v.full || null,
       parseInt(v.cantDecos) || 0, parseInt(v.cantMesh) || 0,
       v.plano || null, 'VENTA', `[Grupo Futura] ${String(v.obs || '').trim()}`.substring(0, 1000),
-      dueno.sala || null, origenId,
+      // Sin sala en FUTURA: su equipo de campo en Grupo Futura ("SUP. CAMPO …")
+      dueno.sala || String(asesor.equipo || '').trim().toUpperCase().substring(0, 50) || null, origenId,
     ]);
 
     await conn.commit();

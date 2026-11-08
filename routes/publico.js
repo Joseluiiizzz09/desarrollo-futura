@@ -538,6 +538,8 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
       String(v.biometria || '').toUpperCase() === 'SI' ? String(v.biometriaTipo || '').toUpperCase() || null : null,
     ]);
     console.log(`[publico/venta-claro] venta ${result.insertId} -> ${dueno.id ? `usuario ${dueno.id}` : `vendedor de Grupo Futura ${dueno.nombre}`}`);
+    // Vendedor de Grupo Futura sin sala: se le pone su equipo de campo
+    if (m[1] === 'gf' && !dueno.sala) require('../utils/salasGrupoFutura').completarSalasGrupoFutura();
     res.json({ ok: true });
   } catch (e) {
     console.error('[publico/venta-claro] Error:', e);

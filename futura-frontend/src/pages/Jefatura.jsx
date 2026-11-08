@@ -56,6 +56,7 @@ const CARGOS = [
 function tipoVentaFlujo(v) {
   const cargo = String(v.asesor_cargo || '').trim().toLowerCase()
   const sala = String(v.sala || '').trim().toUpperCase()
+  if (sala.includes('CAMPO')) return 'CAMPO'
   const deGrupoFutura = !v.asesor_id || !!v.origen_grupo_futura_id
     || String(v.observacion || '').startsWith('[Grupo Futura]') || !sala
   return cargo === 'campo' || cargo === 'supcampo' || sala.startsWith('CAMPO') || deGrupoFutura ? 'CAMPO' : 'DIGITAL'
@@ -1557,9 +1558,10 @@ export default function Jefatura() {
     ...ventasCache.map(v => String(v.campana || '').trim()).filter(Boolean),
   ])].sort((a, b) => a.localeCompare(b, 'es')), [ventasCache, CAMPANAS])
 
-  // Salas para el desplegable: las fijas, las de los usuarios y las que aparecen en las ventas
+  // Salas de oficina + las salas/equipos en uso (incluye los equipos de campo
+  // de Grupo Futura, "SUP. CAMPO …"); sin los CAMPO 1–10 que nadie usa.
   const salasFlujoOpciones = useMemo(() => [...new Set([
-    ...SALAS,
+    'SALA 1', 'SALA 2',
     ...usuarios.map(u => String(u.sala || '').trim().toUpperCase()),
     ...ventasCache.map(v => String(v.sala || '').trim().toUpperCase()),
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true })), [usuarios, ventasCache])

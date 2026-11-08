@@ -105,4 +105,7 @@ process.on('uncaughtException',    (err) => console.error('[UNCAUGHT]', err.mess
 process.on('unhandledRejection',   (r)   => console.error('[UNHANDLED]', r));
 
 const PORT = process.env.PORT || 3000;
-db.listo.then(() => app.listen(PORT, '0.0.0.0', () => console.log('Netcontact API puerto ' + PORT)));
+db.listo.then(() => {
+  app.listen(PORT, '0.0.0.0', () => console.log('Netcontact API puerto ' + PORT));
+  require('./utils/salasGrupoFutura').iniciarSalasGrupoFutura();
+});
