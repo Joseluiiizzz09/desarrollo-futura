@@ -7,7 +7,6 @@ import { VentaEditarModal } from '../components/VentaEditarModal'
 import ObsSeguimientoCell from '../components/ObsSeguimientoCell'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
-import CanalBadge from '../components/CanalBadge'
 import { API, NC_API, ncHeaders, ncHeadersFile } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import { usuarioTieneCargo } from '../utils/roles'
@@ -837,16 +836,15 @@ export default function Supervisor({ area = 'supervisor' }) {
                 <input type="text" className="tabla-search" value={tablaSearch} onChange={e=>setTablaSearch(e.target.value)} placeholder="Buscar por N1, asesor..." />
               </div>
               <div className="tabla-scroll tabla-scroll-ventas">
-              <table className="tabla tabla-sup-ventas" style={{minWidth:2250}}>
-                <thead><tr><th>#</th><th>Estado actual</th><th>Canal</th><th>Validación</th><th>Grabación</th><th>Programación</th><th>Obs. Seguimiento</th><th>Obs. Validación</th><th>Fecha Programada</th><th>Fecha</th><th>Nombre</th><th>DNI</th><th>N1</th><th>N2</th><th>Depto.</th><th>Distrito</th><th>Paquete</th><th>Asesor</th><th>Hora</th><th>Obs.</th><th>Acción</th></tr></thead>
+              <table className="tabla tabla-sup-ventas" style={{minWidth:2150}}>
+                <thead><tr><th>#</th><th>Estado actual</th><th>Validación</th><th>Grabación</th><th>Programación</th><th>Obs. Seguimiento</th><th>Obs. Validación</th><th>Fecha Programada</th><th>Fecha</th><th>Nombre</th><th>DNI</th><th>N1</th><th>N2</th><th>Depto.</th><th>Distrito</th><th>Paquete</th><th>Asesor</th><th>Hora</th><th>Obs.</th><th>Acción</th></tr></thead>
                 <tbody>
                   {ventasTabla.length === 0
-                    ? <tr className="tabla-empty"><td colSpan={21}>Sin ventas con esos filtros.</td></tr>
+                    ? <tr className="tabla-empty"><td colSpan={20}>Sin ventas con esos filtros.</td></tr>
                     : ventasPaginaData.map((v,i)=>(
                         <tr key={v.id}>
                           <td style={{color:'#9ca3af',fontSize:10}}>{(ventasPaginaSegura-1)*ventasPorPagina+i+1}</td>
                           <td><BadgeEstado id={mapearEstado(v.estado)} /></td>
-                          <td><CanalBadge canal={v.canal} /></td>
                           <td><span className={`sup-flujo-badge ${claseFlujo(estadoValidacionFlujo(v))}`}>{estadoValidacionFlujo(v)}</span></td>
                           <td><span className={`sup-flujo-badge ${claseFlujo(v.estado_grab)}`}>{etiquetaFlujo(v.estado_grab)}</span></td>
                           <td><span className={`sup-flujo-badge ${claseFlujo(v.estado_prog)}`}>{etiquetaFlujo(v.estado_prog)}</span></td>
