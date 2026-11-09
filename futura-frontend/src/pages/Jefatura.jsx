@@ -1941,21 +1941,53 @@ export default function Jefatura() {
     setCobCodigosTexto(''); setCobCodigosResultado(null); setCobCodigosMensaje('')
   }
 
+  // Supervisor de la venta: el usuario Supervisor / Supervisor Campo de la
+  // misma sala o equipo que la venta.
+  const supervisorPorSala = useMemo(() => {
+    const mapa = new Map()
+    usuarios.forEach(u => {
+      const cargos = [u.cargo, ...(Array.isArray(u.permisos) ? u.permisos : [])]
+      const sala = String(u.sala || '').trim().toUpperCase()
+      if (sala && u.activo !== false && cargos.some(c => ['supervisor', 'supcampo'].includes(c)) && !mapa.has(sala)) mapa.set(sala, u.nombre)
+    })
+    return mapa
+  }, [usuarios])
+  const supervisorDeVenta = v => supervisorPorSala.get(String(v.sala || '').trim().toUpperCase()) || ''
+  const altaVenta = v => (soloFecha(v.fecha_instalado) || String(v.estado || '').toUpperCase() === 'INSTALADO') ? 1 : 0
+  const biometriaVenta = v => {
+    const b = String(v.biometria || '').toUpperCase()
+    if (b === 'SI') return String(v.biometria_tipo || '').toUpperCase() === 'BIOMETRIA AISLADA' ? 'Sí (aislada)' : 'Sí'
+    return b === 'NO' ? 'No' : ''
+  }
+
   function exportarVentasExcel() {
     descargarExcel(ventasFlujoFiltradas, [
-      ['FECHA SUBIDA',      v => formatF(soloFecha(v._fecha || v.fecha_ingreso || v.fecha || v.created_at))],
-      ['CLIENTE',           v => v.nombre || v.nombre_apellidos || v.cliente || '-'],
-      ['DNI',               v => v.dni || v.documento || '-'],
-      ['SOT',               v => v.sot || '-'],
-      ['DISTRITO',          v => v.distrito || '-'],
-      ['ASESOR',            v => v.asesor_nombre || v.asesor || v.vendedor || '-'],
-      ['SALA',              v => v.sala || '-'],
+      // Estados primero; luego la misma estructura del reporte Claro / Kels.
       ['VALIDACIÓN',        v => estadoValidacion(v)],
       ['GRABACIÓN',         v => estadoGrabacion(v)],
       ['PROGRAMACIÓN',      v => estadoProgramacionFlujo(v).label + (v.usuario_prog ? ` (Por: ${v.usuario_prog})` : '')],
-      ['FECHA PROGRAMACIÓN', v => soloFecha(v.fecha_programada || v.fecha_prog || v.fecha_programado) ? formatF(soloFecha(v.fecha_programada || v.fecha_prog || v.fecha_programado)) : '-'],
       ['SEGUIMIENTO',       v => estadoSeguimiento(v) ? flujoLabelEstado(estadoSeguimiento(v)) : '-'],
-      ['FECHA DE INSTALACIÓN', v => soloFecha(v.fecha_instalado) ? formatF(soloFecha(v.fecha_instalado)) : '-'],
+      ['Fecha de registro', v => formatF(soloFecha(v._fecha || v.fecha_ingreso || v.fecha || v.created_at))],
+      ['Fecha de Instalación', v => soloFecha(v.fecha_instalado) ? formatF(soloFecha(v.fecha_instalado)) : ''],
+      ['N° doc cliente',    v => v.dni || v.documento || ''],
+      ['Altas',             v => altaVenta(v)],
+      ['SOT',               v => v.sot || ''],
+      ['Supervisor',        v => supervisorDeVenta(v)],
+      ['Vendedor',          v => v.asesor_nombre || v.asesor || v.vendedor || ''],
+      ['Nombre del Cliente', v => v.nombre || v.nombre_apellidos || v.cliente || ''],
+      ['Teléfono 1 del Cliente', v => v.telefono1 || ''],
+      ['Teléfono 2 del Cliente', v => v.telefono2 || ''],
+      ['Correo del Cliente', v => v.email || ''],
+      ['Departamento',      v => v.departamento || ''],
+      ['Provincia',         v => v.provincia || ''],
+      ['Distrito',          v => v.distrito || ''],
+      ['Dirección de Instalación', v => v.direccion || ''],
+      ['Plan Venta',        v => v.paquete || ''],
+      ['Precio',            v => cargoFijoVenta(v) ?? ''],
+      ['Biometría',         v => biometriaVenta(v)],
+      ['PUNTO_VENTA',       v => v.predio || ''],
+      ['BACK ENCARGADO',    v => v.validador_nombre || ''],
+      ['Empresa',           v => v.operador || 'Claro'],
     ], `ventas_generales_${fechaHoy()}.xlsx`)
   }
 
@@ -3128,24 +3160,40 @@ export default function Jefatura() {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Fecha subida</th>
-                      <th>Cliente</th>
-                      <th>DNI</th>
-                      <th>Asesor</th>
-                      <th>Sala</th>
-                      <th>Canal</th>
-                      <th>Tipo</th>
-                      <th>Cargo fijo</th>
                       <th>Validación</th>
                       <th>Grabación</th>
                       <th>Programación</th>
                       <th>Seguimiento</th>
+                      <th>Fecha de registro</th>
+                      <th>Fecha de instalación</th>
+                      <th>N° doc cliente</th>
+                      <th>Altas</th>
+                      <th>SOT</th>
+                      <th>Supervisor</th>
+                      <th>Vendedor</th>
+                      <th>Nombre del cliente</th>
+                      <th>Teléfono 1</th>
+                      <th>Teléfono 2</th>
+                      <th>Correo</th>
+                      <th>Departamento</th>
+                      <th>Provincia</th>
+                      <th>Distrito</th>
+                      <th>Dirección de instalación</th>
+                      <th>Plan venta</th>
+                      <th>Precio</th>
+                      <th>Biometría</th>
+                      <th>Punto venta</th>
+                      <th>Back encargado</th>
+                      <th>Empresa</th>
+                      <th>Sala</th>
+                      <th>Canal</th>
+                      <th>Tipo</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ventasFlujoFiltradas.length === 0 ? (
-                      <tr><td colSpan="14" className="tabla-empty">No hay ventas registradas.</td></tr>
+                      <tr><td colSpan="30" className="tabla-empty">No hay ventas registradas.</td></tr>
                     ) : ventasFlujoPagina.map((v, i) => {
                       const estadoSeg = estadoSeguimiento(v)
                       const pInfo = estadoProgramacionFlujo(v)
@@ -3156,14 +3204,6 @@ export default function Jefatura() {
                       return (
                         <tr key={v.id || `${v.dni || v.documento || 'venta'}-${i}`}>
                           <td>{(paginaFlujo - 1) * porPaginaFlujo + i + 1}</td>
-                          <td>{formatF(v._fecha || v.fecha_ingreso || v.fecha || v.created_at)}</td>
-                          <td className="flujo-cliente">{v.nombre || v.nombre_apellidos || v.cliente || '—'}</td>
-                          <td>{v.dni || v.documento || '—'}</td>
-                          <td title={String(v.asesor_nombre || v.asesor || v.vendedor || '').toLocaleUpperCase('es-PE')}>{String(v.asesor_nombre || v.asesor || v.vendedor || '—').toLocaleUpperCase('es-PE')}</td>
-                          <td title={v.sala || ''}>{v.sala || '—'}</td>
-                          <td><CanalBadge canal={v.canal} /></td>
-                          <td><TipoVentaBadge tipo={tipoVentaFlujo(v)} /></td>
-                          <td title={v.paquete || ''} style={{fontWeight:700}}>{soles(cargoFijoVenta(v))}</td>
                           <td><span className={flujoValidada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoValidacion(v)}</span></td>
                           <td><span className={flujoGrabada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoGrabacion(v)}</span></td>
                           <td>
@@ -3173,6 +3213,30 @@ export default function Jefatura() {
                             </div>
                           </td>
                           <td>{estadoSeg ? <span className="flujo-info">{flujoLabelEstado(estadoSeg)}</span> : '—'}</td>
+                          <td>{formatF(v._fecha || v.fecha_ingreso || v.fecha || v.created_at)}</td>
+                          <td>{soloFecha(v.fecha_instalado) ? formatF(soloFecha(v.fecha_instalado)) : '—'}</td>
+                          <td>{v.dni || v.documento || '—'}</td>
+                          <td style={{textAlign:'center',fontWeight:700}}>{altaVenta(v)}</td>
+                          <td>{v.sot || '—'}</td>
+                          <td>{supervisorDeVenta(v) || '—'}</td>
+                          <td title={String(v.asesor_nombre || v.asesor || v.vendedor || '').toLocaleUpperCase('es-PE')}>{String(v.asesor_nombre || v.asesor || v.vendedor || '—').toLocaleUpperCase('es-PE')}</td>
+                          <td className="flujo-cliente">{v.nombre || v.nombre_apellidos || v.cliente || '—'}</td>
+                          <td>{v.telefono1 || '—'}</td>
+                          <td>{v.telefono2 || '—'}</td>
+                          <td title={v.email || ''}>{v.email || '—'}</td>
+                          <td>{v.departamento || '—'}</td>
+                          <td>{v.provincia || '—'}</td>
+                          <td>{v.distrito || '—'}</td>
+                          <td title={v.direccion || ''}>{v.direccion || '—'}</td>
+                          <td title={v.paquete || ''}>{v.paquete || '—'}</td>
+                          <td style={{fontWeight:700}}>{soles(cargoFijoVenta(v))}</td>
+                          <td>{biometriaVenta(v) || '—'}</td>
+                          <td>{v.predio || '—'}</td>
+                          <td>{v.validador_nombre || '—'}</td>
+                          <td>{v.operador || 'Claro'}</td>
+                          <td title={v.sala || ''}>{v.sala || '—'}</td>
+                          <td><CanalBadge canal={v.canal} /></td>
+                          <td><TipoVentaBadge tipo={tipoVentaFlujo(v)} /></td>
                           <td>
                             <div className="venta-actions">
                               <button type="button" className="venta-action-btn" onClick={()=>setMediaVenta(v)}>Archivos</button>

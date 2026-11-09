@@ -1498,6 +1498,10 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                (SELECT vh.usuario_nombre FROM venta_historial vh
                  WHERE vh.campo = 'estado_grab' AND vh.venta_id = v.id AND LOWER(vh.valor_nuevo) = 'grabado'
                  ORDER BY vh.created_at DESC, vh.id DESC LIMIT 1) AS grabado_por_nombre,
+               -- Back encargado: quien hizo la última tipificación en Validación
+               (SELECT vh.usuario_nombre FROM venta_historial vh
+                 WHERE vh.campo = 'obs_validacion' AND vh.venta_id = v.id AND vh.tipo = 'CAMBIO_VALIDACION'
+                 ORDER BY vh.created_at DESC, vh.id DESC LIMIT 1) AS validador_nombre,
                ph.fecha_programado,
                ph_prog.estado_prog, ph_prog.usuario_prog, ph_prog.fecha_prog,
                ph_sup.fecha_sup_resultado,
