@@ -797,6 +797,8 @@ router.get('/marketing-resumen', auth(['jefatura','marketing']), async (req, res
     const hasta = String(req.query.hasta || '').trim();
     const campana = String(req.query.campana || '').trim();
     const tipificacion = String(req.query.tipificacion || '').trim();
+    // por_dia=1: un grupo por (día, campaña, tipificación) — lo usa Costos
+    const porDia = String(req.query.por_dia || '') === '1';
     const errores = validar([
       errorFecha(desde || undefined, 'desde'),
       errorFecha(hasta || undefined, 'hasta'),
@@ -820,7 +822,8 @@ router.get('/marketing-resumen', auth(['jefatura','marketing']), async (req, res
     const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
 
     const [leadsRows] = await db.query(`
-      SELECT l.n1, ${campanaSql} AS campana, l.tipif_vend, l.tipif_back_2, l.tipif_back, l.created_at
+      SELECT l.n1, ${campanaSql} AS campana, l.tipif_vend, l.tipif_back_2, l.tipif_back, l.created_at,
+             DATE_FORMAT(l.fecha, '%Y-%m-%d') AS dia
       FROM leads l
       ${where}
     `, params);
@@ -878,8 +881,8 @@ router.get('/marketing-resumen', auth(['jefatura','marketing']), async (req, res
       campanasSet.add(l.campana);
       tipificacionesSet.add(tipificacionFila);
       if (tipificacion && tipificacionFila !== tipificacion) continue;
-      const clave = `${l.campana}|||${tipificacionFila}`;
-      const actual = resumenMap.get(clave) || { campana: l.campana, tipificacion: tipificacionFila, cantidad: 0, primera_alta: l.created_at, ultima_alta: l.created_at };
+      const clave = `${porDia ? `${l.dia}|||` : ''}${l.campana}|||${tipificacionFila}`;
+      const actual = resumenMap.get(clave) || { ...(porDia ? { fecha: l.dia || null } : {}), campana: l.campana, tipificacion: tipificacionFila, cantidad: 0, primera_alta: l.created_at, ultima_alta: l.created_at };
       actual.cantidad++;
       if (String(l.created_at) < String(actual.primera_alta)) actual.primera_alta = l.created_at;
       if (String(l.created_at) > String(actual.ultima_alta)) actual.ultima_alta = l.created_at;

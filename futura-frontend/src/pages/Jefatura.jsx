@@ -612,6 +612,11 @@ export default function Jefatura() {
   const [gastoGuardando, setGastoGuardando] = useState(false)
   const [gastoEditandoId, setGastoEditandoId] = useState(null)
   const [filaAbierta, setFilaAbierta] = useState('')
+  // Costos por día: leads por (día, campaña) y montos que se están escribiendo
+  const [costosDiaData, setCostosDiaData] = useState([])
+  const [costosDiaCarga, setCostosDiaCarga] = useState({ cargando:false, error:'' })
+  const [costoBorrador, setCostoBorrador] = useState({})
+  const [costoGuardando, setCostoGuardando] = useState('')
   // Mismo dashboard, pero para las campañas de Reclutamiento (leads_reclutamiento)
   const [marketingReclFiltros, setMarketingReclFiltros] = useState({ desde:fechaHoy(), hasta:fechaHoy(), campana:'', tipificacion:'' })
   const [marketingReclData, setMarketingReclData] = useState([])
@@ -878,6 +883,47 @@ export default function Jefatura() {
       setGastosCarga({ cargando:false, error:error.message || 'Error de conexión' })
     }
   }, [marketingFiltros])
+
+  const cargarCostosDia = useCallback(async (filtros = marketingFiltros) => {
+    setCostosDiaCarga({ cargando:true, error:'' })
+    try {
+      const qs = new URLSearchParams({ por_dia:'1' })
+      ;['desde','hasta','campana'].forEach(k => { if (filtros[k]) qs.set(k, filtros[k]) })
+      const res = await fetch(`${API}/leads/marketing-resumen?${qs}`, { headers:ncHeaders() })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo cargar los leads por día')
+      setCostosDiaData(Array.isArray(data.data) ? data.data : [])
+      setCostosDiaCarga({ cargando:false, error:'' })
+    } catch (error) {
+      setCostosDiaCarga({ cargando:false, error:error.message || 'Error de conexión' })
+    }
+  }, [marketingFiltros])
+
+  // Guarda el gasto de un día y campaña escrito en la tabla (vacío o 0 lo quita)
+  async function guardarCostoDia(fila) {
+    const clave = `${fila.fecha}|${fila.campana}`
+    const texto = costoBorrador[clave]
+    if (texto === undefined) return
+    const monto = texto === '' ? 0 : Number(String(texto).replace(',', '.'))
+    if (!Number.isFinite(monto) || monto < 0) { setGastosCarga(p => ({ ...p, error:'Escribe un monto válido' })); return }
+    if (Math.abs(monto - (fila.gasto || 0)) < 0.005) { setCostoBorrador(b => { const n = { ...b }; delete n[clave]; return n }); return }
+    setCostoGuardando(clave)
+    try {
+      const res = monto > 0
+        ? await fetch(`${API}/leads/marketing-gastos`, { method:'POST', headers:ncHeaders(),
+            body:JSON.stringify({ fecha:fila.fecha, campana:fila.campana, tipo:'ventas', monto, notas:fila.notas || '' }) })
+        : await fetch(`${API}/leads/marketing-gastos/${fila.gastoId}`, { method:'DELETE', headers:ncHeaders() })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo guardar el gasto')
+      await cargarGastos()
+      setCostoBorrador(b => { const n = { ...b }; delete n[clave]; return n })
+      setGastosCarga(p => ({ ...p, error:'' }))
+    } catch (error) {
+      setGastosCarga(p => ({ ...p, error:error.message || 'Error de conexión' }))
+    } finally {
+      setCostoGuardando('')
+    }
+  }
 
   async function guardarGasto() {
     const monto = Number(gastoForm.monto)
@@ -1177,10 +1223,10 @@ export default function Jefatura() {
     if (seccion === 'seguimiento') cargarSeguimiento()
     if (seccion === 'reclutados-generales') { cargarReclutados(); cargarEntrevistados() }
     if (seccion === 'eliminaciones') cargarEliminaciones()
-    if (seccion === 'marketing-leads') { cargarMarketing(); cargarMarketingRecl(); cargarGastos(); cargarGastosRecl() }
+    if (seccion === 'marketing-leads') { cargarMarketing(); cargarMarketingRecl(); cargarGastos(); cargarGastosRecl(); cargarCostosDia() }
     if (seccion === 'grab-rendimiento') cargarGrabRendimiento()
     if (seccion === 'envio-masivo') cargarMasivo()
-  }, [seccion, cargarSeguimiento, cargarReclutados, cargarEntrevistados, cargarEliminaciones, cargarMarketing, cargarMarketingRecl, cargarGastos, cargarGastosRecl, cargarGrabRendimiento, cargarMasivo])
+  }, [seccion, cargarSeguimiento, cargarReclutados, cargarEntrevistados, cargarEliminaciones, cargarMarketing, cargarMarketingRecl, cargarGastos, cargarGastosRecl, cargarCostosDia, cargarGrabRendimiento, cargarMasivo])
 
   // El dashboard representa el ciclo del mes actual según la fecha real de
   // cada evento. Una venta puede haberse creado antes y programarse o instalarse
@@ -1289,8 +1335,46 @@ export default function Jefatura() {
     return { filas, gastoTotalPeriodo, ventasTotalPeriodo }
   }, [gastosData, resumenMarketing])
 
+  // Una fila por día y campaña: leads, ventas y el gasto de ese día.
+  // Con rango de fechas salen todos los días del rango para cada campaña del
+  // periodo (así se puede escribir el gasto de un día sin leads).
+  const costosPorDia = useMemo(() => {
+    const filas = new Map()
+    const clave = (f, c) => `${f}|${c}`
+    const base = (fecha, campana) => ({ fecha, campana, leads:0, ventas:0, gasto:0, gastoId:null, notas:'' })
+    costosDiaData.forEach(r => {
+      if (!r.fecha) return
+      const k = clave(r.fecha, r.campana)
+      if (!filas.has(k)) filas.set(k, base(r.fecha, r.campana))
+      const f = filas.get(k), n = Number(r.cantidad || 0)
+      f.leads += n
+      if (TIPIF_CONJUNTO_VENTA.has(String(r.tipificacion || '').trim().toUpperCase())) f.ventas += n
+    })
+    gastosData.forEach(g => {
+      if (marketingFiltros.campana && g.campana !== marketingFiltros.campana) return
+      const fecha = String(soloFecha(g.fecha) || '').slice(0, 10)
+      if (!fecha) return
+      const k = clave(fecha, g.campana)
+      if (!filas.has(k)) filas.set(k, base(fecha, g.campana))
+      const f = filas.get(k)
+      f.gasto += Number(g.monto || 0); f.gastoId = g.id; f.notas = g.notas || ''
+    })
+    const { desde, hasta } = marketingFiltros
+    if (desde && hasta && desde <= hasta) {
+      const campanas = [...new Set([...filas.values()].map(f => f.campana))]
+      const dias = []
+      for (let d = desde; d <= hasta && dias.length < 62; d = new Date(new Date(`${d}T12:00:00`).getTime() + 864e5).toISOString().slice(0, 10)) dias.push(d)
+      dias.forEach(d => campanas.forEach(c => { if (!filas.has(clave(d, c))) filas.set(clave(d, c), base(d, c)) }))
+    }
+    const lista = [...filas.values()].map(f => ({ ...f, cpl: f.leads > 0 ? f.gasto / f.leads : null, cpv: f.ventas > 0 ? f.gasto / f.ventas : null }))
+      .sort((a, b) => b.fecha.localeCompare(a.fecha) || a.campana.localeCompare(b.campana, 'es'))
+    const tot = lista.reduce((t, f) => ({ leads:t.leads + f.leads, ventas:t.ventas + f.ventas, gasto:t.gasto + f.gasto }), { leads:0, ventas:0, gasto:0 })
+    return { filas:lista, tot }
+  }, [costosDiaData, gastosData, marketingFiltros])
+
   function exportarCostosExcel() {
-    descargarExcel(costosPorCampana.filas, [
+    descargarExcel(costosPorDia.filas, [
+      ['Fecha', f=>f.fecha],
       ['Campaña', f=>f.campana],
       ['Leads', f=>f.leads],
       ['Ventas', f=>f.ventas],
@@ -2437,10 +2521,10 @@ export default function Jefatura() {
               <div style={{display:'flex',gap:8}}>
                 {marketingVista==='ventas' && <button className="btn-nuevo" style={{background:'#0f766e'}} onClick={exportarMarketingExcel} disabled={!marketingData.length}>Exportar Excel</button>}
                 {marketingVista==='reclutamiento' && <button className="btn-nuevo" style={{background:'#0f766e'}} onClick={exportarMarketingReclExcel} disabled={!marketingReclData.length}>Exportar Excel</button>}
-                {marketingVista==='costos' && <button className="btn-nuevo" style={{background:'#0f766e'}} onClick={exportarCostosExcel} disabled={!costosPorCampana.filas.length}>Exportar Excel</button>}
+                {marketingVista==='costos' && <button className="btn-nuevo" style={{background:'#0f766e'}} onClick={exportarCostosExcel} disabled={!costosPorDia.filas.length}>Exportar Excel</button>}
                 {marketingVista==='ventas' && <button className="btn-nuevo" onClick={()=>cargarMarketing(marketingFiltros)}>Actualizar</button>}
                 {marketingVista==='reclutamiento' && <button className="btn-nuevo" onClick={()=>cargarMarketingRecl(marketingReclFiltros)}>Actualizar</button>}
-                {marketingVista==='costos' && <button className="btn-nuevo" onClick={()=>{ cargarMarketing(marketingFiltros); cargarGastos(marketingFiltros) }}>Actualizar</button>}
+                {marketingVista==='costos' && <button className="btn-nuevo" onClick={()=>{ cargarMarketing(marketingFiltros); cargarGastos(marketingFiltros); cargarCostosDia(marketingFiltros) }}>Actualizar</button>}
               </div>
             </div>
 
@@ -2521,52 +2605,64 @@ export default function Jefatura() {
             </div>
             </>}
 
-            {marketingVista==='costos' && <div className="tabla-wrap marketing-tabla-card">
-                <div className="tabla-header"><span className="tabla-title">Costos por campaña</span><span className="tabla-count">{costosPorCampana.filas.length} campañas</span></div>
-                {gastosCarga.error && <div className="marketing-error">{gastosCarga.error}</div>}
+            {marketingVista==='costos' && <>
+            <div className="filtros-avanzados marketing-filtros">
+              <div className="filtros-titulo">Filtros de costos</div>
+              <div className="filtros-grid">
+                <label><span>Rango de fechas</span><RangoFechasPicker desde={marketingFiltros.desde} hasta={marketingFiltros.hasta} onChange={v=>setMarketingFiltros(p=>({...p,...v}))} /></label>
+                <label><span>Campaña</span><select value={marketingFiltros.campana} onChange={e=>setMarketingFiltros(p=>({...p,campana:e.target.value}))}><option value="">Todas las campañas</option>{marketingCatalogos.campanas.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+                <button type="button" className="flujo-clear filtro-limpiar" onClick={()=>setMarketingFiltros(p=>({...p,desde:fechaHoy(),hasta:fechaHoy(),campana:''}))}>Hoy</button>
+              </div>
+            </div>
+            <div className="kpi-grid marketing-kpis">
+              <div className="kpi-card k-blue"><div className="kpi-num">{costosPorDia.tot.leads}</div><div className="kpi-label">Leads</div><div className="kpi-sub">del periodo</div></div>
+              <div className="kpi-card k-green"><div className="kpi-num">{costosPorDia.tot.ventas}</div><div className="kpi-label">Ventas</div><div className="kpi-sub">del periodo</div></div>
+              <div className="kpi-card k-orange"><div className="kpi-num">S/ {costosPorDia.tot.gasto.toFixed(2)}</div><div className="kpi-label">Gasto total</div><div className="kpi-sub">publicidad</div></div>
+              <div className="kpi-card k-purple"><div className="kpi-num">{costosPorDia.tot.leads?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.leads).toFixed(2)}`:'—'}</div><div className="kpi-label">Costo por lead</div><div className="kpi-sub">promedio</div></div>
+              <div className="kpi-card k-red"><div className="kpi-num">{costosPorDia.tot.ventas?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.ventas).toFixed(2)}`:'—'}</div><div className="kpi-label">Costo por venta</div><div className="kpi-sub">promedio</div></div>
+            </div>
+            <div className="tabla-wrap marketing-tabla-card">
+                <div className="tabla-header"><span className="tabla-title">Costos por día y campaña</span><span className="tabla-count">{costosPorDia.filas.length} filas</span></div>
+                {(gastosCarga.error || costosDiaCarga.error) && <div className="marketing-error">{gastosCarga.error || costosDiaCarga.error}</div>}
                 <div style={{overflowX:'auto'}}><table className="tabla marketing-tabla">
-                  <thead><tr><th>Campaña</th><th>Leads</th><th>Ventas</th><th>Gasto</th><th>Costo por lead</th><th>Costo por venta</th><th>Acciones</th></tr></thead>
-                  <tbody>{costosPorCampana.filas.length===0
-                    ? <tr><td colSpan="7" className="tabla-empty">Sin datos para los filtros seleccionados.</td></tr>
-                    : costosPorCampana.filas.flatMap(f => {
-                        const filas = [
-                          <tr key={f.campana}>
+                  <thead><tr><th>Fecha</th><th>Campaña</th><th>Leads</th><th>Ventas</th><th>Gasto (S/)</th><th>Costo por lead</th><th>Costo por venta</th><th>Registrado por</th></tr></thead>
+                  <tbody>{costosPorDia.filas.length===0
+                    ? <tr><td colSpan="8" className="tabla-empty">{costosDiaCarga.cargando?'Cargando…':'Sin datos para los filtros seleccionados.'}</td></tr>
+                    : costosPorDia.filas.map(f => {
+                        const k = `${f.fecha}|${f.campana}`
+                        const borrador = costoBorrador[k]
+                        const registro = f.gastoId ? gastosData.find(g => g.id === f.gastoId) : null
+                        return (
+                          <tr key={k}>
+                            <td>{formatF(f.fecha)}</td>
                             <td><strong>{f.campana}</strong></td>
                             <td>{f.leads}</td>
                             <td>{f.ventas}</td>
-                            <td>S/ {f.gasto.toFixed(2)}</td>
+                            <td>
+                              <input type="number" min="0" step="0.01" placeholder="0.00" aria-label={`Gasto ${f.campana} ${f.fecha}`}
+                                value={borrador !== undefined ? borrador : (f.gasto ? f.gasto.toFixed(2) : '')}
+                                disabled={costoGuardando === k}
+                                onChange={e => setCostoBorrador(b => ({ ...b, [k]: e.target.value }))}
+                                onBlur={() => guardarCostoDia(f)}
+                                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setCostoBorrador(b => { const n = { ...b }; delete n[k]; return n }) }}
+                                style={{width:110,padding:'6px 8px',border:`1px solid ${borrador !== undefined ? '#6366f1' : '#d1d5db'}`,borderRadius:7,fontFamily:'inherit',fontSize:12,fontWeight:700,textAlign:'right'}} />
+                              {costoGuardando === k && <small style={{marginLeft:6,color:'#6b7280'}}>Guardando…</small>}
+                            </td>
                             <td>{f.cpl!=null?`S/ ${f.cpl.toFixed(2)}`:'—'}</td>
                             <td>{f.cpv!=null?`S/ ${f.cpv.toFixed(2)}`:'—'}</td>
-                            <td style={{display:'flex',gap:10}}>
-                              <button type="button" title="Editar monto" onClick={()=>abrirPanelCampana(f.campana,'editar')} style={{border:'none',background:'none',cursor:'pointer',color:filaAbierta===f.campana?'#0f172a':'#64748b',padding:2}}><IconLapiz /></button>
-                              <button type="button" title="Ver historial" onClick={()=>abrirPanelCampana(f.campana,'historial')} style={{border:'none',background:'none',cursor:'pointer',color:filaAbierta===f.campana?'#0f172a':'#64748b',padding:2}}><IconHoja /></button>
-                            </td>
+                            <td style={{fontSize:11,color:'#6b7280'}}>{registro?.registrado_por_nombre || '—'}</td>
                           </tr>
-                        ]
-                        if (filaAbierta === f.campana) {
-                          const entradas = gastosData.filter(g => g.campana === f.campana)
-                          filas.push(
-                            <tr key={`${f.campana}-panel`}>
-                              <td colSpan="7" style={{background:'#f8fafc',padding:'12px 16px'}}>
-                                <div className="filtros-grid" style={{marginBottom:entradas.length?12:0}}>
-                                  <label><span>Fecha</span><input type="date" value={gastoForm.fecha} onChange={e=>setGastoForm(p=>({...p,fecha:e.target.value}))} /></label>
-                                  <label><span>Monto (S/)</span><input type="number" min="0" step="0.01" value={gastoForm.monto} onChange={e=>setGastoForm(p=>({...p,monto:e.target.value}))} /></label>
-                                  <label><span>Notas (opcional)</span><input type="text" value={gastoForm.notas} onChange={e=>setGastoForm(p=>({...p,notas:e.target.value}))} /></label>
-                                  <button type="button" className="btn-nuevo" disabled={gastoGuardando} onClick={guardarGasto}>{gastoGuardando?'Guardando…':(gastoEditandoId?'Actualizar':'Guardar')}</button>
-                                  {gastoEditandoId && <button type="button" className="flujo-clear filtro-limpiar" onClick={()=>{ setGastoEditandoId(null); setGastoForm(p=>({...p,monto:'',notas:''})) }}>Cancelar edición</button>}
-                                </div>
-                                {entradas.length>0 && <div style={{overflowX:'auto'}}><table className="tabla marketing-tabla">
-                                  <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th><th>Registrado por</th><th></th></tr></thead>
-                                  <tbody>{entradas.map(g=><tr key={g.id}><td>{formatF(soloFecha(g.fecha))}</td><td>S/ {Number(g.monto||0).toFixed(2)}</td><td>{g.notas||'—'}</td><td>{g.registrado_por_nombre||'—'}</td><td style={{display:'flex',gap:6}}><button type="button" className="flujo-clear filtro-limpiar" onClick={()=>editarGasto(g)}>Editar</button><button type="button" className="flujo-clear filtro-limpiar" onClick={()=>eliminarGasto(g.id)}>Eliminar</button></td></tr>)}</tbody>
-                                </table></div>}
-                              </td>
-                            </tr>
-                          )
-                        }
-                        return filas
+                        )
                       })}</tbody>
+                  {costosPorDia.filas.length>0 && <tfoot><tr style={{fontWeight:800}}>
+                    <td colSpan="2">Total</td><td>{costosPorDia.tot.leads}</td><td>{costosPorDia.tot.ventas}</td><td>S/ {costosPorDia.tot.gasto.toFixed(2)}</td>
+                    <td>{costosPorDia.tot.leads?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.leads).toFixed(2)}`:'—'}</td>
+                    <td>{costosPorDia.tot.ventas?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.ventas).toFixed(2)}`:'—'}</td><td></td>
+                  </tr></tfoot>}
                 </table></div>
-              </div>}
+                <div style={{padding:'8px 14px',fontSize:11,color:'#6b7280'}}>Escribe el gasto en la fila y presiona Enter (o sal del cuadro) para guardarlo. Déjalo vacío para quitarlo.</div>
+              </div>
+            </>}
             </>}
 
             {marketingVista==='reclutamiento' && <>
