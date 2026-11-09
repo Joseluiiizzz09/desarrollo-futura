@@ -2573,9 +2573,9 @@ const cargarLeads = useCallback(async (todasLasFechas = false, fechaSolicitada =
       <div className="topbar module-topbar-standard">
         <div className="bo-topbar-left">
           <div className="brand">
-            <div className="logo-circle"><img src="/assets/logo-futura.png" alt="FUTURA" /></div>
+            <div className="logo-circle"><img src="/assets/vexa-icon.png" alt="VEXA" /></div>
             <div className="brand-text">
-              <img src="/assets/futura-wordmark.png" alt="FUTURA" style={{height:22,width:"auto",display:"block"}} />
+              <img src="/assets/vexa-wordmark.png" alt="VEXA" style={{height:22,width:"auto",display:"block"}} />
               <span className="brand-sub">Back Data</span>
             </div>
           </div>

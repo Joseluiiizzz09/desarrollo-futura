@@ -4,7 +4,7 @@ import styles from "./Login.module.css";
 import { RUTAS, CARGO_LABELS } from "../utils/rutas";
 import { cargosDeUsuario } from "../utils/roles";
 
-const logo = "/assets/logo-futura.png";
+const logo = "/assets/vexa-icon.png";
 
 const API = "/api";
 
@@ -54,7 +54,7 @@ export default function Login() {
   /* ===== SALUDO DINÁMICO ===== */
   const valUpper = usuario.trim().toUpperCase();
   const femenino = valUpper.endsWith("A");
-  const saludoTxt = femenino ? "Bienvenida a FUTURA" : "Bienvenido a FUTURA";
+  const saludoTxt = femenino ? "Bienvenida a VEXA" : "Bienvenido a VEXA";
   const nombreTxt = usuario.trim().length < 2 ? "..." : valUpper;
 
   /* ===== Si ya hay sesión activa → redirigir ===== */
@@ -216,8 +216,7 @@ export default function Login() {
 
         <div className={styles.brandBlock}>
           <div className={styles.brandLogoRow}>
-            <img src={logo} alt="FUTURA" className={styles.brandLogo} />
-            <span className={styles.brandName}>FUTURA</span>
+            <img src="/assets/vexa-logo-blanco.png" alt="VEXA Ventas" style={{ width: 280, maxWidth: "80%", height: "auto" }} />
           </div>
           <p className={styles.brandTagline}>Gestión comercial con control total.</p>
 
@@ -308,7 +307,7 @@ export default function Login() {
           ) : (
             <>
               <h2 className={styles.saludo}>
-                Bienvenido a <strong>FUTURA</strong>
+                Bienvenido a <strong>VEXA</strong>
               </h2>
               <p className={styles.formSubtitle}>Ingrese sus credenciales para continuar.</p>
               {usuario.trim().length >= 2 && (
@@ -386,7 +385,7 @@ export default function Login() {
 
               <div className={styles.formFooter}>
                 <p>Acceso solo para usuarios autorizados.</p>
-                <p>© {new Date().getFullYear()} FUTURA · Plataforma de Gestión Empresarial</p>
+                <p>© {new Date().getFullYear()} VEXA · Plataforma de Gestión Empresarial</p>
               </div>
             </>
           )}

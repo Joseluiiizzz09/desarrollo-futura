@@ -658,10 +658,10 @@ export default function Supervisor({ area = 'supervisor' }) {
       <div className="topbar module-topbar-standard">
         <div className="topbar-brand">
           <div className="logo-circle">
-            <img src="/assets/logo-futura.png" alt="NC" style={{width:26,height:26,objectFit:'contain'}} />
+            <img src="/assets/vexa-icon.png" alt="NC" style={{width:26,height:26,objectFit:'contain'}} />
           </div>
           <div className="topbar-brand-text">
-            <img src="/assets/futura-wordmark.png" alt="FUTURA" style={{height:22,width:"auto",display:"block"}} />
+            <img src="/assets/vexa-wordmark.png" alt="VEXA" style={{height:22,width:"auto",display:"block"}} />
             <span className="brand-sub">{esCampo ? 'Supervisor Campo' : 'Supervisor'}</span>
           </div>
           <button

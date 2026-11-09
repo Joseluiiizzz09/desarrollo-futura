@@ -845,9 +845,9 @@ export default function Cobranzas({ areaNombre = 'Cobranzas', modoSupervisorCali
     <div className="cobranzas-shell">
       <header className="cobranzas-topbar">
         <div className="cobranzas-brand">
-          <img className="cobranzas-logo" src="/assets/logo-futura.png" alt="" />
+          <img className="cobranzas-logo" src="/assets/vexa-icon.png" alt="" />
           <div>
-            <img className="cobranzas-wordmark" src="/assets/futura-wordmark.png" alt="FUTURA" />
+            <img className="cobranzas-wordmark" src="/assets/vexa-wordmark.png" alt="VEXA" />
             <span>PANEL DE {areaNombre.toUpperCase()}</span>
           </div>
           {esCalidad && (

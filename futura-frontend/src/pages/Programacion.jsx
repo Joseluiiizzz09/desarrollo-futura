@@ -290,10 +290,10 @@ export default function Programacion() {
       <div className="topbar module-topbar-standard">
         <div className="brand">
           <div className="logo-circle">
-            <img src="/assets/logo-futura.png" alt="" onError={e => { e.target.parentNode.textContent = '' }} />
+            <img src="/assets/vexa-icon.png" alt="" onError={e => { e.target.parentNode.textContent = '' }} />
           </div>
           <div className="brand-text">
-            <img src="/assets/futura-wordmark.png" alt="FUTURA" style={{height:22,width:"auto",display:"block"}} />
+            <img src="/assets/vexa-wordmark.png" alt="VEXA" style={{height:22,width:"auto",display:"block"}} />
             <span className="brand-sub">Programación</span>
           </div>
         </div>
