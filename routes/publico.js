@@ -17,6 +17,14 @@ const db        = require('../database');
 const { validar, errorTexto, errorEmail, errorDni, errorFecha, errorEnteroPositivo, errorEnum, TIPO_DOC_OK } = require('../middleware/validar');
 
 const CARGOS_VENDEDOR_FUTURA = ['asesor', 'campo'];
+// Vende si su cargo principal o uno adicional (permisos) es de vendedor:
+// p. ej. un Jefe de área que además es Asesor Campo.
+function esVendedorFutura(u) {
+  if (CARGOS_VENDEDOR_FUTURA.includes(String(u?.cargo || '').toLowerCase())) return true;
+  let extra = [];
+  try { extra = JSON.parse(u?.permisos || '[]'); } catch {}
+  return Array.isArray(extra) && extra.some(c => CARGOS_VENDEDOR_FUTURA.includes(String(c || '').toLowerCase()));
+}
 const GF_API_URL = (process.env.GRUPOFUTURA_API_URL || 'http://127.0.0.1:3001').replace(/\/+$/, '');
 
 // La oficina comparte una IP pública: límites holgados, solo contra abuso
@@ -222,11 +230,11 @@ router.post('/ingresar', limiteIngresoIp, limiteIngreso, async (req, res) => {
     }
     // 2) FUTURA
     if (!elegido) {
-      const [rows] = await db.query('SELECT id, nombre, password, cargo, activo FROM usuarios WHERE usuario = ? LIMIT 1', [usuario]);
+      const [rows] = await db.query('SELECT id, nombre, password, cargo, permisos, activo FROM usuarios WHERE usuario = ? LIMIT 1', [usuario]);
       const u = rows[0];
       if (bcrypt.compareSync(password, u?.password || HASH_SEÑUELO) && u) {
         if (!u.activo) desactivado = true;
-        else if (!CARGOS_VENDEDOR_FUTURA.includes(String(u.cargo || '').toLowerCase())) sinPermiso = true;
+        else if (!esVendedorFutura(u)) sinPermiso = true;
         else elegido = { clave: `fu:${u.id}`, nombre: u.nombre };
       }
     }
@@ -488,10 +496,16 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
 
     if (vaAGrupoFutura) {
       if (m[1] === 'gf') return reenviarAGrupoFutura(res, 'venta-win', { operador, asesorId: vendedorId, venta: v });
-      const [usuarios] = await db.query(
-        `SELECT usuario, nombre, cargo, genero FROM usuarios WHERE id = ? AND activo = 1 AND cargo IN (?) LIMIT 1`,
-        [vendedorId, CARGOS_VENDEDOR_FUTURA]
+      const [filasU] = await db.query(
+        `SELECT usuario, nombre, cargo, genero, permisos FROM usuarios WHERE id = ? AND activo = 1 LIMIT 1`,
+        [vendedorId]
       );
+      // Si el cargo principal no es de vendedor, va el adicional (p. ej. 'campo')
+      const usuarios = filasU.filter(esVendedorFutura).map(({ permisos, ...u }) => {
+        if (CARGOS_VENDEDOR_FUTURA.includes(String(u.cargo || '').toLowerCase())) return u;
+        let extra = []; try { extra = JSON.parse(permisos || '[]'); } catch {}
+        return { ...u, cargo: extra.map(c => String(c).toLowerCase()).find(c => CARGOS_VENDEDOR_FUTURA.includes(c)) };
+      });
       if (!usuarios.length) return res.status(400).json({ ok: false, mensaje: 'Tu nombre ya no está en la lista. Recarga la página.' });
       return reenviarAGrupoFutura(res, 'venta-win', { operador, asesor: usuarios[0], venta: v });
     }
@@ -511,10 +525,10 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
       dueno = existentes[0] || { id: null, nombre: nombreVendedor, sala: null };
     } else {
       const [usuarios] = await db.query(
-        `SELECT id, nombre, sala FROM usuarios WHERE id = ? AND activo = 1 AND cargo IN (?) LIMIT 1`,
-        [vendedorId, CARGOS_VENDEDOR_FUTURA]
+        `SELECT id, nombre, sala, cargo, permisos FROM usuarios WHERE id = ? AND activo = 1 LIMIT 1`,
+        [vendedorId]
       );
-      dueno = usuarios[0];
+      dueno = usuarios.filter(esVendedorFutura)[0];
     }
     if (!dueno) return res.status(400).json({ ok: false, mensaje: 'No se encontró tu usuario. Vuelve a ingresar.' });
     const [result] = await db.query(`
