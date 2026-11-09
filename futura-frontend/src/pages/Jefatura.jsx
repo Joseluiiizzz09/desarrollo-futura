@@ -1369,7 +1369,7 @@ export default function Jefatura() {
       for (let d = desde; d <= hasta && dias.length < 62; d = new Date(new Date(`${d}T12:00:00`).getTime() + 864e5).toISOString().slice(0, 10)) dias.push(d)
       dias.forEach(d => campanas.forEach(c => { if (!filas.has(clave(d, c))) filas.set(clave(d, c), base(d, c)) }))
     }
-    const lista = [...filas.values()].map(f => ({ ...f, cpl: f.leads > 0 ? f.gasto / f.leads : null, cpv: f.ventas > 0 ? f.gasto / f.ventas : null }))
+    const lista = [...filas.values()].map(f => ({ ...f, cpl: f.gasto > 0 && f.leads > 0 ? f.gasto / f.leads : null, cpv: f.gasto > 0 && f.ventas > 0 ? f.gasto / f.ventas : null }))
       .sort((a, b) => b.fecha.localeCompare(a.fecha) || a.campana.localeCompare(b.campana, 'es'))
     const sumar = l => l.reduce((t, f) => ({ leads:t.leads + f.leads, ventas:t.ventas + f.ventas, gasto:t.gasto + f.gasto }), { leads:0, ventas:0, gasto:0 })
     const tot = sumar(lista)
@@ -1378,7 +1378,7 @@ export default function Jefatura() {
     lista.forEach(f => { if (!porCampana.has(f.campana)) porCampana.set(f.campana, []); porCampana.get(f.campana).push(f) })
     const campanas = [...porCampana].map(([campana, dias]) => {
       const t = sumar(dias)
-      return { campana, ...t, cpl: t.leads ? t.gasto / t.leads : null, cpv: t.ventas ? t.gasto / t.ventas : null,
+      return { campana, ...t, cpl: t.gasto > 0 && t.leads ? t.gasto / t.leads : null, cpv: t.gasto > 0 && t.ventas ? t.gasto / t.ventas : null,
         dias: [...dias].sort((a, b) => a.fecha.localeCompare(b.fecha)) }
     }).sort((a, b) => b.leads - a.leads || a.campana.localeCompare(b.campana, 'es'))
     return { filas:lista, tot, campanas }
