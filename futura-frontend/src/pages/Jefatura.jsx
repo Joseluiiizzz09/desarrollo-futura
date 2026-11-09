@@ -69,8 +69,12 @@ function tipoVentaFlujo(v) {
 function cargoFijoVenta(v) {
   const p = String(v.paquete || '').toUpperCase().replace(',', '.')
   if (!p) return null
-  const m = p.match(/S\/\s*(\d+(?:\.\d+)?)/) || p.match(/(\d+(?:\.\d+)?)\s*(?:S|SOLES)?\s*$/)
-  if (!m || /MBPS\s*$|MPBS\s*$|SOL\s*$/.test(p)) return null
+  // "S/89" manda aunque el nombre termine en "PROMO 1 SOL"
+  const conS = p.match(/S\/\s*(\d+(?:\.\d+)?)/)
+  // Promo de 400 MBPS a 1 sol los primeros meses: su cargo fijo es S/ 89
+  if (!conS && /PROM LIM\/ARQ 400/.test(p)) return 89
+  const m = conS || (!/MBPS\s*$|MPBS\s*$|SOL\s*$/.test(p) && p.match(/(\d+(?:\.\d+)?)\s*(?:S|SOLES)?\s*$/))
+  if (!m) return null
   const n = Number(m[1])
   return Number.isFinite(n) && n > 0 && n < 1000 ? n : null
 }
