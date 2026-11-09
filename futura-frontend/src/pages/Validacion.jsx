@@ -18,6 +18,7 @@ const ESTADOS_TODOS = [
   { id:'validado',       label:'VALIDADO',        cls:'be-validado' },
   { id:'agendado',       label:'AGENDADO',        cls:'be-agendado' },
   { id:'biometria',      label:'BIOMETRÍA',       cls:'be-biometria' },
+  { id:'biometria_aislada', label:'BIOMETRÍA AISLADA', cls:'be-biometria-aislada' },
   { id:'desaprobado',    label:'DESAPROBADO',     cls:'be-desaprobado' },
   { id:'instalado',      label:'INSTALADO',       cls:'be-instalado' },
   { id:'programado',     label:'PROGRAMADO',      cls:'be-programado' },
@@ -48,6 +49,7 @@ const TIP_BTNS = [
   { id:'venta',           label:'VENTA',             cls:'be-venta' },
   { id:'agendado',        label:'AGENDADO',         cls:'be-agendado' },
   { id:'biometria',       label:'BIOMETRÍA',        cls:'be-biometria' },
+  { id:'biometria_aislada', label:'BIOMETRÍA AISLADA', cls:'be-biometria-aislada' },
   { id:'validado',        label:'VALIDADO',         cls:'be-validado' },
 ]
 
@@ -55,9 +57,9 @@ const CANAL_BTNS = [
   { id:'KELS',       label:'KELS',       cls:'be-canal-kels' },
 ]
 
-const ESTADOS_OK    = ['validado','agendado','biometria','instalado','programado','grabado','aprobado','en_ejecucion','caida','rechazo_campo','tecnico_casa']
+const ESTADOS_OK    = ['validado','agendado','biometria','biometria_aislada','instalado','programado','grabado','aprobado','en_ejecucion','caida','rechazo_campo','tecnico_casa']
 const TIPIF_NO_VAL  = ['corta_llamada','fraude','no_desea','no_contesta','buzon_voz','servicio_activo','corregir','mala_oferta','desaprobado']
-const TIPS_DISPLAY  = ['CORTA LLAMADA','FRAUDE','NO DESEA','NO CONTESTA','BUZON DE VOZ','GRABANDO','SERVICIO ACTIVO','CORREGIR','MALA OFERTA','DESAPROBADO','BIOMETRÍA','VENTA','VALIDADO','INSTALADO','PROGRAMADO','CAÍDA','OBSERVADO','PENDIENTE']
+const TIPS_DISPLAY  = ['CORTA LLAMADA','FRAUDE','NO DESEA','NO CONTESTA','BUZON DE VOZ','GRABANDO','SERVICIO ACTIVO','CORREGIR','MALA OFERTA','DESAPROBADO','BIOMETRÍA','BIOMETRÍA AISLADA','VENTA','VALIDADO','INSTALADO','PROGRAMADO','CAÍDA','OBSERVADO','PENDIENTE']
 const LT_COLORES    = ['#7C3AED','#2563eb','#16a34a','#d97706','#dc2626','#0891b2','#ec4899']
 
 // ── Utilidades ────────────────────────────────────────────────────────────
@@ -136,7 +138,9 @@ function mapVenta(v) {
     estadoVal:          (v.estado_validacion || 'venta').toLowerCase() === 'validado' && String(v.estado_grab || '').toLowerCase() === 'agendado'
       ? 'agendado'
       : (v.estado_validacion || 'venta').toLowerCase() === 'validado' && /^biometria/.test(String(v.tipo_grabacion || '').toLowerCase())
-        ? 'biometria' : (v.estado_validacion || 'venta').toLowerCase(),
+        ? 'biometria'
+        : (v.estado_validacion || 'venta').toLowerCase() === 'validado' && /AISLADA/i.test(String(v.biometria_tipo || ''))
+          ? 'biometria_aislada' : (v.estado_validacion || 'venta').toLowerCase(),
     obsSeg:             v.obs_seguimiento || '',
     _audioPath:         v.audio_path || '',
     _audioNombre:       v.audio_path ? v.audio_path.split('/').pop() : '',
@@ -358,7 +362,7 @@ export default function Validacion() {
       return
     }
 
-    if (['venta', 'validado', 'agendado', 'biometria'].includes(tipSel) && !canalSel && !v.canal) {
+    if (['venta', 'validado', 'agendado', 'biometria', 'biometria_aislada'].includes(tipSel) && !canalSel && !v.canal) {
       mostrarToast('Selecciona el canal (KELS) antes de guardar')
       return
     }
@@ -482,6 +486,7 @@ export default function Validacion() {
                 <option value="">Todos los estados</option>
                 <option value="validado">VALIDADO</option>
                 <option value="biometria">BIOMETRÍA</option>
+                <option value="biometria_aislada">BIOMETRÍA AISLADA</option>
                 <option value="novalidado">NO VALIDADO</option>
                 <option value="venta">VENTA</option>
               </select>

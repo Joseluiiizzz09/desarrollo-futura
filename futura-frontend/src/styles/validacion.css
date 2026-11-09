@@ -309,6 +309,7 @@ body{
 .be-pendiente,.b-pendiente{background:#e2e8f0;color:#1e293b;border-color:#cbd5e1;}
 .be-fraude{background:#fecaca;color:#7f1d1d;border-color:#f87171;}
 .be-biometria{background:#f0fdf4;color:#166534;border-color:#86efac;}
+.be-biometria-aislada{background:#ecfeff;color:#155e75;border-color:#67e8f9;}
 .be-desaprobado{background:#fef2f2;color:#7f1d1d;border-color:#f87171;}
 .be-malaoferta{background:#ffedd5;color:#9a3412;border-color:#fdba74;}
 .be-nodesea{background:#fecdd3;color:#881337;border-color:#fda4af;}
