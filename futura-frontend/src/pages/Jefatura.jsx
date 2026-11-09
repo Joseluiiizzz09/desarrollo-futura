@@ -63,6 +63,19 @@ function tipoVentaFlujo(v) {
   return cargo === 'campo' || cargo === 'supcampo' || sala.startsWith('CAMPO') || deGrupoFutura ? 'CAMPO' : 'DIGITAL'
 }
 // Tipo de predio de la venta: HORIZONTAL (casa) / VERTICAL (edificio) / '' sin dato
+// Cargo fijo (S/) que trae el nombre del paquete: "150 MBPS S/70.00",
+// "400 MBPS 94.00 S", "300 MPBS 84.00" o promociones que terminan en el precio
+// ("PROM … X 6M 39.5"). null si el paquete no trae precio.
+function cargoFijoVenta(v) {
+  const p = String(v.paquete || '').toUpperCase().replace(',', '.')
+  if (!p) return null
+  const m = p.match(/S\/\s*(\d+(?:\.\d+)?)/) || p.match(/(\d+(?:\.\d+)?)\s*(?:S|SOLES)?\s*$/)
+  if (!m || /MBPS\s*$|MPBS\s*$|SOL\s*$/.test(p)) return null
+  const n = Number(m[1])
+  return Number.isFinite(n) && n > 0 && n < 1000 ? n : null
+}
+const soles = n => n == null ? '—' : `S/ ${n.toFixed(2)}`
+
 function predioVenta(v) {
   const p = String(v.predio || '').trim().toUpperCase()
   return p.startsWith('VERT') ? 'VERTICAL' : p.startsWith('HORIZ') ? 'HORIZONTAL' : ''
@@ -1465,6 +1478,7 @@ export default function Jefatura() {
       ['ASESOR',           v => v.asesor_nombre || '-'],
       ['SALA',             v => v.sala || '-'],
       ['PLAN',             v => v.paquete || '-'],
+      ['CARGO FIJO',       v => cargoFijoVenta(v) ?? ''],
       ['TRAMO',            v => v.tramo_seguimiento || '-'],
       ['MOTIVO',           v => v.motivo_seguimiento || '-'],
     ]
@@ -2891,6 +2905,16 @@ export default function Jefatura() {
                   <div className="kpi-label">{card.label}</div>
                 </button>
               ))}
+              {(() => {
+                const precios = ventasFlujoFiltradas.map(cargoFijoVenta).filter(n => n != null)
+                const prom = precios.length ? precios.reduce((a, b) => a + b, 0) / precios.length : null
+                return (
+                  <div className="kpi-card flujo-kpi k-teal" title={`Promedio del cargo fijo de ${precios.length} de ${ventasFlujoFiltradas.length} ventas filtradas (las que tienen precio en el paquete)`}>
+                    <div className="kpi-num">{soles(prom)}</div>
+                    <div className="kpi-label">Cargo fijo promedio</div>
+                  </div>
+                )
+              })()}
               <button type="button" className="kpi-card flujo-kpi k-green export-kpi-card" onClick={exportarVentasExcel}>
                 <span className="export-kpi-icon" aria-hidden="true">⇩</span>
                 <span className="kpi-label">Exportar Excel</span>
@@ -2966,6 +2990,7 @@ export default function Jefatura() {
                       <th>Sala</th>
                       <th>Canal</th>
                       <th>Tipo</th>
+                      <th>Cargo fijo</th>
                       <th>Validación</th>
                       <th>Grabación</th>
                       <th>Programación</th>
@@ -2975,7 +3000,7 @@ export default function Jefatura() {
                   </thead>
                   <tbody>
                     {ventasFlujoFiltradas.length === 0 ? (
-                      <tr><td colSpan="13" className="tabla-empty">No hay ventas registradas.</td></tr>
+                      <tr><td colSpan="14" className="tabla-empty">No hay ventas registradas.</td></tr>
                     ) : ventasFlujoPagina.map((v, i) => {
                       const estadoSeg = estadoSeguimiento(v)
                       const pInfo = estadoProgramacionFlujo(v)
@@ -2993,6 +3018,7 @@ export default function Jefatura() {
                           <td title={v.sala || ''}>{v.sala || '—'}</td>
                           <td><CanalBadge canal={v.canal} /></td>
                           <td><TipoVentaBadge tipo={tipoVentaFlujo(v)} /></td>
+                          <td title={v.paquete || ''} style={{fontWeight:700}}>{soles(cargoFijoVenta(v))}</td>
                           <td><span className={flujoValidada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoValidacion(v)}</span></td>
                           <td><span className={flujoGrabada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoGrabacion(v)}</span></td>
                           <td>
