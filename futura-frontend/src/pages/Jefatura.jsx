@@ -563,6 +563,9 @@ export default function Jefatura() {
   const [dashTipo, setDashTipo] = useState('')
   const [dashPredio, setDashPredio] = useState('')
   const [vhHasta, setVhHasta] = useState('')
+  // Desglose elegido en las tablas (los gráficos lo siguen)
+  const [campoFoco, setCampoFoco] = useState(null)
+  const [focoDigital, setFocoDigital] = useState('')
   const [fvHasta,      setFvHasta]      = useState('')
   const [fvProgDesde,  setFvProgDesde]  = useState('')
   const [fvProgHasta,  setFvProgHasta]  = useState('')
@@ -1185,89 +1188,6 @@ export default function Jefatura() {
     }
   }, [ventasDash, mesReporte])
 
-  /* charts — siempre en DOM; solo recrear cuando estamos en dashboard */
-  useEffect(() => {
-    if (seccion !== 'dashboard') return
-
-    function destroy(key) {
-      if (chartInst.current[key]) { try { chartInst.current[key].destroy() } catch {} delete chartInst.current[key] }
-    }
-
-    /* Chart 1 — doughnut estados */
-    if (canvasEstados.current) {
-      destroy('estados')
-      const e  = s => (s || '').toLowerCase()
-      const estados = [
-        { label:'Validadas',       val: cicloDashboardMes.ventasNuevas.filter(v=>!['venta','','corta_llamada','fraude','no_desea','no_contesta','servicio_activo','no_validado'].includes(e(v.estado))).length, color:'#7C3AED' },
-        { label:'No validadas',    val: cicloDashboardMes.ventasNuevas.filter(v=>['venta','corta_llamada','fraude','no_desea','no_contesta','servicio_activo','no_validado'].includes(e(v.estado))).length,        color:'#ef4444' },
-        { label:'Grabadas',        val: cicloDashboardMes.ventasNuevas.filter(flujoGrabada).length,   color:'#d97706' },
-        { label:'No grabadas',     val: cicloDashboardMes.ventasNuevas.filter(flujoNoGrabada).length, color:'#9ca3af' },
-        { label:'No programadas',  val: cicloDashboardMes.ventasNuevas.filter(v=>['bloqueado','sin_agenda','caracter_especial','fraude','zona_restringida'].includes(e(v.estado))).length, color:'#6366f1' },
-        { label:'Instaladas',      val: cicloDashboardMes.instalaciones.length, color:'#16a34a' },
-        { label:'Caídas',          val: cicloDashboardMes.ventasNuevas.filter(v=>e(v.estado)==='caida').length,     color:'#dc2626' },
-        { label:'Rechazos',        val: cicloDashboardMes.ventasNuevas.filter(v=>e(v.estado)==='rechazo_campo').length, color:'#f97316' },
-      ].filter(x => x.val > 0)
-      if (estados.length) {
-        chartInst.current.estados = new Chart(canvasEstados.current, {
-          type: 'doughnut',
-          data: { labels: estados.map(x=>x.label), datasets: [{ data: estados.map(x=>x.val), backgroundColor: estados.map(x=>x.color), borderWidth:2, borderColor:'#fff', hoverOffset:6 }] },
-          options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:10}}, tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}} } }
-        })
-      }
-    }
-
-    /* Chart 2 — bar salas */
-    if (canvasSalas.current) {
-      destroy('salas')
-      const mesUsar   = mesReporte || mesActual()
-      const esMesSeleccionado = valor => String(soloFecha(valor) || '').slice(0, 7) === mesUsar
-      // Campo: sus equipos con movimiento en el mes; si no, las salas de oficina
-      const salas     = dashTipo === 'CAMPO'
-        ? [...new Set(ventasDash.filter(v => esMesSeleccionado(v._fecha || v.created_at) || esMesSeleccionado(v.fecha_instalado) || esMesSeleccionado(v.fecha_programada))
-            .map(v => String(v.sala || '').trim().toUpperCase()).filter(Boolean))].sort().slice(0, 12)
-        : SALAS_OFICINA
-      // Se agrupa por v.sala (ya resuelve sala_atribucion en el backend), no
-      // por la sala ACTUAL del asesor en usuarios: si no, una venta que un
-      // asesor hizo para otra sala y que luego se movio de sala seguia
-      // contando para su sala nueva en vez de la sala a la que se atribuyo.
-      const instaladas = salas.map(s =>
-        ventasDash.filter(v=>String(v.sala||'').toUpperCase()===s&&esMesSeleccionado(v.fecha_instalado)&&ventaAlcanzoInstalacion(v)).length
-      )
-      const caidas = salas.map(s =>
-        ventasDash.filter(v=>String(v.sala||'').toUpperCase()===s&&esMesSeleccionado(v.fecha_programada)&&(v.estado||'').toLowerCase()==='caida').length
-      )
-      chartInst.current.salas = new Chart(canvasSalas.current, {
-        type: 'bar',
-        data: { labels:salas, datasets:[
-          { label:'Instaladas', data:instaladas, backgroundColor:'#16a34a', borderRadius:6 },
-          { label:'Caídas',     data:caidas,     backgroundColor:'#ef4444', borderRadius:6 },
-        ]},
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}} }
-      })
-    }
-
-    /* Chart 3 — line diario */
-    if (canvasDiario.current) {
-      destroy('diario')
-      const dias = []
-      for (let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); dias.push(d.toISOString().split('T')[0]) }
-      const salas  = dashTipo === 'CAMPO'
-        ? [...new Set(ventasDash.filter(v => dias.includes(v._fecha)).map(v => String(v.sala || '').trim().toUpperCase()).filter(Boolean))].sort().slice(0, 7)
-        : SALAS_OFICINA
-      const colors = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#06b6d4','#f43f5e','#eab308']
-      const datasets = salas.map((s,i) =>
-        ({ label:s, data:dias.map(d=>ventasDash.filter(v=>v._fecha===d&&String(v.sala||'').toUpperCase()===s).length), borderColor:colors[i], backgroundColor:colors[i]+'22', fill:true, tension:.4, borderWidth:2, pointRadius:4 })
-      )
-      chartInst.current.diario = new Chart(canvasDiario.current, {
-        type: 'line',
-        data: { labels:dias.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`}), datasets },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}} }
-      })
-    }
-
-    return () => { destroy('estados'); destroy('salas'); destroy('diario') }
-  }, [seccion, ventasDash, dashTipo, cicloDashboardMes, usuarios, mesReporte])
-
   /* ── navegación ── */
   function irSeccion(id) {
     setSeccion(id)
@@ -1684,12 +1604,145 @@ export default function Jefatura() {
     const salasDigital = [...new Set(['SALA 1', 'SALA 2', ...activos
       .filter(u => u.cargo === 'asesor').map(u => String(u.sala || '').trim().toUpperCase())
       .filter(s => s && !s.includes('CAMPO'))])]
+    const periodo = esHoy ? 'hoy' : desde === hasta ? formatF(desde) : `${formatF(desde)} – ${formatF(hasta)}`
     return {
-      esHoy, subtitulo,
+      esHoy, subtitulo, desde, hasta, periodo,
       campo: armar(deHoy.filter(v => tipoVentaFlujo(v) === 'CAMPO'), equiposCampo, etiquetaCampo),
       digital: armar(deHoy.filter(v => tipoVentaFlujo(v) !== 'CAMPO'), salasDigital, s => s),
     }
   }, [ventasDash, usuarios, vhDesde, vhHasta])
+
+  // Datos de los gráficos: mismo rango de fechas y mismo desglose que las
+  // tablas "Ventas por equipo y sala". Sin selección: jefes (Campo) y salas
+  // (Digital); al hacer clic se baja de nivel (sub jefes → supervisores →
+  // asesores del equipo; sala → asesores de la sala).
+  const chartsDash = useMemo(() => {
+    const { desde, hasta, periodo } = ventasHoyPorEquipo
+    const enRango = f => { const d = String(soloFecha(f) || ''); return !!d && d >= desde && d <= hasta }
+    const fechaDe = v => v._fecha || String(v.created_at || '').split(' ')[0]
+    const salaDe = v => String(v.sala || '').trim().toUpperCase()
+    const tocaRango = v => enRango(fechaDe(v)) || enRango(v.fecha_instalado) || enRango(v.fecha_programada)
+    const campoV = ventasDash.filter(v => tipoVentaFlujo(v) === 'CAMPO')
+    const digV = ventasDash.filter(v => tipoVentaFlujo(v) !== 'CAMPO')
+    const porAsesor = ventas => {
+      const m = new Map()
+      ventas.filter(tocaRango).forEach(v => {
+        const n = String(v.asesor_nombre || '').trim() || 'SIN ASESOR'
+        if (!m.has(n)) m.set(n, [])
+        m.get(n).push(v)
+      })
+      return [...m].map(([label, vs]) => ({ label, ventas: vs }))
+        .sort((a, b) => b.ventas.length - a.ventas.length || a.label.localeCompare(b.label, 'es')).slice(0, 12)
+    }
+    const grupos = []
+    const alcance = []
+    let nivel = 'equipo'
+    if (dashTipo !== 'DIGITAL') {
+      if (campoFoco?.asesoresDe) {
+        const s = new Set(campoFoco.asesoresDe)
+        grupos.push(...porAsesor(campoV.filter(v => s.has(salaDe(v)))))
+        alcance.push(campoFoco.nombre); nivel = 'asesor'
+      } else if (campoFoco?.grupos?.length) {
+        campoFoco.grupos.forEach(g => { const s = new Set(g.salas); grupos.push({ label: g.label, ventas: campoV.filter(v => s.has(salaDe(v))) }) })
+        if (campoFoco.nombre) alcance.push(campoFoco.nombre)
+      } else grupos.push({ label: 'CAMPO', ventas: campoV })
+    }
+    if (dashTipo !== 'CAMPO') {
+      if (focoDigital) {
+        grupos.push(...porAsesor(digV.filter(v => (salaDe(v) || 'SIN SALA') === focoDigital)))
+        alcance.push(focoDigital); nivel = 'asesor'
+      } else {
+        ventasHoyPorEquipo.digital.filas.forEach(f =>
+          grupos.push({ label: f.label, ventas: digV.filter(v => (salaDe(v) || 'SIN SALA') === f.sala) }))
+        if (nivel !== 'asesor') nivel = dashTipo === 'DIGITAL' ? 'sala' : 'equipo y sala'
+      }
+    }
+    const esCaida = v => ['CAIDA', 'RECHAZO_CAMPO'].includes(String(v.estado || '').trim().toUpperCase())
+    // Días del gráfico de línea: los del rango (mínimo 7, máximo 92)
+    const dia = (f, n) => new Date(new Date(`${f}T12:00:00`).getTime() + n * 864e5).toISOString().slice(0, 10)
+    let inicio = desde
+    if (dia(inicio, 6) > hasta) inicio = dia(hasta, -6)
+    if (dia(inicio, 91) < hasta) inicio = dia(hasta, -91)
+    const dias = []
+    for (let d = inicio; d <= hasta; d = dia(d, 1)) dias.push(d)
+    const filas = grupos.map(g => ({
+      label: g.label,
+      ingresadas: g.ventas.filter(v => enRango(fechaDe(v))),
+      instaladas: g.ventas.filter(v => enRango(v.fecha_instalado) && ventaAlcanzoInstalacion(v)).length,
+      caidas: g.ventas.filter(v => enRango(v.fecha_programada) && esCaida(v)).length,
+      diario: dias.map(d => g.ventas.filter(v => fechaDe(v) === d).length),
+    }))
+    const todas = [...new Set(grupos.flatMap(g => g.ventas))]
+    return {
+      periodo, dias, filas, nivel,
+      alcance: alcance.join(' · '),
+      ingresadas: todas.filter(v => enRango(fechaDe(v))),
+      instaladas: todas.filter(v => enRango(v.fecha_instalado) && ventaAlcanzoInstalacion(v)).length,
+    }
+  }, [ventasDash, ventasHoyPorEquipo, dashTipo, campoFoco, focoDigital])
+
+  /* charts — siempre en DOM; solo recrear cuando estamos en dashboard.
+     Siguen el rango de fechas y el desglose de "Ventas por equipo y sala". */
+  useEffect(() => {
+    if (seccion !== 'dashboard') return
+
+    function destroy(key) {
+      if (chartInst.current[key]) { try { chartInst.current[key].destroy() } catch {} delete chartInst.current[key] }
+    }
+    const { ingresadas, instaladas, filas, dias } = chartsDash
+
+    /* Chart 1 — doughnut estados (ventas ingresadas en el rango) */
+    if (canvasEstados.current) {
+      destroy('estados')
+      const e  = s => (s || '').toLowerCase()
+      const estados = [
+        { label:'Validadas',       val: ingresadas.filter(v=>!['venta','','corta_llamada','fraude','no_desea','no_contesta','servicio_activo','no_validado'].includes(e(v.estado))).length, color:'#7C3AED' },
+        { label:'No validadas',    val: ingresadas.filter(v=>['venta','corta_llamada','fraude','no_desea','no_contesta','servicio_activo','no_validado'].includes(e(v.estado))).length,        color:'#ef4444' },
+        { label:'Grabadas',        val: ingresadas.filter(flujoGrabada).length,   color:'#d97706' },
+        { label:'No grabadas',     val: ingresadas.filter(flujoNoGrabada).length, color:'#9ca3af' },
+        { label:'No programadas',  val: ingresadas.filter(v=>['bloqueado','sin_agenda','caracter_especial','fraude','zona_restringida'].includes(e(v.estado))).length, color:'#6366f1' },
+        { label:'Instaladas',      val: instaladas, color:'#16a34a' },
+        { label:'Caídas',          val: ingresadas.filter(v=>e(v.estado)==='caida').length,     color:'#dc2626' },
+        { label:'Rechazos',        val: ingresadas.filter(v=>e(v.estado)==='rechazo_campo').length, color:'#f97316' },
+      ].filter(x => x.val > 0)
+      if (estados.length) {
+        chartInst.current.estados = new Chart(canvasEstados.current, {
+          type: 'doughnut',
+          data: { labels: estados.map(x=>x.label), datasets: [{ data: estados.map(x=>x.val), backgroundColor: estados.map(x=>x.color), borderWidth:2, borderColor:'#fff', hoverOffset:6 }] },
+          options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:10}}, tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}} } }
+        })
+      }
+    }
+
+    /* Chart 2 — instaladas y caídas por grupo del desglose */
+    if (canvasSalas.current) {
+      destroy('salas')
+      chartInst.current.salas = new Chart(canvasSalas.current, {
+        type: 'bar',
+        data: { labels:filas.map(f=>f.label), datasets:[
+          { label:'Instaladas', data:filas.map(f=>f.instaladas), backgroundColor:'#16a34a', borderRadius:6 },
+          { label:'Caídas',     data:filas.map(f=>f.caidas),     backgroundColor:'#ef4444', borderRadius:6 },
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false},ticks:{font:{size:10}}}} }
+      })
+    }
+
+    /* Chart 3 — ventas diarias por grupo del desglose */
+    if (canvasDiario.current) {
+      destroy('diario')
+      const colors = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#06b6d4','#f43f5e','#eab308','#14b8a6','#a855f7','#64748b','#ec4899','#84cc16']
+      const datasets = filas.map((f,i) =>
+        ({ label:f.label, data:f.diario, borderColor:colors[i%colors.length], backgroundColor:colors[i%colors.length]+'22', fill:filas.length<=3, tension:.4, borderWidth:2, pointRadius:dias.length>31?2:4 })
+      )
+      chartInst.current.diario = new Chart(canvasDiario.current, {
+        type: 'line',
+        data: { labels:dias.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`}), datasets },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}} }
+      })
+    }
+
+    return () => { destroy('estados'); destroy('salas'); destroy('diario') }
+  }, [seccion, chartsDash])
 
   const resumenFlujoVentas = useMemo(() => ({
     todas: ventasFlujoBase.length,
@@ -2175,15 +2228,20 @@ export default function Jefatura() {
               </div>
             </div>
             <div className="ventas-hoy-grid">
-              {dashTipo !== 'DIGITAL' && <VentasHoyCampo datos={ventasHoyPorEquipo.campo}
+              {dashTipo !== 'DIGITAL' && <VentasHoyCampo datos={ventasHoyPorEquipo.campo} onFoco={setCampoFoco}
                 titulo={ventasHoyPorEquipo.esHoy ? 'Ventas del día — Campo' : 'Ventas — Campo'} subtitulo={ventasHoyPorEquipo.subtitulo} />}
               {dashTipo !== 'CAMPO' && [[ventasHoyPorEquipo.esHoy ? 'Ventas del día — Digital' : 'Ventas — Digital', ventasHoyPorEquipo.digital]].map(([titulo, d]) => (
                 <div key={titulo} className="ventas-hoy-card">
-                  <div className="ventas-hoy-head"><span>{titulo}</span><small>{ventasHoyPorEquipo.subtitulo}</small></div>
+                  <div className="ventas-hoy-head"><span>{titulo}</span><small>{ventasHoyPorEquipo.subtitulo} · clic para ver sus asesores</small></div>
                   <table className="ventas-hoy-tabla vh-hv">
                     <thead><tr><th>Sala</th><th title="Horizontal">Horiz.</th><th title="Vertical">Vert.</th><th>Total</th></tr></thead>
                     <tbody>
-                      {d.filas.map(f => <tr key={f.sala}><td title={f.label}>{f.label}</td><td>{f.h}</td><td>{f.vt}</td><td>{f.n}</td></tr>)}
+                      {d.filas.map(f => (
+                        <tr key={f.sala} className={`vhc-click${focoDigital === f.sala ? ' vhc-foco' : ''}`}
+                          onClick={() => setFocoDigital(x => x === f.sala ? '' : f.sala)}>
+                          <td title={f.label}>{f.label}</td><td>{f.h}</td><td>{f.vt}</td><td>{f.n}</td>
+                        </tr>
+                      ))}
                       {d.filas.length === 0 && <tr><td colSpan="4" className="ventas-hoy-vacio">Sin salas</td></tr>}
                     </tbody>
                     <tfoot><tr><td>Total</td><td>{d.totH}</td><td>{d.totV}</td><td>{d.total}</td></tr></tfoot>
@@ -2193,23 +2251,23 @@ export default function Jefatura() {
             </div>
             <div className="charts-grid">
               <div className="chart-card">
-                <div className="chart-title">Ventas por estado</div>
+                <div className="chart-title-row">
+                  <span>Ventas por estado{chartsDash.alcance ? ` — ${chartsDash.alcance}` : ''}</span>
+                  <span className="chart-periodo">{chartsDash.periodo}</span>
+                </div>
                 <div className="chart-wrap"><canvas ref={canvasEstados}></canvas></div>
               </div>
               <div className="chart-card">
                 <div className="chart-title-row">
-                  <span>Instaladas y Caídas por sala</span>
-                  <select value={mesReporte} onChange={e=>setMesReporte(e.target.value)}
-                    style={{padding:'4px 8px',border:'1px solid #e5e7eb',borderRadius:'7px',fontSize:'11px',fontFamily:'inherit',outline:'none',color:'#374151',cursor:'pointer'}}>
-                    {MESES_SALAS.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}
-                  </select>
+                  <span>Instaladas y Caídas por {chartsDash.nivel}{chartsDash.alcance ? ` — ${chartsDash.alcance}` : ''}</span>
+                  <span className="chart-periodo">{chartsDash.periodo}</span>
                 </div>
                 <div className="chart-wrap"><canvas ref={canvasSalas}></canvas></div>
               </div>
               <div className="chart-card full">
                 <div className="chart-title-row">
-                  <span>Ventas diarias por sala — últimos 7 días</span>
-                  <span style={{fontSize:'11px',color:'#9ca3af'}}>Se actualiza cada 60 seg.</span>
+                  <span>Ventas diarias por {chartsDash.nivel}{chartsDash.alcance ? ` — ${chartsDash.alcance}` : ''}</span>
+                  <span className="chart-periodo">{chartsDash.dias.length > 1 ? `${formatF(chartsDash.dias[0])} – ${formatF(chartsDash.dias[chartsDash.dias.length - 1])}` : chartsDash.periodo}</span>
                 </div>
                 <div className="chart-wrap"><canvas ref={canvasDiario}></canvas></div>
               </div>

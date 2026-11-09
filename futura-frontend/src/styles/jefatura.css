@@ -1595,3 +1595,10 @@ button.export-kpi-card:hover {
 
 /* El selector de rango no se estira: ancho según su texto */
 .ventas-hoy-filtros .dash-selector > div { flex: 0 0 auto; width: auto; }
+
+/* Gráficos ligados a "Ventas por equipo y sala" */
+.chart-periodo { font-size:11px; color:#9ca3af; font-weight:600; white-space:nowrap; }
+.ventas-hoy-tabla tr.vhc-click { cursor:pointer; }
+.ventas-hoy-tabla tr.vhc-click:hover td { background:#f8fafc; }
+.ventas-hoy-tabla tr.vhc-foco td { background:#eef2ff !important; }
+.ventas-hoy-tabla tr.vhc-foco td:first-child { box-shadow:inset 3px 0 0 #6366f1; }

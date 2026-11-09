@@ -6,10 +6,13 @@ import { API, ncHeaders } from '../services/api'
 // `filas`: [{ sala, label, n }] de los equipos con ventas Claro; `total`.
 const SIN_JEFE = 'SIN JEFE ASIGNADO'
 
-export default function VentasHoyCampo({ datos, titulo = 'Ventas del día — Campo', subtitulo = 'ingresadas hoy' }) {
+// `onFoco({ nombre, grupos:[{label, salas}], asesoresDe })`: el nivel elegido,
+// para que los gráficos del Dashboard muestren el mismo desglose.
+export default function VentasHoyCampo({ datos, titulo = 'Ventas del día — Campo', subtitulo = 'ingresadas hoy', onFoco }) {
   const { filas, total, totH = 0, totV = 0 } = datos
   const [jerarquia, setJerarquia] = useState([])
   const [abiertos, setAbiertos] = useState(() => new Set())
+  const [foco, setFoco] = useState(null)
 
   useEffect(() => {
     let vivo = true
@@ -41,14 +44,54 @@ export default function VentasHoyCampo({ datos, titulo = 'Ventas del día — Ca
         .map(a => ({ ...a, equipos: [...a.equipos].sort((x, y) => (y.n - x.n) || x.label.localeCompare(y.label, 'es')) })) }))
   }, [filas, jerarquia])
 
-  const alternar = clave => setAbiertos(prev => {
-    const s = new Set(prev)
-    s.has(clave) ? s.delete(clave) : s.add(clave)
-    return s
-  })
+  // Cada nodo del árbol: sus salas (equipos), su padre y sus hijos
+  const nodos = useMemo(() => {
+    const m = new Map()
+    for (const j of arbol) {
+      const kj = `j:${j.nombre}`
+      const hijosJ = []
+      for (const a of j.areas) {
+        if (!a.nombre) {
+          a.equipos.forEach(f => {
+            m.set(`${kj}|e:${f.sala}`, { nombre: f.label, salas: [f.sala], padre: kj, equipo: true })
+            hijosJ.push({ label: f.label, salas: [f.sala] })
+          })
+          continue
+        }
+        const ka = `${kj}|a:${a.nombre}`
+        a.equipos.forEach(f => m.set(`${ka}|e:${f.sala}`, { nombre: f.label, salas: [f.sala], padre: ka, equipo: true }))
+        const salasA = a.equipos.map(f => f.sala)
+        m.set(ka, { nombre: a.nombre, salas: salasA, padre: kj, hijos: a.equipos.map(f => ({ label: f.label, salas: [f.sala] })) })
+        hijosJ.push({ label: a.nombre, salas: salasA })
+      }
+      m.set(kj, { nombre: j.nombre, salas: hijosJ.flatMap(h => h.salas), padre: null, hijos: hijosJ })
+    }
+    return m
+  }, [arbol])
+
+  useEffect(() => {
+    if (!onFoco) return
+    const n = foco && nodos.get(foco)
+    if (!n) onFoco({ nombre: '', grupos: arbol.map(j => ({ label: j.nombre, salas: nodos.get(`j:${j.nombre}`)?.salas || [] })), asesoresDe: null })
+    else if (n.equipo) onFoco({ nombre: n.nombre, grupos: [], asesoresDe: n.salas })
+    else onFoco({ nombre: n.nombre, grupos: n.hijos, asesoresDe: null })
+  }, [foco, nodos, arbol, onFoco])
+
+  // Clic: abre/cierra el nivel y lo deja elegido para los gráficos
+  const alternar = (clave, desplegable) => {
+    const padre = nodos.get(clave)?.padre ?? null
+    if (!desplegable) { setFoco(f => f === clave ? padre : clave); return }
+    const abierto = abiertos.has(clave)
+    setAbiertos(prev => {
+      const s = new Set(prev)
+      abierto ? s.delete(clave) : s.add(clave)
+      return s
+    })
+    setFoco(f => abierto ? ((f && (f === clave || f.startsWith(`${clave}|`))) ? padre : f) : clave)
+  }
 
   const fila = (clave, nivel, texto, c, desplegable, abierto, rol) => (
-    <tr key={clave} className={`vhc-n${nivel}${desplegable ? ' vhc-click' : ''}`} onClick={desplegable ? () => alternar(clave) : undefined}>
+    <tr key={clave} className={`vhc-n${nivel} vhc-click${foco === clave ? ' vhc-foco' : ''}`} onClick={() => alternar(clave, desplegable)}>
       <td title={texto}>
         <span style={{ paddingLeft: nivel * 18 }}>
           {desplegable ? <span className="vhc-flecha">{abierto ? '▾' : '▸'}</span> : <span className="vhc-punto">•</span>}
@@ -80,7 +123,7 @@ export default function VentasHoyCampo({ datos, titulo = 'Ventas del día — Ca
 
   return (
     <div className="ventas-hoy-card">
-      <div className="ventas-hoy-head"><span>{titulo}</span><small>{subtitulo} · clic para desglosar</small></div>
+      <div className="ventas-hoy-head"><span>{titulo}</span><small>{subtitulo} · clic para desglosar (los gráficos siguen la selección)</small></div>
       <table className="ventas-hoy-tabla vh-hv">
         <thead><tr><th>Equipo</th><th title="Horizontal">Horiz.</th><th title="Vertical">Vert.</th><th>Total</th></tr></thead>
         <tbody>
