@@ -1952,7 +1952,12 @@ export default function Jefatura() {
     })
     return mapa
   }, [usuarios])
-  const supervisorDeVenta = v => supervisorPorSala.get(String(v.sala || '').trim().toUpperCase()) || ''
+  const supervisorDeVenta = v => {
+    const sala = String(v.sala || '').trim().toUpperCase()
+    // Si ningún usuario supervisor tiene esa sala, las salas tipo
+    // "SUP. CAMPO OSCAR RAUL" ya llevan el nombre del supervisor.
+    return supervisorPorSala.get(sala) || (sala.match(/^SUP\.?\s*(?:CAMPO\s+)?(.+)$/)?.[1] || '')
+  }
   const altaVenta = v => (soloFecha(v.fecha_instalado) || String(v.estado || '').toUpperCase() === 'INSTALADO') ? 1 : 0
   const biometriaVenta = v => {
     const b = String(v.biometria || '').toUpperCase()

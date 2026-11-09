@@ -1348,22 +1348,39 @@ button.export-kpi-card:hover {
    Cliente/Estado/Acciones). */
 .flujo-tabla .tabla {
   table-layout: fixed;
-  width: max(100%, 2070px);
+  width: max(100%, 4924px);
 }
-.flujo-tabla .tabla th:nth-child(1), .flujo-tabla .tabla td:nth-child(1) { width: 40px; text-align: center; }
-.flujo-tabla .tabla th:nth-child(2), .flujo-tabla .tabla td:nth-child(2) { width: 100px; }
-.flujo-tabla .tabla th:nth-child(3), .flujo-tabla .tabla td:nth-child(3) { width: 190px; }
-.flujo-tabla .tabla th:nth-child(4), .flujo-tabla .tabla td:nth-child(4) { width: 95px; }
-.flujo-tabla .tabla th:nth-child(5), .flujo-tabla .tabla td:nth-child(5) { width: 160px; }
-.flujo-tabla .tabla th:nth-child(6), .flujo-tabla .tabla td:nth-child(6) { width: 190px; }
-.flujo-tabla .tabla th:nth-child(7), .flujo-tabla .tabla td:nth-child(7) { width: 80px; }
-.flujo-tabla .tabla th:nth-child(8), .flujo-tabla .tabla td:nth-child(8) { width: 90px; }
-.flujo-tabla .tabla th:nth-child(9), .flujo-tabla .tabla td:nth-child(9) { width: 95px; }
-.flujo-tabla .tabla th:nth-child(10), .flujo-tabla .tabla td:nth-child(10) { width: 130px; }
-.flujo-tabla .tabla th:nth-child(11), .flujo-tabla .tabla td:nth-child(11) { width: 130px; overflow: visible; text-overflow: clip; }
-.flujo-tabla .tabla th:nth-child(12), .flujo-tabla .tabla td:nth-child(12) { width: 160px; }
-.flujo-tabla .tabla th:nth-child(13), .flujo-tabla .tabla td:nth-child(13) { width: 130px; }
-.flujo-tabla .tabla th:nth-child(14), .flujo-tabla .tabla td:nth-child(14) { width: 480px; overflow: visible; text-overflow: clip; }
+/* Ventas generales: estados primero y luego la estructura del reporte Claro / Kels. */
+.flujo-tabla .tabla th:nth-child(1), .flujo-tabla .tabla td:nth-child(1) { width: 44px; text-align: center; } /* # */
+.flujo-tabla .tabla th:nth-child(2), .flujo-tabla .tabla td:nth-child(2) { width: 130px; } /* Validación */
+.flujo-tabla .tabla th:nth-child(3), .flujo-tabla .tabla td:nth-child(3) { width: 130px; } /* Grabación */
+.flujo-tabla .tabla th:nth-child(4), .flujo-tabla .tabla td:nth-child(4) { width: 150px; overflow: visible; text-overflow: clip; } /* Programación */
+.flujo-tabla .tabla th:nth-child(5), .flujo-tabla .tabla td:nth-child(5) { width: 140px; } /* Seguimiento */
+.flujo-tabla .tabla th:nth-child(6), .flujo-tabla .tabla td:nth-child(6) { width: 145px; } /* Fecha de registro */
+.flujo-tabla .tabla th:nth-child(7), .flujo-tabla .tabla td:nth-child(7) { width: 160px; } /* Fecha de instalación */
+.flujo-tabla .tabla th:nth-child(8), .flujo-tabla .tabla td:nth-child(8) { width: 115px; } /* N° doc cliente */
+.flujo-tabla .tabla th:nth-child(9), .flujo-tabla .tabla td:nth-child(9) { width: 60px; text-align: center; } /* Altas */
+.flujo-tabla .tabla th:nth-child(10), .flujo-tabla .tabla td:nth-child(10) { width: 100px; } /* SOT */
+.flujo-tabla .tabla th:nth-child(11), .flujo-tabla .tabla td:nth-child(11) { width: 190px; } /* Supervisor */
+.flujo-tabla .tabla th:nth-child(12), .flujo-tabla .tabla td:nth-child(12) { width: 290px; } /* Vendedor */
+.flujo-tabla .tabla th:nth-child(13), .flujo-tabla .tabla td:nth-child(13) { width: 310px; } /* Nombre del cliente */
+.flujo-tabla .tabla th:nth-child(14), .flujo-tabla .tabla td:nth-child(14) { width: 110px; } /* Teléfono 1 */
+.flujo-tabla .tabla th:nth-child(15), .flujo-tabla .tabla td:nth-child(15) { width: 110px; } /* Teléfono 2 */
+.flujo-tabla .tabla th:nth-child(16), .flujo-tabla .tabla td:nth-child(16) { width: 220px; } /* Correo */
+.flujo-tabla .tabla th:nth-child(17), .flujo-tabla .tabla td:nth-child(17) { width: 125px; } /* Departamento */
+.flujo-tabla .tabla th:nth-child(18), .flujo-tabla .tabla td:nth-child(18) { width: 120px; } /* Provincia */
+.flujo-tabla .tabla th:nth-child(19), .flujo-tabla .tabla td:nth-child(19) { width: 160px; } /* Distrito */
+.flujo-tabla .tabla th:nth-child(20), .flujo-tabla .tabla td:nth-child(20) { width: 380px; } /* Dirección de instalación */
+.flujo-tabla .tabla th:nth-child(21), .flujo-tabla .tabla td:nth-child(21) { width: 280px; } /* Plan venta */
+.flujo-tabla .tabla th:nth-child(22), .flujo-tabla .tabla td:nth-child(22) { width: 90px; } /* Precio */
+.flujo-tabla .tabla th:nth-child(23), .flujo-tabla .tabla td:nth-child(23) { width: 115px; } /* Biometría */
+.flujo-tabla .tabla th:nth-child(24), .flujo-tabla .tabla td:nth-child(24) { width: 110px; } /* Punto venta */
+.flujo-tabla .tabla th:nth-child(25), .flujo-tabla .tabla td:nth-child(25) { width: 180px; } /* Back encargado */
+.flujo-tabla .tabla th:nth-child(26), .flujo-tabla .tabla td:nth-child(26) { width: 85px; } /* Empresa */
+.flujo-tabla .tabla th:nth-child(27), .flujo-tabla .tabla td:nth-child(27) { width: 200px; } /* Sala */
+.flujo-tabla .tabla th:nth-child(28), .flujo-tabla .tabla td:nth-child(28) { width: 100px; } /* Canal */
+.flujo-tabla .tabla th:nth-child(29), .flujo-tabla .tabla td:nth-child(29) { width: 95px; } /* Tipo */
+.flujo-tabla .tabla th:nth-child(30), .flujo-tabla .tabla td:nth-child(30) { width: 480px; overflow: visible; text-overflow: clip; } /* Acciones */
 
 /* Botones de Acciones más compactos, solo dentro de Ventas generales —
    .venta-action-btn es compartido con Supervisor (venta-assignment.css),
@@ -1394,8 +1411,8 @@ button.export-kpi-card:hover {
   width: 100%;
   min-width: 1795px;
 }
-/* Ventas generales: 13 columnas (con Tipo) y Sala ancha para "SUP. CAMPO …" */
-.flujo-tabla .flujo-tabla-scroll .tabla { min-width: 2070px; }
+/* Ventas generales: 30 columnas (ver anchos arriba) */
+.flujo-tabla .flujo-tabla-scroll .tabla { min-width: 4924px; }
 
 .flujo-tabla-scroll::-webkit-scrollbar {
   height: 11px;
