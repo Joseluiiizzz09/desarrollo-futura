@@ -1622,7 +1622,10 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
       // Grabaciones revisan después, cuando la venta vuelve como PROGRAMADO.
       // estado GRABADO: ventas que Programación guardó sin elegir estado
       // (antes la pantalla enviaba el estado visible GRABADO); siguen en cola.
+      // Las que Programación ya tipificó siguen en su lista aunque Seguimiento
+      // las haya movido después (EN EJECUCIÓN, TÉCNICO EN CASA, etc.).
       sql += ` AND (UPPER(v.estado) IN (${ESTADOS_PROGRAMACION.map(() => '?').join(',')})
+                OR ph_prog.estado_prog IS NOT NULL
                 OR (UPPER(v.estado) IN ('VALIDADO', 'GRABADO')
                     AND LOWER(v.estado_grab) = 'grabado'
                     AND LOWER(COALESCE(v.estado_supgrab, 'sin_revisar')) IN ('sin_revisar', 'aprobado')))`;

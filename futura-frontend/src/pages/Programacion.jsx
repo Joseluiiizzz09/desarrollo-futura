@@ -156,11 +156,11 @@ export default function Programacion() {
 
   const kpis = useMemo(() => ({
     total:       ventas.length,
-    programado:  ventas.filter(v => (v.estado || '').toUpperCase() === 'PROGRAMADO').length,
-    pendiente:   ventas.filter(v => (v.estado || '').toUpperCase() === 'PENDIENTE').length,
-    noValidas:   ventas.filter(v => ['FRAUDE', 'ZONA_RESTRINGIDA', 'ZONA RESTRINGIDA'].includes((v.estado || '').toUpperCase())).length,
-    caracter:    ventas.filter(v => ['CARACTER_ESPECIAL', 'CARÁCTER_ESPECIAL', 'CARACTER ESPECIAL', 'CARÁCTER ESPECIAL'].includes((v.estado || '').toUpperCase())).length,
-    sinAgenda:   ventas.filter(v => ['SIN_AGENDA', 'SIN AGENDA'].includes((v.estado || '').toUpperCase())).length,
+    programado:  ventas.filter(v => estadoVisible(v) === 'PROGRAMADO').length,
+    pendiente:   ventas.filter(v => estadoVisible(v) === 'PENDIENTE').length,
+    noValidas:   ventas.filter(v => ['FRAUDE', 'ZONA_RESTRINGIDA', 'ZONA RESTRINGIDA'].includes(estadoVisible(v))).length,
+    caracter:    ventas.filter(v => ['CARACTER_ESPECIAL', 'CARÁCTER_ESPECIAL', 'CARACTER ESPECIAL', 'CARÁCTER ESPECIAL'].includes(estadoVisible(v))).length,
+    sinAgenda:   ventas.filter(v => ['SIN_AGENDA', 'SIN AGENDA'].includes(estadoVisible(v))).length,
   }), [ventas])
 
   function limpiarFiltros() {
