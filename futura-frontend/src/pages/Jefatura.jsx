@@ -617,6 +617,8 @@ export default function Jefatura() {
   const [costosDiaCarga, setCostosDiaCarga] = useState({ cargando:false, error:'' })
   const [costoBorrador, setCostoBorrador] = useState({})
   const [costoGuardando, setCostoGuardando] = useState('')
+  const [costoEditando, setCostoEditando] = useState('')
+  const [costoCerradas, setCostoCerradas] = useState(() => new Set())
   // Mismo dashboard, pero para las campañas de Reclutamiento (leads_reclutamiento)
   const [marketingReclFiltros, setMarketingReclFiltros] = useState({ desde:fechaHoy(), hasta:fechaHoy(), campana:'', tipificacion:'' })
   const [marketingReclData, setMarketingReclData] = useState([])
@@ -906,7 +908,7 @@ export default function Jefatura() {
     if (texto === undefined) return
     const monto = texto === '' ? 0 : Number(String(texto).replace(',', '.'))
     if (!Number.isFinite(monto) || monto < 0) { setGastosCarga(p => ({ ...p, error:'Escribe un monto válido' })); return }
-    if (Math.abs(monto - (fila.gasto || 0)) < 0.005) { setCostoBorrador(b => { const n = { ...b }; delete n[clave]; return n }); return }
+    if (Math.abs(monto - (fila.gasto || 0)) < 0.005) { setCostoBorrador(b => { const n = { ...b }; delete n[clave]; return n }); setCostoEditando(''); return }
     setCostoGuardando(clave)
     try {
       const res = monto > 0
@@ -917,6 +919,7 @@ export default function Jefatura() {
       if (!res.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo guardar el gasto')
       await cargarGastos()
       setCostoBorrador(b => { const n = { ...b }; delete n[clave]; return n })
+      setCostoEditando('')
       setGastosCarga(p => ({ ...p, error:'' }))
     } catch (error) {
       setGastosCarga(p => ({ ...p, error:error.message || 'Error de conexión' }))
@@ -1368,8 +1371,17 @@ export default function Jefatura() {
     }
     const lista = [...filas.values()].map(f => ({ ...f, cpl: f.leads > 0 ? f.gasto / f.leads : null, cpv: f.ventas > 0 ? f.gasto / f.ventas : null }))
       .sort((a, b) => b.fecha.localeCompare(a.fecha) || a.campana.localeCompare(b.campana, 'es'))
-    const tot = lista.reduce((t, f) => ({ leads:t.leads + f.leads, ventas:t.ventas + f.ventas, gasto:t.gasto + f.gasto }), { leads:0, ventas:0, gasto:0 })
-    return { filas:lista, tot }
+    const sumar = l => l.reduce((t, f) => ({ leads:t.leads + f.leads, ventas:t.ventas + f.ventas, gasto:t.gasto + f.gasto }), { leads:0, ventas:0, gasto:0 })
+    const tot = sumar(lista)
+    // Agrupado por campaña, con sus días (del más antiguo al más reciente)
+    const porCampana = new Map()
+    lista.forEach(f => { if (!porCampana.has(f.campana)) porCampana.set(f.campana, []); porCampana.get(f.campana).push(f) })
+    const campanas = [...porCampana].map(([campana, dias]) => {
+      const t = sumar(dias)
+      return { campana, ...t, cpl: t.leads ? t.gasto / t.leads : null, cpv: t.ventas ? t.gasto / t.ventas : null,
+        dias: [...dias].sort((a, b) => a.fecha.localeCompare(b.fecha)) }
+    }).sort((a, b) => b.leads - a.leads || a.campana.localeCompare(b.campana, 'es'))
+    return { filas:lista, tot, campanas }
   }, [costosDiaData, gastosData, marketingFiltros])
 
   function exportarCostosExcel() {
@@ -2611,56 +2623,89 @@ export default function Jefatura() {
               <div className="filtros-grid">
                 <label><span>Rango de fechas</span><RangoFechasPicker desde={marketingFiltros.desde} hasta={marketingFiltros.hasta} onChange={v=>setMarketingFiltros(p=>({...p,...v}))} /></label>
                 <label><span>Campaña</span><select value={marketingFiltros.campana} onChange={e=>setMarketingFiltros(p=>({...p,campana:e.target.value}))}><option value="">Todas las campañas</option>{marketingCatalogos.campanas.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
-                <button type="button" className="flujo-clear filtro-limpiar" onClick={()=>setMarketingFiltros(p=>({...p,desde:fechaHoy(),hasta:fechaHoy(),campana:''}))}>Hoy</button>
+                <button type="button" className="flujo-clear filtro-limpiar" onClick={()=>setMarketingFiltros(p=>({...p,desde:fechaHoy(),hasta:fechaHoy(),campana:''}))}>Limpiar</button>
               </div>
             </div>
-            <div className="kpi-grid marketing-kpis">
-              <div className="kpi-card k-blue"><div className="kpi-num">{costosPorDia.tot.leads}</div><div className="kpi-label">Leads</div><div className="kpi-sub">del periodo</div></div>
-              <div className="kpi-card k-green"><div className="kpi-num">{costosPorDia.tot.ventas}</div><div className="kpi-label">Ventas</div><div className="kpi-sub">del periodo</div></div>
-              <div className="kpi-card k-orange"><div className="kpi-num">S/ {costosPorDia.tot.gasto.toFixed(2)}</div><div className="kpi-label">Gasto total</div><div className="kpi-sub">publicidad</div></div>
-              <div className="kpi-card k-purple"><div className="kpi-num">{costosPorDia.tot.leads?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.leads).toFixed(2)}`:'—'}</div><div className="kpi-label">Costo por lead</div><div className="kpi-sub">promedio</div></div>
-              <div className="kpi-card k-red"><div className="kpi-num">{costosPorDia.tot.ventas?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.ventas).toFixed(2)}`:'—'}</div><div className="kpi-label">Costo por venta</div><div className="kpi-sub">promedio</div></div>
-            </div>
             <div className="tabla-wrap marketing-tabla-card">
-                <div className="tabla-header"><span className="tabla-title">Costos por día y campaña</span><span className="tabla-count">{costosPorDia.filas.length} filas</span></div>
+                <div className="tabla-header"><span className="tabla-title">Costos por campaña</span><span className="tabla-count">{costosPorDia.campanas.length} campaña{costosPorDia.campanas.length===1?'':'s'}</span></div>
                 {(gastosCarga.error || costosDiaCarga.error) && <div className="marketing-error">{gastosCarga.error || costosDiaCarga.error}</div>}
                 <div style={{overflowX:'auto'}}><table className="tabla marketing-tabla">
-                  <thead><tr><th>Fecha</th><th>Campaña</th><th>Leads</th><th>Ventas</th><th>Gasto (S/)</th><th>Costo por lead</th><th>Costo por venta</th><th>Registrado por</th></tr></thead>
-                  <tbody>{costosPorDia.filas.length===0
-                    ? <tr><td colSpan="8" className="tabla-empty">{costosDiaCarga.cargando?'Cargando…':'Sin datos para los filtros seleccionados.'}</td></tr>
-                    : costosPorDia.filas.map(f => {
-                        const k = `${f.fecha}|${f.campana}`
-                        const borrador = costoBorrador[k]
-                        const registro = f.gastoId ? gastosData.find(g => g.id === f.gastoId) : null
-                        return (
-                          <tr key={k}>
-                            <td>{formatF(f.fecha)}</td>
-                            <td><strong>{f.campana}</strong></td>
-                            <td>{f.leads}</td>
-                            <td>{f.ventas}</td>
-                            <td>
-                              <input type="number" min="0" step="0.01" placeholder="0.00" aria-label={`Gasto ${f.campana} ${f.fecha}`}
-                                value={borrador !== undefined ? borrador : (f.gasto ? f.gasto.toFixed(2) : '')}
-                                disabled={costoGuardando === k}
-                                onChange={e => setCostoBorrador(b => ({ ...b, [k]: e.target.value }))}
-                                onBlur={() => guardarCostoDia(f)}
-                                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setCostoBorrador(b => { const n = { ...b }; delete n[k]; return n }) }}
-                                style={{width:110,padding:'6px 8px',border:`1px solid ${borrador !== undefined ? '#6366f1' : '#d1d5db'}`,borderRadius:7,fontFamily:'inherit',fontSize:12,fontWeight:700,textAlign:'right'}} />
-                              {costoGuardando === k && <small style={{marginLeft:6,color:'#6b7280'}}>Guardando…</small>}
+                  <thead><tr><th>Campaña</th><th>Leads</th><th>Ventas</th><th>Gasto</th><th>Costo por lead</th><th>Costo por venta</th><th>Acciones</th></tr></thead>
+                  <tbody>{costosPorDia.campanas.length===0
+                    ? <tr><td colSpan="7" className="tabla-empty">{costosDiaCarga.cargando?'Cargando…':'Sin datos para los filtros seleccionados.'}</td></tr>
+                    : costosPorDia.campanas.flatMap(c => {
+                        const cerrada = costoCerradas.has(c.campana)
+                        const soles2 = n => `S/ ${Number(n||0).toFixed(2)}`
+                        const filas = [
+                          <tr key={c.campana} style={{cursor:'pointer'}} title={cerrada?'Ver días':'Ocultar días'}
+                            onClick={()=>setCostoCerradas(prev=>{ const n=new Set(prev); n.has(c.campana)?n.delete(c.campana):n.add(c.campana); return n })}>
+                            <td><strong>{c.campana}</strong></td>
+                            <td>{c.leads}</td>
+                            <td>{c.ventas}</td>
+                            <td>{soles2(c.gasto)}</td>
+                            <td>{c.cpl!=null?soles2(c.cpl):'—'}</td>
+                            <td>{c.cpv!=null?soles2(c.cpv):'—'}</td>
+                            <td style={{display:'flex',gap:10}} onClick={e=>e.stopPropagation()}>
+                              <button type="button" title="Registrar gasto" onClick={()=>abrirPanelCampana(c.campana,'editar')} style={{border:'none',background:'none',cursor:'pointer',color:filaAbierta===c.campana?'#0f172a':'#64748b',padding:2}}><IconLapiz /></button>
+                              <button type="button" title="Ver historial" onClick={()=>abrirPanelCampana(c.campana,'historial')} style={{border:'none',background:'none',cursor:'pointer',color:filaAbierta===c.campana?'#0f172a':'#64748b',padding:2}}><IconHoja /></button>
                             </td>
-                            <td>{f.cpl!=null?`S/ ${f.cpl.toFixed(2)}`:'—'}</td>
-                            <td>{f.cpv!=null?`S/ ${f.cpv.toFixed(2)}`:'—'}</td>
-                            <td style={{fontSize:11,color:'#6b7280'}}>{registro?.registrado_por_nombre || '—'}</td>
                           </tr>
-                        )
+                        ]
+                        if (filaAbierta === c.campana) {
+                          const entradas = gastosData.filter(g => g.campana === c.campana)
+                          filas.push(
+                            <tr key={`${c.campana}-panel`}>
+                              <td colSpan="7" style={{background:'#f8fafc',padding:'12px 16px'}}>
+                                <div className="filtros-grid" style={{marginBottom:entradas.length?12:0}}>
+                                  <label><span>Fecha</span><input type="date" value={gastoForm.fecha} onChange={e=>setGastoForm(p=>({...p,fecha:e.target.value}))} /></label>
+                                  <label><span>Monto (S/)</span><input type="number" min="0" step="0.01" value={gastoForm.monto} onChange={e=>setGastoForm(p=>({...p,monto:e.target.value}))} /></label>
+                                  <label><span>Notas (opcional)</span><input type="text" value={gastoForm.notas} onChange={e=>setGastoForm(p=>({...p,notas:e.target.value}))} /></label>
+                                  <button type="button" className="btn-nuevo" disabled={gastoGuardando} onClick={guardarGasto}>{gastoGuardando?'Guardando…':(gastoEditandoId?'Actualizar':'Guardar')}</button>
+                                  {gastoEditandoId && <button type="button" className="flujo-clear filtro-limpiar" onClick={()=>{ setGastoEditandoId(null); setGastoForm(p=>({...p,monto:'',notas:''})) }}>Cancelar edición</button>}
+                                </div>
+                                {entradas.length>0 && <div style={{overflowX:'auto'}}><table className="tabla marketing-tabla">
+                                  <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th><th>Registrado por</th><th></th></tr></thead>
+                                  <tbody>{entradas.map(g=><tr key={g.id}><td>{formatF(soloFecha(g.fecha))}</td><td>S/ {Number(g.monto||0).toFixed(2)}</td><td>{g.notas||'—'}</td><td>{g.registrado_por_nombre||'—'}</td><td style={{display:'flex',gap:6}}><button type="button" className="flujo-clear filtro-limpiar" onClick={()=>editarGasto(g)}>Editar</button><button type="button" className="flujo-clear filtro-limpiar" onClick={()=>eliminarGasto(g.id)}>Eliminar</button></td></tr>)}</tbody>
+                                </table></div>}
+                              </td>
+                            </tr>
+                          )
+                        }
+                        if (!cerrada) c.dias.forEach(f => {
+                          const k = `${f.fecha}|${f.campana}`
+                          const editando = costoEditando === k
+                          const apagado = {color:'#cbd5e1'}
+                          filas.push(
+                            <tr key={k} style={{background:'#f8fafc'}}>
+                              <td style={{paddingLeft:32}}><strong style={{color:'#334155'}}>{formatF(f.fecha)}</strong></td>
+                              <td>{f.leads}</td>
+                              <td style={f.ventas?undefined:apagado}>{f.ventas}</td>
+                              <td>
+                                {editando ? (
+                                  <input type="number" min="0" step="0.01" placeholder="0.00" autoFocus aria-label={`Gasto ${f.campana} ${f.fecha}`}
+                                    value={costoBorrador[k] !== undefined ? costoBorrador[k] : (f.gasto ? f.gasto.toFixed(2) : '')}
+                                    disabled={costoGuardando === k}
+                                    onChange={e => setCostoBorrador(b => ({ ...b, [k]: e.target.value }))}
+                                    onBlur={() => guardarCostoDia(f)}
+                                    onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { setCostoBorrador(b => { const n = { ...b }; delete n[k]; return n }); setCostoEditando('') } }}
+                                    style={{width:100,padding:'5px 8px',border:'1px solid #6366f1',borderRadius:7,fontFamily:'inherit',fontSize:12,fontWeight:700}} />
+                                ) : (
+                                  <button type="button" title="Editar gasto del día" onClick={()=>setCostoEditando(k)}
+                                    style={{display:'inline-flex',alignItems:'center',gap:6,border:'none',background:'none',padding:0,cursor:'pointer',fontFamily:'inherit',fontSize:12,...(f.gasto?{color:'#0f172a',fontWeight:700}:apagado)}}>
+                                    {soles2(f.gasto)} <span style={{color:'#94a3b8',display:'inline-flex'}}><IconLapiz /></span>
+                                  </button>
+                                )}
+                                {costoGuardando === k && <small style={{marginLeft:6,color:'#6b7280'}}>Guardando…</small>}
+                              </td>
+                              <td>{f.cpl!=null?soles2(f.cpl):'—'}</td>
+                              <td>{f.cpv!=null?soles2(f.cpv):'—'}</td>
+                              <td></td>
+                            </tr>
+                          )
+                        })
+                        return filas
                       })}</tbody>
-                  {costosPorDia.filas.length>0 && <tfoot><tr style={{fontWeight:800}}>
-                    <td colSpan="2">Total</td><td>{costosPorDia.tot.leads}</td><td>{costosPorDia.tot.ventas}</td><td>S/ {costosPorDia.tot.gasto.toFixed(2)}</td>
-                    <td>{costosPorDia.tot.leads?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.leads).toFixed(2)}`:'—'}</td>
-                    <td>{costosPorDia.tot.ventas?`S/ ${(costosPorDia.tot.gasto/costosPorDia.tot.ventas).toFixed(2)}`:'—'}</td><td></td>
-                  </tr></tfoot>}
                 </table></div>
-                <div style={{padding:'8px 14px',fontSize:11,color:'#6b7280'}}>Escribe el gasto en la fila y presiona Enter (o sal del cuadro) para guardarlo. Déjalo vacío para quitarlo.</div>
               </div>
             </>}
             </>}
