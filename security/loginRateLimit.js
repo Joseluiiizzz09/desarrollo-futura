@@ -16,8 +16,21 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Ingreso del formulario público de ventas (vexa.net.pe): su propio conteo
+// de intentos fallidos por usuario (de FUTURA o de Grupo Futura).
+const formularioKey = usuario => `venta:${String(usuario || '').trim().toLowerCase()}`;
+const formularioLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, max: 5, keyGenerator: req => formularioKey(req.body?.usuario),
+  skipSuccessfulRequests: true, validate: false,
+  message: { ok: false, mensaje: 'Usuario bloqueado por varios intentos fallidos. Intenta de nuevo en 5 minutos.' },
+  standardHeaders: true, legacyHeaders: false,
+});
+
+// Desbloquea al usuario en el login del sistema y en el formulario de ventas
+const desbloquearFormulario = usuario => formularioLimiter.resetKey(formularioKey(usuario));
 function desbloquearLogin(usuario) {
   loginLimiter.resetKey(loginKey(usuario));
+  desbloquearFormulario(usuario);
 }
 
-module.exports = { loginLimiter, desbloquearLogin };
+module.exports = { loginLimiter, formularioLimiter, desbloquearLogin, desbloquearFormulario };

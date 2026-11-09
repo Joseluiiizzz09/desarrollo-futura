@@ -195,12 +195,8 @@ function leerSesion(token) {
     return d?.tipo === 'venta-publica' && /^(fu|gf):\d{1,10}$/.test(d.clave) ? d : null;
   } catch { return null; }
 }
-const loginKey = req => `venta:${String(req.body?.usuario || '').trim().toLowerCase()}`;
-const limiteIngreso = rateLimit({
-  windowMs: 5 * 60 * 1000, max: 5, keyGenerator: loginKey, skipSuccessfulRequests: true, validate: false,
-  message: { ok: false, mensaje: 'Usuario bloqueado por varios intentos fallidos. Intenta de nuevo en 5 minutos.' },
-  standardHeaders: true, legacyHeaders: false,
-});
+// Intentos fallidos por usuario: se desbloquea desde Usuarios (FUTURA o Grupo Futura)
+const { formularioLimiter: limiteIngreso } = require('../security/loginRateLimit');
 const limiteIngresoIp = rateLimit({
   windowMs: 10 * 60 * 1000, max: 100, keyGenerator: ipCliente, validate: false,
   message: { ok: false, mensaje: 'Demasiados intentos. Espera unos minutos.' },

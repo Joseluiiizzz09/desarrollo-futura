@@ -238,4 +238,14 @@ router.post('/venta-grupo-futura', verificarClaveInternaGrupoFutura, async (req,
   }
 });
 
+// POST /api/interno/desbloquear-formulario  Body: { usuario }
+// Grupo Futura lo llama al desbloquear a un usuario: reinicia sus intentos
+// fallidos en el formulario público de ventas (que vive en FUTURA).
+router.post('/desbloquear-formulario', verificarClaveInternaGrupoFutura, (req, res) => {
+  const usuario = String(req.body?.usuario || '').trim().toLowerCase().substring(0, 100);
+  if (!usuario) return res.status(400).json({ ok: false, mensaje: 'Falta el usuario' });
+  require('../security/loginRateLimit').desbloquearFormulario(usuario);
+  res.json({ ok: true });
+});
+
 module.exports = router;
