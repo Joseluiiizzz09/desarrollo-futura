@@ -55,10 +55,13 @@ function estadoVisible(v) {
   // En esta pantalla debe prevalecer la última tipificación propia de
   // Programación hasta que el área la cambie explícitamente.
   const propioProgramacion = (v.estado_prog || '').toUpperCase()
-  if (ESTADO_BTNS.some(({ id }) => id === propioProgramacion)) {
+  const raw = (v.estado || '').toUpperCase()
+  // PROGRAMADO que volvió a VALIDADO (venció la revisión de 2 horas o la
+  // devolvieron): ya no está programada, hay que programarla de nuevo.
+  const programacionDevuelta = propioProgramacion === 'PROGRAMADO' && raw === 'VALIDADO'
+  if (!programacionDevuelta && ESTADO_BTNS.some(({ id }) => id === propioProgramacion)) {
     return propioProgramacion
   }
-  const raw = (v.estado || '').toUpperCase()
   // GRABADO pasa directo a Programación (ya no espera revisión previa de Super).
   if (raw === 'VALIDADO' && (v.estado_grab || '').toLowerCase() === 'grabado') return 'GRABADO'
   return raw

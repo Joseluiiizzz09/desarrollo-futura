@@ -187,6 +187,10 @@ function tipValidacionActual(v) {
 }
 
 function estadoProgramacionFlujo(venta) {
+  // PROGRAMADO que volvió a VALIDADO (venció la revisión o la devolvieron):
+  // está pendiente de programarse otra vez.
+  if (String(venta?.estado || '').toUpperCase() === 'VALIDADO'
+      && (!venta?.estado_prog || String(venta.estado_prog).toUpperCase() === 'PROGRAMADO')) return estadoProg('')
   if (venta?.estado_prog) return estadoProg(venta.estado_prog)
   if (venta?.fecha_programada || venta?.fecha_prog || venta?.fecha_programado) return estadoProg('PROGRAMADO')
   return estadoProg('')
