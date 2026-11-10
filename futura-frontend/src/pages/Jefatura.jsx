@@ -6,6 +6,7 @@ import MediaViewer from '../components/MediaViewer'
 import { HistorialVentaModal, ReasignarVentaModal } from '../components/VentaAssignmentModal'
 import { VentaEditarModal } from '../components/VentaEditarModal'
 import { VentaProgramarModal } from '../components/VentaProgramarModal'
+import EstadoEditableCell from '../components/EstadoEditableCell'
 import ObsSeguimientoCell from '../components/ObsSeguimientoCell'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
@@ -153,6 +154,38 @@ function estadoProg(raw) {
     TECNICO_CASA:'TÉCNICO EN CASA', TECNICOS_CAMINO:'TÉCNICOS EN CAMINO', REASIGNACION:'REASIGNACIÓN', RECHAZO_CAMPO:'RECHAZO CAMPO', RECHAZO_MESA:'RECHAZO MESA' }
   return { key:s, label:m[s]||s }
 }
+// Opciones del lápiz en Ventas generales: los mismos estados que usa cada área
+const opc = pares => pares.map(([id, label]) => ({ id, label }))
+const OPC_VALIDACION = opc([
+  ['venta','VENTA'],['validado','VALIDADO'],['biometria','BIOMETRÍA'],['biometria_aislada','BIOMETRÍA AISLADA'],
+  ['corta_llamada','CORTA LLAMADA'],['fraude','FRAUDE'],['no_desea','NO DESEA'],['no_contesta','NO CONTESTA'],
+  ['buzon_voz','BUZÓN DE VOZ'],['servicio_activo','SERVICIO ACTIVO'],['corregir','CORREGIR'],['mala_oferta','MALA OFERTA'],
+  ['desaprobado','DESAPROBADO'],
+])
+const OPC_GRABACION = opc([
+  ['pendiente','PENDIENTE'],['grabando','GRABANDO'],['grabado','GRABADO'],['biometria','BIOMETRÍA'],['biometria_aislada','BIOMETRÍA AISLADA'],
+  ['corta_llamada','CORTA LLAMADA'],['suplantacion','SUPLANTACIÓN'],['no_desea','NO DESEA'],['no_contesta','NO CONTESTA'],
+  ['buzon_voz','BUZÓN DE VOZ'],['esperando_tercero','ESPERANDO TERCERO'],['corregir_sec','CORREGIR SEC'],
+])
+const OPC_PROGRAMACION = opc([
+  ['PROGRAMADO','PROGRAMADO'],['RECHAZADO','RECHAZADO'],['BLOQUEADO','BLOQUEADO'],['SIN_AGENDA','SIN AGENDA'],
+  ['CARACTER_ESPECIAL','CARÁCTER ESPECIAL'],['FRAUDE','FRAUDE'],['ZONA_RESTRINGIDA','ZONA RESTRINGIDA'],
+])
+const OPC_SEGUIMIENTO = opc([
+  ['en_ejecucion','EN EJECUCIÓN'],['instalado','INSTALADO'],['caida','CAÍDA'],['rechazo_campo','RECHAZO EN CAMPO'],
+  ['tecnico_casa','TÉCNICO EN CASA'],['levantar_sot','LEVANTAR SOT'],['tecnicos_camino','TÉCNICOS EN CAMINO'],
+  ['instalado_no_validado','INSTALADO NO VALIDADO'],['reasignacion','REASIGNACIÓN'],['derivado_planta_externa','DERIVADO A PLANTA EXTERNA'],
+  ['servicio_activo','SERVICIO ACTIVO'],['rechazo_mesa','RECHAZO EN MESA'],
+])
+// Tipificación de Validación actual (BIOMETRÍA / AISLADA se guardan como VALIDADO)
+function tipValidacionActual(v) {
+  const e = normEstado(v?.estado_validacion) || 'venta'
+  if (e !== 'validado') return e
+  if (/AISLADA/i.test(String(v?.biometria_tipo || ''))) return 'biometria_aislada'
+  if (/^biometria/.test(normEstado(v?.tipo_grabacion))) return 'biometria'
+  return e
+}
+
 function estadoProgramacionFlujo(venta) {
   if (venta?.estado_prog) return estadoProg(venta.estado_prog)
   if (venta?.fecha_programada || venta?.fecha_prog || venta?.fecha_programado) return estadoProg('PROGRAMADO')
@@ -655,6 +688,37 @@ export default function Jefatura() {
   const [ventaHistorial, setVentaHistorial] = useState(null)
   const [ventaEditar, setVentaEditar] = useState(null)
   const [ventaProgramar, setVentaProgramar] = useState(null)
+
+  // Lápiz de Ventas generales: cada cambio usa el mismo guardado (y las
+  // mismas reglas del servidor) que el módulo de su área.
+  async function patchEstadoFlujo(url, body, ok) {
+    try {
+      const res = await fetch(url, { method:'PATCH', headers:ncHeaders(), body:JSON.stringify(body) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.ok === false) { mostrarToast(data.mensaje || 'No se pudo cambiar el estado'); return }
+      mostrarToast(ok)
+      firmaVentasRef.current = ''
+      await cargarVentasCache()
+    } catch { mostrarToast('Error conectando al servidor') }
+  }
+  const cambiarValidacionFlujo = (v, tip) => patchEstadoFlujo(`${API}/ventas/${v.id}/tipificar-validacion`,
+    { tipificacion: tip, observacion: null, estadoAnteriorEsperado: v.estado, canal: null }, 'Validación actualizada')
+  const cambiarGrabacionFlujo = (v, eg) => patchEstadoFlujo(`${API}/ventas/${v.id}?area=grabaciones`,
+    ['grabado','biometria','biometria_aislada'].includes(eg)
+      ? { estado_grab:'grabado', estado_supgrab:'sin_revisar', tipo_grabacion: eg === 'grabado' ? 'audio' : eg }
+      : { estado_grab: eg },
+    'Grabación actualizada')
+  const cambiarProgramacionFlujo = (v, est) => {
+    // PROGRAMADO pide SOT y fecha: se abre la ventana de Programación
+    if (est === 'PROGRAMADO') { setVentaProgramar(v); return }
+    const body = est === 'RECHAZADO'
+      ? { ...(['VALIDADO','GRABADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL'].includes(String(v.estado || '').toUpperCase()) ? { estado:'VALIDADO' } : {}),
+          estado_grab:'grabado', estado_supgrab:'sin_revisar' }
+      : { estado: est }
+    return patchEstadoFlujo(`${API}/ventas/${v.id}?area=programacion`, body, 'Programación actualizada')
+  }
+  const cambiarSeguimientoFlujo = (v, est) => patchEstadoFlujo(`${API}/ventas/${v.id}?area=seguimiento`,
+    { estado: est }, 'Seguimiento actualizado')
 
   /* charts */
   const canvasEstados = useRef(null)
@@ -3209,15 +3273,33 @@ export default function Jefatura() {
                       return (
                         <tr key={v.id || `${v.dni || v.documento || 'venta'}-${i}`}>
                           <td>{(paginaFlujo - 1) * porPaginaFlujo + i + 1}</td>
-                          <td><span className={flujoValidada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoValidacion(v)}</span></td>
-                          <td><span className={flujoGrabada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoGrabacion(v)}</span></td>
                           <td>
-                            <div title={pTip}>
-                              <span style={{display:'inline-block',padding:'2px 8px',borderRadius:'99px',fontSize:'10px',fontWeight:700,letterSpacing:'.3px',background:pSt.bg,color:pSt.color,border:`1px solid ${pSt.border}`,whiteSpace:'nowrap'}}>{pInfo.label}</span>
-                              {v.usuario_prog && <div style={{fontSize:'10px',color:'#6b7280',marginTop:'2px',whiteSpace:'nowrap'}}>Por: {v.usuario_prog.split(' ').slice(0,2).join(' ').toLocaleUpperCase('es-PE')}</div>}
-                            </div>
+                            <EstadoEditableCell opciones={OPC_VALIDACION} actual={tipValidacionActual(v)}
+                              titulo="Cambiar estado de validación" onGuardar={tip => cambiarValidacionFlujo(v, tip)}>
+                              <span className={flujoValidada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoValidacion(v)}</span>
+                            </EstadoEditableCell>
                           </td>
-                          <td>{estadoSeg ? <span className="flujo-info">{flujoLabelEstado(estadoSeg)}</span> : '—'}</td>
+                          <td>
+                            <EstadoEditableCell opciones={OPC_GRABACION} actual={normEstado(v.estado_grab) || 'pendiente'}
+                              titulo="Cambiar estado de grabación" onGuardar={eg => cambiarGrabacionFlujo(v, eg)}>
+                              <span className={flujoGrabada(v) ? 'flujo-ok' : 'flujo-warn'}>{estadoGrabacion(v)}</span>
+                            </EstadoEditableCell>
+                          </td>
+                          <td>
+                            <EstadoEditableCell opciones={OPC_PROGRAMACION} actual={pInfo.key}
+                              titulo="Cambiar estado de programación" onGuardar={est => cambiarProgramacionFlujo(v, est)}>
+                              <div title={pTip}>
+                                <span style={{display:'inline-block',padding:'2px 8px',borderRadius:'99px',fontSize:'10px',fontWeight:700,letterSpacing:'.3px',background:pSt.bg,color:pSt.color,border:`1px solid ${pSt.border}`,whiteSpace:'nowrap'}}>{pInfo.label}</span>
+                                {v.usuario_prog && <div style={{fontSize:'10px',color:'#6b7280',marginTop:'2px',whiteSpace:'nowrap'}}>Por: {v.usuario_prog.split(' ').slice(0,2).join(' ').toLocaleUpperCase('es-PE')}</div>}
+                              </div>
+                            </EstadoEditableCell>
+                          </td>
+                          <td>
+                            <EstadoEditableCell opciones={OPC_SEGUIMIENTO} actual={estadoSeg}
+                              titulo="Cambiar estado de seguimiento" onGuardar={est => cambiarSeguimientoFlujo(v, est)}>
+                              {estadoSeg ? <span className="flujo-info">{flujoLabelEstado(estadoSeg)}</span> : '—'}
+                            </EstadoEditableCell>
+                          </td>
                           <td>{formatF(v._fecha || v.fecha_ingreso || v.fecha || v.created_at)}</td>
                           <td>{soloFecha(v.fecha_instalado) ? formatF(soloFecha(v.fecha_instalado)) : '—'}</td>
                           <td>{v.dni || v.documento || '—'}</td>
