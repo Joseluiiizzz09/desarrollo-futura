@@ -2262,6 +2262,12 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     if (grabacionesRevisaProgramado && !['conforme', 'no_conforme', 'rechazado'].includes(resultadoSuper)) {
       return res.status(409).json({ ok: false, mensaje: 'Esta venta está programada. Selecciona CONFORME, NO CONFORME o RECHAZADO.' });
     }
+    // Grabaciones también puede dar CONFORME a una venta devuelta (NO CONFORME)
+    // que ya fue programada (tiene SOT y fecha); nunca a una sin programar.
+    if (cargoEfectivo === 'grabaciones' && resultadoSuper === 'conforme' && !grabacionesRevisaProgramado
+        && !(String(rows[0].sot || '').trim() && rows[0].fecha_programada)) {
+      return res.status(409).json({ ok: false, mensaje: 'Solo una venta ya programada (con SOT y fecha) puede pasar a CONFORME.' });
+    }
     if (
       cargoEfectivo === 'supgrabaciones' &&
       rows[0].tuvo_programacion &&

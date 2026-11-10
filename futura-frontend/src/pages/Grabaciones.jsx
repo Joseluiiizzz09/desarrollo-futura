@@ -831,7 +831,14 @@ export default function Grabaciones() {
                             {v._estadoSupGrab === 'observado'
                               ? <span className="badge-grab bg-observado">OBSERVADO</span>
                               : v._estadoSupGrab === 'no_conforme'
-                                ? <span className="badge-grab" style={{background:'#fef2f2',color:'#b91c1c',border:'1px solid #fca5a5'}}>NO CONFORME</span>
+                                ? (v.sot && v.fecha_programada
+                                  // Ya fue programada (tiene SOT y fecha): Grabaciones puede darla CONFORME
+                                  ? <button type="button" className="badge-grab badge-grab-clic" title="Ya fue programada: clic para marcar CONFORME, NO CONFORME o RECHAZADO"
+                                      style={{background:'#fef2f2',color:'#b91c1c',border:'1px solid #fca5a5',cursor:'pointer'}}
+                                      onClick={() => { setModalRevisar(v); setResultadoRev(''); setObsRev('') }}>
+                                      NO CONFORME <span className="badge-grab-flecha">▾</span>
+                                    </button>
+                                  : <span className="badge-grab" style={{background:'#fef2f2',color:'#b91c1c',border:'1px solid #fca5a5'}}>NO CONFORME</span>)
                                 : <span style={{color:'#9ca3af'}}>—</span>}
                           </td>
                           <td style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:'#dc2626'}}>
@@ -913,7 +920,7 @@ export default function Grabaciones() {
       {modalRevisar && (
         <div className="modal-bg open" onClick={e=>{ if(e.target===e.currentTarget && !guardandoRev) setModalRevisar(null) }}>
           <div className="modal-box" style={{maxWidth:460}}>
-            <div className="modal-title">Revisar venta programada</div>
+            <div className="modal-title">{String(modalRevisar.estado_supgrab || '').toLowerCase() === 'no_conforme' ? 'Revisar venta devuelta (ya programada)' : 'Revisar venta programada'}</div>
             <div className="modal-sub">Cliente: <strong>{modalRevisar.nombreApellidos || modalRevisar.nombre || '—'}</strong>{modalRevisar.sot ? <> · SOT: <strong>{modalRevisar.sot}</strong></> : null}</div>
             <div className="modal-campo">
               <label>Resultado</label>
