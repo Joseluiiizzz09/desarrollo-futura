@@ -109,7 +109,8 @@ const esDistritoDoble = (dpto, distrito) => String(dpto || '').trim().toUpperCas
 const regionWin = (dpto, distrito, elegida) => {
   if (!dpto) return ''
   if (esDistritoDoble(dpto, distrito)) return elegida === 'PROVINCIA' ? 'PROVINCIA' : 'LIMA'
-  return String(dpto).trim().toUpperCase() === 'LIMA' ? 'LIMA' : 'PROVINCIA'
+  // Callao lleva los planes de Lima
+  return ['LIMA', 'CALLAO'].includes(String(dpto).trim().toUpperCase()) ? 'LIMA' : 'PROVINCIA'
 }
 const esRuc20 = paquete => /^RUC\s*20/i.test(String(paquete || '').trim())
 
