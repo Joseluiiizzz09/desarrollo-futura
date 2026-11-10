@@ -2080,9 +2080,10 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       && (tipificacion === 'biometria'
         || (tipificacion === 'validado' && String(venta.biometria || '').toUpperCase() === 'SI' && !esAislada));
     const tipoBiometria = 'biometria';
-    // De BIOMETRÍA a BIOMETRÍA AISLADA: deja de darse por grabada (la marcó la
-    // biometría, no una grabación real) y vuelve a Grabaciones.
-    const quitarGrabadoBiometria = tipificacion === 'biometria_aislada'
+    // De BIOMETRÍA a cualquier otra tipificación: deja de darse por grabada (la
+    // marcó la biometría, no una grabación real). Con VALIDADO o AGENDADO además
+    // deja de ser venta con biometría: necesita grabación (va a Grabaciones).
+    const quitarGrabadoBiometria = Boolean(tipificacion) && tipificacion !== 'biometria'
       && String(venta.estado_grab || '').toLowerCase() === 'grabado'
       && String(venta.tipo_grabacion || '').toLowerCase() === 'biometria';
 
@@ -2091,6 +2092,12 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
         `UPDATE ventas SET estado = ?, obs_validacion = ?${canalNorm ? ', canal = ?' : ''} WHERE id = ?`,
         canalNorm ? [nuevoEstado, nuevoHistorialTexto, canalNorm, ventaId] : [nuevoEstado, nuevoHistorialTexto, ventaId]
       );
+      if (quitarGrabadoBiometria) {
+        await conn.query(`UPDATE ventas SET estado_grab = 'pendiente', tipo_grabacion = NULL WHERE id = ?`, [ventaId]);
+        if (['validado', 'agendado'].includes(tipificacion)) {
+          await conn.query(`UPDATE ventas SET biometria = 'NO', biometria_tipo = NULL WHERE id = ?`, [ventaId]);
+        }
+      }
       if (tipificacion === 'agendado') {
         await conn.query(`UPDATE ventas SET estado_grab = 'agendado', agenda_grab_at = ? WHERE id = ?`, [agendaSql, ventaId]);
       } else if (['validado', 'biometria', 'biometria_aislada'].includes(tipificacion)) {
@@ -2107,9 +2114,6 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       }
       if (tipificacion === 'biometria_aislada') {
         await conn.query(`UPDATE ventas SET biometria = 'SI', biometria_tipo = 'BIOMETRIA AISLADA' WHERE id = ?`, [ventaId]);
-        if (quitarGrabadoBiometria) {
-          await conn.query(`UPDATE ventas SET estado_grab = 'pendiente', tipo_grabacion = NULL WHERE id = ?`, [ventaId]);
-        }
       }
     } else {
       await conn.query(
@@ -2159,7 +2163,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
         etiqueta:      'Estado de grabación',
         valorAnterior: 'grabado',
         valorNuevo:    'pendiente',
-        descripcion:   'Cambia de biometría a biometría aislada: necesita grabación',
+        descripcion:   `Cambia de biometría a ${etiquetaTip}: ya no se da por grabada`,
       });
     }
     if (canalNorm && canalNorm !== venta.canal) {
