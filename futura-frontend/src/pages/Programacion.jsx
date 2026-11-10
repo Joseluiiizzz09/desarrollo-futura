@@ -33,6 +33,9 @@ const ESTADO_LABELS = {
   PENDIENTE:        'Pendiente',
 }
 
+// Tramos de instalación (los mismos de Seguimiento)
+const TRAMOS = ['AM', 'PM', 'PM 3']
+
 const ESTADO_BTNS = [
   { id: 'PROGRAMADO',        label: 'Programado',        cls: 'be-programado' },
   { id: 'RECHAZADO',         label: 'Rechazado',         cls: 'be-rechazado'  },
@@ -104,6 +107,7 @@ export default function Programacion() {
   const [obsProg, setObsProg]         = useState('')
   const [sotProg, setSotProg]         = useState('')
   const [fechaProg, setFechaProg]     = useState('')
+  const [tramoProg, setTramoProg]     = useState('')
   const [errorGuardado, setErrorGuardado] = useState('')
   const [guardando, setGuardando] = useState(false)
 
@@ -173,6 +177,7 @@ export default function Programacion() {
     setObsProg(v.obs_programacion || '')
     setSotProg(v.sot || '')
     setFechaProg((v.fecha_programada || '').split('T')[0])
+    setTramoProg(v.tramo_seguimiento || '')
     setErrorGuardado('')
   }
 
@@ -182,6 +187,7 @@ export default function Programacion() {
     setObsProg('')
     setSotProg('')
     setFechaProg('')
+    setTramoProg('')
     setErrorGuardado('')
   }
 
@@ -214,6 +220,8 @@ export default function Programacion() {
             ? {
                 sot: sotProg.trim(),
                 fecha_programada: fechaProg,
+                // Tramo de instalación: el mismo que usa y puede cambiar Seguimiento
+                ...(tramoProg !== (modalDet.tramo_seguimiento || '') ? { tramo_seguimiento: tramoProg } : {}),
                 estado_supgrab: 'programado',
                 estado_grab: 'grabado',
               }
@@ -503,6 +511,13 @@ export default function Programacion() {
                         value={fechaProg}
                         onChange={e => { setFechaProg(e.target.value); setErrorGuardado('') }}
                       />
+                    </label>
+                    <label>
+                      Tramo
+                      <select value={tramoProg} onChange={e => { setTramoProg(e.target.value); setErrorGuardado('') }}>
+                        <option value="">— Sin tramo —</option>
+                        {TRAMOS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
                     </label>
                   </div>
                 )}

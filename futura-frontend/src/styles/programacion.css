@@ -1443,7 +1443,7 @@ body{
 
 .programado-datos {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 120px;
   gap: 9px;
   margin-top: 12px;
   padding-top: 11px;
@@ -1460,7 +1460,8 @@ body{
   font-weight: 700 !important;
 }
 
-.programado-datos input {
+.programado-datos input,
+.programado-datos select {
   width: 100%;
   min-height: 35px;
   padding: 7px 9px;
@@ -1472,7 +1473,8 @@ body{
   font: 600 12px/1.2 inherit;
 }
 
-.programado-datos input:focus {
+.programado-datos input:focus,
+.programado-datos select:focus {
   border-color: #7c3aed;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, .1);
 }
