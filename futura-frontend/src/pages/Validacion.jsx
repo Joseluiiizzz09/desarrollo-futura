@@ -137,10 +137,10 @@ function mapVenta(v) {
     // BIOMETRÍA = VALIDADO dada por grabada con biometría (sin audio).
     estadoVal:          (v.estado_validacion || 'venta').toLowerCase() === 'validado' && String(v.estado_grab || '').toLowerCase() === 'agendado'
       ? 'agendado'
-      : (v.estado_validacion || 'venta').toLowerCase() === 'validado' && /^biometria/.test(String(v.tipo_grabacion || '').toLowerCase())
-        ? 'biometria'
-        : (v.estado_validacion || 'venta').toLowerCase() === 'validado' && /AISLADA/i.test(String(v.biometria_tipo || ''))
-          ? 'biometria_aislada' : (v.estado_validacion || 'venta').toLowerCase(),
+      : (v.estado_validacion || 'venta').toLowerCase() === 'validado' && /AISLADA/i.test(String(v.biometria_tipo || ''))
+        ? 'biometria_aislada'
+        : (v.estado_validacion || 'venta').toLowerCase() === 'validado' && /^biometria/.test(String(v.tipo_grabacion || '').toLowerCase())
+          ? 'biometria' : (v.estado_validacion || 'venta').toLowerCase(),
     obsSeg:             v.obs_seguimiento || '',
     _audioPath:         v.audio_path || '',
     _audioNombre:       v.audio_path ? v.audio_path.split('/').pop() : '',

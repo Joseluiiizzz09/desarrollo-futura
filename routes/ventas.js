@@ -2011,7 +2011,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
     await conn.beginTransaction();
 
     const [rows] = await conn.query(
-      `SELECT id, estado, obs_validacion, canal, estado_grab, biometria, biometria_tipo FROM ventas WHERE id = ? FOR UPDATE`,
+      `SELECT id, estado, obs_validacion, canal, estado_grab, tipo_grabacion, biometria, biometria_tipo FROM ventas WHERE id = ? FOR UPDATE`,
       [ventaId]
     );
     if (!rows.length) {
@@ -2080,6 +2080,11 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       && (tipificacion === 'biometria'
         || (tipificacion === 'validado' && String(venta.biometria || '').toUpperCase() === 'SI' && !esAislada));
     const tipoBiometria = 'biometria';
+    // De BIOMETRÍA a BIOMETRÍA AISLADA: deja de darse por grabada (la marcó la
+    // biometría, no una grabación real) y vuelve a Grabaciones.
+    const quitarGrabadoBiometria = tipificacion === 'biometria_aislada'
+      && String(venta.estado_grab || '').toLowerCase() === 'grabado'
+      && String(venta.tipo_grabacion || '').toLowerCase() === 'biometria';
 
     if (nuevoEstado) {
       await conn.query(
@@ -2097,8 +2102,14 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
       if (biometriaDirecta) {
         await conn.query(`UPDATE ventas SET estado_grab = 'grabado', tipo_grabacion = ?, biometria = 'SI', biometria_tipo = 'BIOMETRIA' WHERE id = ?`, [tipoBiometria, ventaId]);
       }
+      if (tipificacion === 'biometria' && !biometriaDirecta) {
+        await conn.query(`UPDATE ventas SET biometria = 'SI', biometria_tipo = 'BIOMETRIA' WHERE id = ?`, [ventaId]);
+      }
       if (tipificacion === 'biometria_aislada') {
         await conn.query(`UPDATE ventas SET biometria = 'SI', biometria_tipo = 'BIOMETRIA AISLADA' WHERE id = ?`, [ventaId]);
+        if (quitarGrabadoBiometria) {
+          await conn.query(`UPDATE ventas SET estado_grab = 'pendiente', tipo_grabacion = NULL WHERE id = ?`, [ventaId]);
+        }
       }
     } else {
       await conn.query(
@@ -2139,6 +2150,16 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
         valorAnterior: venta.estado_grab || 'pendiente',
         valorNuevo:    'grabado',
         descripcion:   `Venta con ${tipoBiometria === 'biometria_aislada' ? 'biometría aislada' : 'biometría'}: pasa directo a Programación sin grabación`,
+      });
+    }
+    if (nuevoEstado && quitarGrabadoBiometria) {
+      await registrarHistorial(conn, ventaId, actor, {
+        tipo:          'CAMBIO_VALIDACION',
+        campo:         'estado_grab',
+        etiqueta:      'Estado de grabación',
+        valorAnterior: 'grabado',
+        valorNuevo:    'pendiente',
+        descripcion:   'Cambia de biometría a biometría aislada: necesita grabación',
       });
     }
     if (canalNorm && canalNorm !== venta.canal) {
