@@ -24,7 +24,7 @@ const ESTADOS = [
   { id: 'reasignacion', label: 'REASIGNACION', cls: 'bs-ejec', fila: 'fila-ejec' },
   { id: 'derivado_planta_externa', label: 'DERIVADO A PLANTA EXTERNA', cls: 'bs-rech', fila: 'fila-rech' },
   { id: 'servicio_activo', label: 'SERVICIO ACTIVO', cls: 'bs-inst', fila: 'fila-inst' },
-  { id: 'rechazo_programacion', label: 'RECHAZO', cls: 'bs-rech', fila: 'fila-rech' },
+  { id: 'rechazado', label: 'RECHAZO', cls: 'bs-rech', fila: 'fila-rech' },
   { id: 'rechazo_mesa', label: 'RECHAZO EN MESA', cls: 'bs-rechazo-mesa', fila: 'fila-rech' },
 ]
 
@@ -45,12 +45,12 @@ const ESTADO_BD_MAP = {
   reasignacion: 'reasignacion',
   derivado_planta_externa: 'derivado_planta_externa',
   servicio_activo: 'servicio_activo',
-  rechazo_programacion: 'pendiente',
+  rechazado: 'rechazado',
   rechazo_mesa: 'rechazo_mesa',
 }
 
 const SEG_FILTRO_KEY = 'nc_seguimiento_filtro'
-const ORD_EST = { caida:0, rechazo:1, rechazo_mesa:1, levantar_sot:2, derivado_planta_externa:3, tecnico:4, tecnicos_camino:5, reasignacion:6, ejecucion:7, instalado_no_validado:8, servicio_activo:9, instalado:10 }
+const ORD_EST = { caida:0, rechazo:1, rechazo_mesa:1, rechazado:1, levantar_sot:2, derivado_planta_externa:3, tecnico:4, tecnicos_camino:5, reasignacion:6, ejecucion:7, instalado_no_validado:8, servicio_activo:9, instalado:10 }
 
 function fechaHoy() {
   const a = new Date(), u = a.getTime() + a.getTimezoneOffset() * 60000
@@ -79,7 +79,7 @@ function mapearEstado(e) {
     levantar_sot:'levantar_sot', tecnicos_camino:'tecnicos_camino',
     instalado_no_validado:'instalado_no_validado', reasignacion:'reasignacion',
     derivado_planta_externa:'derivado_planta_externa', servicio_activo:'servicio_activo',
-    rechazo_mesa:'rechazo_mesa',
+    rechazo_mesa:'rechazo_mesa', rechazado:'rechazado',
   }
   if (nuevos[est]) return nuevos[est]
   if (est.includes('tecnico'))   return 'tecnico'
@@ -382,9 +382,9 @@ export default function Seguimiento() {
     if (!modalEstado) return
     const estadoBD = ESTADO_BD_MAP[estNuevo] || 'aprobado'
     const comentario = estObs.trim() || modalEstado._comentario
-    const motivoAplica = estNuevo === 'caida' || estNuevo === 'rechazo'
+    const motivoAplica = estNuevo === 'caida' || estNuevo === 'rechazo' || estNuevo === 'rechazado'
+    if (motivoAplica && !estMotivo) { mostrarToast('Selecciona el motivo'); return }
     const body = { estado: estadoBD, obs_seguimiento: comentario, tramo_seguimiento: estTramo }
-    if (estNuevo === 'rechazo_programacion') body.estado_supgrab = 'aprobado'
     if (motivoAplica) body.motivo_seguimiento = estMotivo
     try {
       const res  = await fetch(`${API}/ventas/${modalEstado.id}?area=seguimiento`, {
@@ -438,9 +438,6 @@ export default function Seguimiento() {
       ? { ...v, sot, fecha_programada: progFecha }
       : v
     ))
-    if (estNuevo === 'rechazo_programacion') {
-      setVentas(list => list.filter(x => x.id !== modalEstado.id))
-    }
     setModalProgramacion(null)
   }
 
@@ -545,7 +542,7 @@ export default function Seguimiento() {
 
   function salir() { logout(); navigate('/login') }
 
-  const motivosParaEstado = estNuevo === 'caida' ? MOTIVOS_CAIDA : estNuevo === 'rechazo' ? MOTIVOS_RECH : []
+  const motivosParaEstado = estNuevo === 'caida' ? MOTIVOS_CAIDA : (estNuevo === 'rechazo' || estNuevo === 'rechazado') ? MOTIVOS_RECH : []
 
   return (
     <div>
@@ -827,7 +824,7 @@ export default function Seguimiento() {
                   {TRAMOS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              {(estNuevo === 'caida' || estNuevo === 'rechazo') && (
+              {(estNuevo === 'caida' || estNuevo === 'rechazo' || estNuevo === 'rechazado') && (
                 <div className="modal-campo" id="motivoWrap">
                   <label>Motivo *</label>
                   <select value={estMotivo} onChange={e => setEstMotivo(e.target.value)}>

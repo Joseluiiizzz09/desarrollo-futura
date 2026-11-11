@@ -342,7 +342,7 @@ function Opciones({ valor, opciones, onChange }) {
 // Cómo se le muestra el estado de su venta al vendedor
 const ESTADOS_MALOS = ['CORTA_LLAMADA','FRAUDE','NO_DESEA','NO_CONTESTA','BUZON_VOZ','MALA_OFERTA','SERVICIO_ACTIVO','CAIDA','RECHAZADO','RECHAZO_CAMPO','ANULADO']
 // Estados de Seguimiento en los que el vendedor ve el motivo
-const ESTADOS_CON_MOTIVO = ['DESAPROBADO', 'CAIDA', 'RECHAZO_CAMPO', 'RECHAZO_MESA']
+const ESTADOS_CON_MOTIVO = ['DESAPROBADO', 'CAIDA', 'RECHAZO_CAMPO', 'RECHAZO_MESA', 'RECHAZADO']
 
 function estadoParaVendedor(v) {
   const e = v.estado
