@@ -1508,6 +1508,7 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                ph_inst.fecha_instalado,
                ph_caida.fecha_caida,
                ph_wa.fecha_whatsapp_enviado,
+               ph_seg.tipificado_seg_por, ph_seg.fecha_tipif_seg,
                COALESCE(LOWER(cv.estado_validacion), 'venta') AS estado_validacion,
                (SELECT l.campana FROM leads l
                   WHERE l.n1_normalizado = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(v.telefono1, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', '')
@@ -1582,6 +1583,17 @@ router.get('/', auth(ROLES_VENTAS), async (req, res) => {
                    GROUP BY venta_id
                  ) lcv ON vh.id = lcv.max_id
                ) cv ON cv.venta_id = v.id
+               LEFT JOIN (
+                 -- Back de Seguimiento: quién hizo la última tipificación (cambio de estado)
+                 SELECT h1.venta_id, h1.usuario_nombre AS tipificado_seg_por, h1.created_at AS fecha_tipif_seg
+                 FROM venta_historial h1
+                 INNER JOIN (
+                   SELECT venta_id, MAX(id) AS max_id
+                   FROM venta_historial
+                   WHERE modulo = 'Seguimiento' AND campo = 'estado'
+                   GROUP BY venta_id
+                 ) h2 ON h1.id = h2.max_id
+               ) ph_seg ON ph_seg.venta_id = v.id
                WHERE 1=1`;
     const params = [];
 

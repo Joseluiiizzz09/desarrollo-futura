@@ -172,6 +172,7 @@ export default function Seguimiento() {
   const [fEstados, setFEstados]   = useState([])
   const [fVendedor, setFVendedor] = useState('')
   const [fSala, setFSala]         = useState('')
+  const [fBackSeg, setFBackSeg]   = useState('')
   const [fDistrito, setFDistrito] = useState('')
   const [fTramo, setFTramo]       = useState('')
   const [fTipoFecha, setFTipoFecha] = useState('fecha')
@@ -260,6 +261,7 @@ export default function Seguimiento() {
             fechaIngreso:     v.created_at ? v.created_at.split(' ')[0] : '',
             _estadoSeg:       mapearEstado(v.estado),
             _tramo:           v.tramo_seguimiento  || '',
+            _backSeg:         String(v.tipificado_seg_por || '').trim(),
             _comentario:      v.obs_seguimiento    || '',
             _motivoRech:      v.motivo_seguimiento || '',
             _proxSeg:         v._proxSeg     || '',
@@ -309,6 +311,7 @@ export default function Seguimiento() {
     }
     if (fVendedor && !(v.vendedor || v.asesor_nombre || '').toLowerCase().includes(fVendedor.toLowerCase())) return false
     if (fSala && !(v.sala || '').toLowerCase().includes(fSala.toLowerCase())) return false
+    if (fBackSeg && (fBackSeg === '__sin__' ? v._backSeg : v._backSeg !== fBackSeg)) return false
     if (fDistrito && !(v.distrito || '').toLowerCase().includes(fDistrito.toLowerCase())) return false
     if (fTramo   && v._tramo !== fTramo) return false
     const f = fTipoFecha === 'programados'
@@ -324,7 +327,7 @@ export default function Seguimiento() {
       ].some(x => String(x || '').toLowerCase().includes(b))) return false
     }
     return true
-  }, [filtroLeyenda, fEstados, fVendedor, fSala, fDistrito, fTramo, fTipoFecha, fDesde, fHasta, busqueda])
+  }, [filtroLeyenda, fEstados, fVendedor, fSala, fBackSeg, fDistrito, fTramo, fTipoFecha, fDesde, fHasta, busqueda])
 
   const ventasEnRango = useMemo(() => ventas.filter(v => filtrarVenta(v, false)), [ventas, filtrarVenta])
 
@@ -356,8 +359,12 @@ export default function Seguimiento() {
   const fin       = Math.min(inicio + porPagina, totalPag)
   const ventasPag = ventasFiltradas.slice(inicio, fin)
 
+  // Backs de Seguimiento presentes en las ventas (quién tipificó)
+  const opcionesBackSeg = useMemo(() => [...new Set(ventas.map(v => v._backSeg).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'es')), [ventas])
+
   function limpiarFiltros() {
-    setFiltroLeyenda(''); setFEstados([]); setFVendedor(''); setFSala(''); setFDistrito('')
+    setFiltroLeyenda(''); setFEstados([]); setFVendedor(''); setFSala(''); setFBackSeg(''); setFDistrito('')
     setFTramo(''); setFTipoFecha('fecha'); setFDesde(''); setFHasta(''); setBusqueda(''); setPagina(1)
     try { sessionStorage.setItem(SEG_FILTRO_KEY, '') } catch {}
   }
@@ -606,6 +613,14 @@ export default function Seguimiento() {
             <div className="fg">
               <label>Sala</label>
               <input value={fSala} onChange={e => { setFSala(e.target.value); setPagina(1) }} placeholder="Escribir sala..." />
+            </div>
+            <div className="fg">
+              <label>Back de seguimiento</label>
+              <select value={fBackSeg} onChange={e => { setFBackSeg(e.target.value); setPagina(1) }}>
+                <option value="">Todos</option>
+                {opcionesBackSeg.map(n => <option key={n} value={n}>{n}</option>)}
+                <option value="__sin__">Sin tipificar</option>
+              </select>
             </div>
             <div className="fg">
               <label>Distrito</label>
