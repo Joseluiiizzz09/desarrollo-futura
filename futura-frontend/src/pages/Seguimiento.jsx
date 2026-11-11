@@ -7,6 +7,7 @@ import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import WhatsappSeguimientoBoton from '../components/WhatsappSeguimientoBoton'
 import CanalBadge from '../components/CanalBadge'
+import { HistorialVentaModal } from '../components/VentaAssignmentModal'
 import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
@@ -935,21 +936,11 @@ export default function Seguimiento() {
 
       {/* MODAL HISTORIAL */}
       {modalHist && (
-        <div className="modal-bg open" onClick={e => { if (e.target === e.currentTarget) setModalHist(null) }}>
-          <div className="modal-box" style={{ maxWidth: '460px' }}>
-            <div className="modal-title">Historial</div>
-            <div className="modal-sub">{modalHist.nombreApellidos || '--'} · {modalHist.dni || '--'}</div>
-            <div className="obs-historial">
-              {modalHist._historial && modalHist._historial.length
-                ? modalHist._historial.map((x, i) => `[${formatF(x.fecha)} ${x.hora} - ${x.user}] ${x.resultado} -- ${x.obs}`).join('\n')
-                : 'Sin historial registrado.'
-              }
-            </div>
-            <div className="modal-btns">
-              <button className="btn-guardar" onClick={() => setModalHist(null)}>Cerrar</button>
-            </div>
-          </div>
-        </div>
+        // Historial real de la venta (el mismo que ve Jefatura)
+        <HistorialVentaModal
+          venta={{ id: modalHist.id, nombre: modalHist.nombreApellidos, dni: modalHist.dni }}
+          onClose={() => setModalHist(null)}
+        />
       )}
 
 

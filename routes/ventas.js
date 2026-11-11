@@ -2696,15 +2696,19 @@ router.post('/:id/enviar-seguimiento-whatsapp', auth(['seguimiento', 'jefatura']
 // que el frontend (textoFecha en VentaAssignmentModal.jsx) la formatee igual
 // que un DATETIME real de MySQL. Líneas que no calcen con el formato se
 // ignoran — no se les inventa fecha.
-router.get('/:id/historial', auth(['jefatura']), async (req, res) => {
+router.get('/:id/historial', auth(['jefatura', 'seguimiento']), async (req, res) => {
   const ventaId = Number(req.params.id);
   if (!Number.isInteger(ventaId) || ventaId <= 0) {
     return res.status(400).json({ ok: false, mensaje: 'Venta no válida.' });
   }
   try {
     const actor = await obtenerActor(db, req.user.id);
-    if (!actor || !actor.activo || actor.cargo !== 'jefatura') {
-      return res.status(403).json({ ok: false, mensaje: 'El historial completo es exclusivo de Jefatura.' });
+    // Jefatura y Seguimiento (cargo principal o adicional) ven el historial completo
+    const permisosActor = Array.isArray(req.user.permisos) ? req.user.permisos : [];
+    const puedeVer = actor && ['jefatura', 'seguimiento'].includes(actor.cargo)
+      || permisosActor.includes('jefatura') || permisosActor.includes('seguimiento');
+    if (!actor || !actor.activo || !puedeVer) {
+      return res.status(403).json({ ok: false, mensaje: 'El historial completo es solo para Jefatura y Seguimiento.' });
     }
     const [ventas] = await db.query(`
       SELECT v.id, v.estado, v.created_at, v.asesor_id,

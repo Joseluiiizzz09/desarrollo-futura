@@ -177,7 +177,7 @@ export function HistorialVentaModal({ venta, onClose }) {
     <ModalBase title="Historial completo de la venta" subtitle={`${venta?.nombre || 'Cliente'} · DNI ${venta?.dni || '—'}`} onClose={onClose} footer={<button type="button" className="va-button primary" onClick={onClose}>Cerrar</button>}>
       <div className="va-audit-intro">
         <span>Auditoría de la venta</span>
-        <p>Incluye la creación de la venta y el historial real de Validación y Super Grabaciones. Grabaciones, Programación, Seguimiento y reasignaciones aún no guardan historial detallado — solo su último estado.</p>
+        <p>Incluye la creación de la venta y cada cambio registrado por las áreas (Validación, Grabaciones, Programación, Seguimiento y reasignaciones), con quién lo hizo y cuándo.</p>
       </div>
       {estado.cargando && <div className="va-empty">Cargando historial completo...</div>}
       {estado.error && <div className="va-alert error">{estado.error}</div>}
