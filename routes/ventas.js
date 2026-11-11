@@ -25,6 +25,16 @@ function cacheVentasSet(clave, payload) {
 function limpiarCacheVentas() {
   cacheVentas.clear();
 }
+// Cualquier cambio (guardar estado, subir audio, tipificar...) invalida la
+// caché de la lista: si no, las pantallas seguían viendo el estado anterior
+// hasta que alguien recargaba la página.
+router.use((req, res, next) => {
+  if (req.method !== 'GET') {
+    limpiarCacheVentas();
+    res.on('finish', limpiarCacheVentas);
+  }
+  next();
+});
 const ESTADOS_GRAB_OK    = ['pendiente','agendado','grabando','grabado','observado','revisado','corta_llamada','suplantacion','no_desea','no_contesta','buzon','buzon_voz','esperando_tercero','corregir_sec'];
 // La biometría reemplaza al audio: una venta GRABADO por biometría no necesita MP3.
 const TIPOS_GRABACION_OK = ['audio','biometria','biometria_aislada'];

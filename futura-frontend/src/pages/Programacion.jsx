@@ -259,10 +259,15 @@ export default function Programacion() {
               ...payload,
               sot: payload.sot ?? x.sot,
               fecha_programada: payload.fecha_programada ?? x.fecha_programada,
+              // La pantalla muestra primero la última tipificación de
+              // Programación: actualizarla para ver el cambio al instante.
+              ...(payload.estado ? { estado_prog: payload.estado } : {}),
             }
           : x
       ))
       cerrarModal()
+      firmaVentasRef.current = ''
+      cargarVentas()
     } catch (e) {
       setErrorGuardado('No se pudo conectar con el servidor. Intente nuevamente.')
     } finally {
