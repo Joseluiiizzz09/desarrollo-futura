@@ -2259,7 +2259,10 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
 
     const modificaFlujo = estado !== undefined || estado_supgrab !== undefined ||
       estado_grab !== undefined || fecha_programada !== undefined;
-    if (rows[0].seguimiento_ingresado_at && cargoEfectivo !== 'seguimiento' && modificaFlujo) {
+    // Una venta que volvió a VALIDADO (audio rechazado, por regrabar o por
+    // programar de nuevo) ya no está en Seguimiento y puede avanzar otra vez.
+    const volvioAValidado = String(rows[0].estado || '').trim().toUpperCase() === 'VALIDADO';
+    if (rows[0].seguimiento_ingresado_at && cargoEfectivo !== 'seguimiento' && modificaFlujo && !volvioAValidado) {
       return res.status(409).json({
         ok: false,
         mensaje: 'Esta venta ya ingresó a Seguimiento y no puede retroceder a una etapa anterior.',
@@ -2381,7 +2384,8 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       estado !== undefined &&
       String(estado).toUpperCase() === 'VALIDADO' &&
       estado_supgrab !== undefined &&
-      String(estado_supgrab).toLowerCase() === 'no_conforme'
+      String(estado_supgrab).toLowerCase() === 'no_conforme' &&
+      cargoEfectivo !== 'programacion'
     ) {
       const estadoActual = String(rows[0].estado || '').toUpperCase();
       const PRE_NOCONFORME = new Set(['VALIDADO', 'APROBADO', 'PROGRAMADO']);
@@ -2393,7 +2397,7 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       String(estado).toUpperCase() === 'VALIDADO' &&
       cargoEfectivo === 'programacion' &&
       estado_supgrab !== undefined &&
-      String(estado_supgrab).toLowerCase() === 'sin_revisar'
+      ['sin_revisar', 'no_conforme'].includes(String(estado_supgrab).toLowerCase())
     ) {
       const estadoActual = String(rows[0].estado || '').toUpperCase();
       const ESTADOS_PROG_VAL = new Set(['VALIDADO','GRABADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL']);
@@ -2410,6 +2414,9 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     agregarCambio('estado_supgrab', estado_supgrab);
     if (estado_supgrab !== undefined && ['conforme', 'rechazado'].includes(String(estado_supgrab).toLowerCase())) {
       campos.push('seguimiento_ingresado_at = COALESCE(seguimiento_ingresado_at, NOW())');
+    } else if (rows[0].seguimiento_ingresado_at && volvioAValidado && cargoEfectivo !== 'seguimiento' && modificaFlujo) {
+      // Sale de Seguimiento: vuelve a recorrer Grabaciones / Programación.
+      campos.push('seguimiento_ingresado_at = NULL');
     }
     // Venta con biometría: no requiere grabación. Al quedar VALIDADO se da por
     // grabada (tipo biometria / biometria_aislada) y pasa directo a Programación.

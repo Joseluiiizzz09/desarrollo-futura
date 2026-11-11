@@ -19,6 +19,7 @@ const BADGE_CLS = {
   FRAUDE:           'b-fraude',
   ZONA_RESTRINGIDA: 'b-zona',
   PENDIENTE:        'b-pendiente',
+  RECHAZADO:        'b-rechazado',
 }
 
 const ESTADO_LABELS = {
@@ -31,6 +32,7 @@ const ESTADO_LABELS = {
   FRAUDE:           'Fraude',
   ZONA_RESTRINGIDA: 'Zona restringida',
   PENDIENTE:        'Pendiente',
+  RECHAZADO:        'Rechazado (a regrabar)',
 }
 
 // Tramos de instalación (los mismos de Seguimiento)
@@ -56,6 +58,9 @@ function estadoVisible(v) {
   // Programación hasta que el área la cambie explícitamente.
   const propioProgramacion = (v.estado_prog || '').toUpperCase()
   const raw = (v.estado || '').toUpperCase()
+  // Audio rechazado: volvió a Grabaciones para grabarse de nuevo.
+  if (raw === 'VALIDADO' && (v.estado_grab || '').toLowerCase() !== 'grabado'
+      && (v.estado_supgrab || '').toLowerCase() === 'no_conforme') return 'RECHAZADO'
   // PROGRAMADO que volvió a VALIDADO (venció la revisión de 2 horas o la
   // devolvieron): ya no está programada, hay que programarla de nuevo.
   const programacionDevuelta = propioProgramacion === 'PROGRAMADO' && raw === 'VALIDADO'
@@ -206,12 +211,18 @@ export default function Programacion() {
       return
     }
     const esRechazo = estadoModal === 'RECHAZADO'
+    if (esRechazo && !obsProg.trim()) {
+      setErrorGuardado('Escriba en la observación el motivo del rechazo del audio.')
+      return
+    }
     const payload = esRechazo
       ? {
           ...(['VALIDADO','GRABADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL'].includes((modalDet.estado || '').toUpperCase())
             ? { estado: 'VALIDADO' } : {}),
-          estado_grab: 'grabado',
-          estado_supgrab: 'sin_revisar',
+          // Audio rechazado por mala grabación: vuelve a Grabaciones para
+          // grabarse de nuevo; luego regresa aquí como GRABADO.
+          estado_grab: 'pendiente',
+          estado_supgrab: 'no_conforme',
           obs_programacion: obsProg,
         }
       : {
@@ -277,6 +288,7 @@ export default function Programacion() {
         .b-caracter   { background:#ede9fe;color:#5b21b6; }
         .b-fraude     { background:#1f2937;color:#fff; }
         .b-zona       { background:#ffedd5;color:#9a3412; }
+        .b-rechazado  { background:#ffe4e6;color:#be123c; }
         .programacion-shell .prog-reference-kpis {
           grid-template-columns:repeat(6,minmax(0,1fr))!important;
           gap:8px!important;
