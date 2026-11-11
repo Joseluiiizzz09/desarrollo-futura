@@ -5,6 +5,7 @@ const auth     = require('../middleware/auth');
 const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
+const { errorTelefonoReferencia } = require('../utils/telefono');
 const { validar, errorTexto, errorEmail, errorDni, errorFecha, errorEnteroPositivo, errorId, errorEnum, TIPO_DOC_OK } = require('../middleware/validar');
 
 const ROLES_VENTAS       = ['asesor','campo','supervisor','supcampo','backoffice','validacion','grabaciones','seguimiento','jefatura','usuarios','programacion','cobranzas','calidad','supcalidad','supgrabaciones'];
@@ -420,6 +421,9 @@ router.post('/', auth(['asesor','campo','backoffice','jefatura','usuarios']), as
       return res.status(400).json({ ok: false, mensaje: 'El teléfono de contacto solo puede contener números.' });
     if (v.telefono2 && !/^\d+$/.test(String(v.telefono2)))
       return res.status(400).json({ ok: false, mensaje: 'El teléfono de referencia solo puede contener números.' });
+
+    const errTelRef = errorTelefonoReferencia(v.telefono2);
+    if (errTelRef) return res.status(400).json({ ok: false, mensaje: errTelRef });
 
     if (v.telefono2 && String(v.telefono1).trim() === String(v.telefono2).trim())
       return res.status(400).json({ ok: false, mensaje: 'El telefono de referencia debe ser diferente al telefono principal.' });

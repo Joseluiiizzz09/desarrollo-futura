@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { API } from '../services/api'
+import { errorTelefonoReferencia } from '../utils/telefono'
 import { UBIGEO, UBIGEO_CLARO } from '../services/ubigeo'
 
 // ── Formulario público de ventas WIN y CLARO (sin iniciar sesión) ───────────
@@ -142,7 +143,9 @@ function faltantes(paso, f) {
   }
   if (paso === P.DIRECCION) {
     pedir(f.telefono1, 'Teléfono de contacto')
-    if (f.telefono2 && f.telefono2 === f.telefono1) req.push('El teléfono de referencia debe ser distinto al de contacto')
+    const errTelRef = errorTelefonoReferencia(f.telefono2)
+    if (errTelRef) req.push(errTelRef)
+    else if (f.telefono2 && f.telefono2 === f.telefono1) req.push('El teléfono de referencia debe ser distinto al de contacto')
     pedir(f.email, 'Correo electrónico')
     if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) req.push('El correo no está bien escrito')
     pedir(f.departamento, 'Departamento')
@@ -978,7 +981,7 @@ export default function VentaClaro() {
                 <div><h2>Contacto y dirección</h2><p className="vc-ayuda">Dónde se instalará el servicio.</p></div>
               </div>
               <Campo label="Teléfono de contacto"><input type="tel" inputMode="numeric" value={f.telefono1} onChange={e => set('telefono1', e.target.value.replace(/\D/g, '').slice(0, 15))} placeholder="9XXXXXXXX" /></Campo>
-              <Campo label="Teléfono de referencia" opcional><input type="tel" inputMode="numeric" value={f.telefono2} onChange={e => set('telefono2', e.target.value.replace(/\D/g, '').slice(0, 15))} placeholder="9XXXXXXXX" /></Campo>
+              <Campo label="Teléfono de referencia" opcional><input type="tel" inputMode="numeric" value={f.telefono2} onChange={e => set('telefono2', e.target.value.replace(/\D/g, '').slice(0, 9))} placeholder="9XXXXXXXX" /></Campo>
               <Campo label="Correo electrónico"><input type="email" inputMode="email" value={f.email} onChange={e => set('email', e.target.value.trim())} placeholder="cliente@correo.com" autoCapitalize="none" /></Campo>
               <Campo label="Departamento">
                 <select value={f.departamento} onChange={e => elegirDepartamento(e.target.value)}>

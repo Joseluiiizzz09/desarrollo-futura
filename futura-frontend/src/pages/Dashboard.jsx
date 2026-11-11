@@ -9,6 +9,7 @@ import ObsSeguimientoCell from '../components/ObsSeguimientoCell'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import { usePaquetesPorPlan } from '../utils/paquetes'
+import { errorTelefonoReferencia } from '../utils/telefono'
 import '../styles/dashboard.css'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -921,8 +922,8 @@ export default function Dashboard({ area = 'asesor' }) {
       if (!/^\d{9}$/.test(nvForm.tel1.trim()))
         return mostrarToast('El teléfono de contacto debe tener exactamente 9 dígitos, sin espacios')
     }
-    if (nvForm.tel2.trim() && !/^\d{9}$/.test(nvForm.tel2.trim()))
-      return mostrarToast('El teléfono de referencia debe tener exactamente 9 dígitos, sin espacios')
+    const errTelRef = errorTelefonoReferencia(nvForm.tel2)
+    if (errTelRef) return mostrarToast(errTelRef)
     if (nvForm.tel2.trim() && nvForm.tel2.trim() === nvForm.tel1.trim())
       return mostrarToast('El teléfono de referencia debe ser diferente al teléfono principal')
     const longitudDoc = { DNI:8, CE:9, RUC:11 }[nvForm.tipoDoc]

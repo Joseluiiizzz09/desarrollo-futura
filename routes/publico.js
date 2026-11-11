@@ -14,6 +14,7 @@ const express   = require('express');
 const router    = express.Router();
 const rateLimit = require('express-rate-limit');
 const db        = require('../database');
+const { errorTelefonoReferencia } = require('../utils/telefono');
 const { validar, errorTexto, errorEmail, errorDni, errorFecha, errorEnteroPositivo, errorEnum, TIPO_DOC_OK } = require('../middleware/validar');
 
 const CARGOS_VENDEDOR_FUTURA = ['asesor', 'campo'];
@@ -151,6 +152,8 @@ function limpiarVenta(v) {
 function errorTelefonos(v) {
   if (!/^\d+$/.test(v.telefono1)) return 'El teléfono de contacto solo lleva números';
   if (v.telefono2 && !/^\d+$/.test(v.telefono2)) return 'El teléfono de referencia solo lleva números';
+  const errRef = errorTelefonoReferencia(v.telefono2);
+  if (errRef) return errRef;
   if (v.telefono2 && v.telefono2 === v.telefono1) return 'El teléfono de referencia debe ser distinto al de contacto';
   return null;
 }
