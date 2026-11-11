@@ -52,6 +52,13 @@ const ESTADO_BTNS = [
 // no actuó (estado sigue en VALIDADO) y Super de Grabaciones ya corroboró
 // la grabación, se muestra GRABADO. Es puramente de presentación — no se
 // persiste nada distinto; `estado` sigue intacto (campo de Validación).
+// Venta que ya pasó a Seguimiento (sigue en esta lista porque Programación la
+// tipificó). El servidor no deja que retroceda de etapa: aquí solo se puede
+// corregir la SOT, el tramo y la observación, sin volver a enviar el estado.
+function yaEnSeguimiento(v) {
+  return Boolean(v?.seguimiento_ingresado_at) && String(v?.estado || '').trim().toUpperCase() !== 'VALIDADO'
+}
+
 function estadoVisible(v) {
   // Seguimiento también actualiza `estado` (por ejemplo a INSTALADO o CAIDA).
   // En esta pantalla debe prevalecer la última tipificación propia de
@@ -210,12 +217,23 @@ export default function Programacion() {
       setErrorGuardado('Para marcar la venta como PROGRAMADO debe ingresar el SOT y la fecha programada.')
       return
     }
+    const soloCorregirSot = yaEnSeguimiento(modalDet) && estadoModal === 'PROGRAMADO'
+    if (soloCorregirSot && fechaProg !== (modalDet.fecha_programada || '').split('T')[0]) {
+      setErrorGuardado('Esta venta ya está en Seguimiento: la fecha programada ya no se puede cambiar desde aquí.')
+      return
+    }
     const esRechazo = estadoModal === 'RECHAZADO'
     if (esRechazo && !obsProg.trim()) {
       setErrorGuardado('Escriba en la observación el motivo del rechazo del audio.')
       return
     }
-    const payload = esRechazo
+    const payload = soloCorregirSot
+      ? {
+          sot: sotProg.trim(),
+          obs_programacion: obsProg,
+          ...(tramoProg !== (modalDet.tramo_seguimiento || '') ? { tramo_seguimiento: tramoProg } : {}),
+        }
+      : esRechazo
       ? {
           ...(['VALIDADO','GRABADO','APROBADO','PROGRAMADO','PENDIENTE','BLOQUEADO','SIN_AGENDA','CARACTER_ESPECIAL'].includes((modalDet.estado || '').toUpperCase())
             ? { estado: 'VALIDADO' } : {}),
@@ -512,6 +530,11 @@ export default function Programacion() {
                     {ESTADO_LABELS[estadoModal] || estadoModal}
                   </div>
                 )}
+                {estadoModal === 'PROGRAMADO' && yaEnSeguimiento(modalDet) && (
+                  <div style={{ marginTop: '8px', fontSize: '11px', color: '#0369a1', fontWeight: 600 }}>
+                    Ya está en Seguimiento: solo se corrige la SOT, el tramo y la observación (el estado no cambia).
+                  </div>
+                )}
                 {estadoModal === 'PROGRAMADO' && (
                   <div className="programado-datos">
                     <label>
@@ -529,6 +552,7 @@ export default function Programacion() {
                       <input
                         type="date"
                         value={fechaProg}
+                        disabled={yaEnSeguimiento(modalDet)}
                         onChange={e => { setFechaProg(e.target.value); setErrorGuardado('') }}
                       />
                     </label>
