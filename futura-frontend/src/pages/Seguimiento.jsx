@@ -7,7 +7,6 @@ import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import ProgramacionInfoCell from '../components/ProgramacionInfoCell'
 import WhatsappSeguimientoBoton from '../components/WhatsappSeguimientoBoton'
 import CanalBadge from '../components/CanalBadge'
-import { HistorialVentaModal } from '../components/VentaAssignmentModal'
 import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
@@ -207,6 +206,23 @@ export default function Seguimiento() {
 
   // Modal historial
   const [modalHist, setModalHist]           = useState(null)
+  const [histSeg, setHistSeg]               = useState({ cargando: false, error: '', filas: [] })
+  // Historial real de la venta, del más reciente al más antiguo
+  useEffect(() => {
+    if (!modalHist) return
+    let activo = true
+    setHistSeg({ cargando: true, error: '', filas: [] })
+    fetch(`${API}/ventas/${modalHist.id}/historial`, { headers: ncHeaders() })
+      .then(async r => {
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok || !d.ok) throw new Error(d.mensaje || 'No se pudo cargar el historial')
+        const filas = (Array.isArray(d.data) ? d.data : []).slice()
+          .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')) || String(b.id).localeCompare(String(a.id), undefined, { numeric: true }))
+        if (activo) setHistSeg({ cargando: false, error: '', filas })
+      })
+      .catch(e => { if (activo) setHistSeg({ cargando: false, error: e.message || 'Error de conexión', filas: [] }) })
+    return () => { activo = false }
+  }, [modalHist])
   const [mediaVenta, setMediaVenta]         = useState(null)
 
   // Modal SOT
@@ -936,11 +952,38 @@ export default function Seguimiento() {
 
       {/* MODAL HISTORIAL */}
       {modalHist && (
-        // Historial real de la venta (el mismo que ve Jefatura)
-        <HistorialVentaModal
-          venta={{ id: modalHist.id, nombre: modalHist.nombreApellidos, dni: modalHist.dni }}
-          onClose={() => setModalHist(null)}
-        />
+        <div className="modal-bg open" onClick={e => { if (e.target === e.currentTarget) setModalHist(null) }}>
+          <div className="modal-box" style={{ maxWidth: '640px' }}>
+            <div className="modal-title">Historial</div>
+            <div className="modal-sub">{modalHist.nombreApellidos || '--'} · {modalHist.dni || '--'}</div>
+            <div className="seg-hist">
+              {histSeg.cargando ? <div className="seg-hist-vacio">Cargando historial…</div>
+                : histSeg.error ? <div className="seg-hist-vacio" style={{ color: '#b91c1c' }}>{histSeg.error}</div>
+                : !histSeg.filas.length ? <div className="seg-hist-vacio">Sin historial registrado.</div>
+                : histSeg.filas.map((h, i) => {
+                    const ant = h.valor_anterior && h.valor_anterior !== '—' ? h.valor_anterior : ''
+                    const nuevo = h.valor_nuevo || ''
+                    const fecha = String(h.created_at || '').replace('T', ' ')
+                    return (
+                      <div key={`${h.id}-${i}`} className={`seg-hist-item${String(h.modulo || '').startsWith('Seguimiento') ? ' es-seg' : ''}`}>
+                        <div className="seg-hist-top">
+                          <span className="seg-hist-fecha">{formatF(fecha.slice(0, 10))} {fecha.slice(11, 16)}</span>
+                          <span className="seg-hist-mod">{h.modulo || '—'}</span>
+                          <span className="seg-hist-user">{h.usuario_nombre || '—'}</span>
+                        </div>
+                        <div className="seg-hist-cambio">
+                          <b>{h.etiqueta || h.campo}</b>{nuevo ? <>: {ant && <span className="seg-hist-ant">{ant} → </span>}{nuevo}</> : null}
+                        </div>
+                        {h.descripcion && h.descripcion !== nuevo && <div className="seg-hist-desc">{h.descripcion}</div>}
+                      </div>
+                    )
+                  })}
+            </div>
+            <div className="modal-btns">
+              <button className="btn-guardar" onClick={() => setModalHist(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
       )}
 
 
