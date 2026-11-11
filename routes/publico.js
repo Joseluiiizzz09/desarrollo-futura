@@ -92,6 +92,9 @@ function erroresVentaClaro(v) {
     errorEnum(v.biometria, '¿Venta con biometría?', ['SI', 'NO']),
     String(v.biometria || '').toUpperCase() === 'SI' && !String(v.biometriaTipo || '').trim() ? 'Tipo de biometría es obligatorio' : null,
     errorEnum(v.biometriaTipo, 'Tipo de biometría', ['BIOMETRIA', 'BIOMETRIA AISLADA']),
+    // Biometría (no la aislada): la venta ya tiene SOT y es obligatoria.
+    String(v.biometria || '').toUpperCase() === 'SI' && String(v.biometriaTipo || '').toUpperCase() === 'BIOMETRIA' && !String(v.sot || '').trim() ? 'SOT es obligatoria' : null,
+    errorTexto(v.sot, 'SOT', { max: 100 }),
     errorTexto(v.plano, 'Plano', { requerido: true, max: 100 }),
     errorTexto(v.obs, 'Observación', { max: 1000 }),
     errorEnteroPositivo(v.cantDecos, 'Cantidad de decos', { max: 10 }),
@@ -131,7 +134,7 @@ function erroresVentaWin(v, sinVivienda = false) {
 // Solo los campos del formulario, sin espacios sobrantes
 const CAMPOS = ['nombre','tipoDoc','dni','fechaNac','lugarNac','padre','madre','telefono1','telefono2','email',
   'departamento','provincia','distrito','direccion','coordenadas','cuotaInstalacion','hogar','predio','tec',
-  'paquete','full','plano','obs','cantDecos','cantMesh','biometria','biometriaTipo'];
+  'paquete','full','plano','obs','cantDecos','cantMesh','biometria','biometriaTipo','sot'];
 function limpiarVenta(v) {
   const out = {};
   for (const c of CAMPOS) out[c] = v?.[c] === undefined || v?.[c] === null ? '' : String(v[c]).trim();
@@ -534,8 +537,8 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
         direccion, coordenadas, fecha_nac, lugar_nac, padre, madre,
         cuota_inst, claro_hogar, predio, tecnologia, paquete,
         full_claro, cant_decos, cant_mesh, plano, estado, observacion,
-        sala_atribucion, biometria, biometria_tipo
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        sala_atribucion, biometria, biometria_tipo, sot
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [
       dueno.id, dueno.nombre, v.tipoDoc, v.dni, v.nombre, v.email,
       v.telefono1, v.telefono2 || null, v.departamento, v.provincia, v.distrito,
@@ -546,6 +549,7 @@ router.post(['/venta', '/venta-claro'], limiteEnvio, async (req, res) => {
       dueno.sala || null,
       String(v.biometria || '').toUpperCase() || null,
       String(v.biometria || '').toUpperCase() === 'SI' ? String(v.biometriaTipo || '').toUpperCase() || null : null,
+      String(v.biometria || '').toUpperCase() === 'SI' && String(v.biometriaTipo || '').toUpperCase() === 'BIOMETRIA' ? (v.sot || null) : null,
     ]);
     console.log(`[publico/venta-claro] venta ${result.insertId} -> ${dueno.id ? `usuario ${dueno.id}` : `vendedor de Grupo Futura ${dueno.nombre}`}`);
     // Vendedor de Grupo Futura sin sala: se le pone su equipo de campo

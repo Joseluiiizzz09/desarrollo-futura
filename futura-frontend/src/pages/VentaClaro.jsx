@@ -25,7 +25,7 @@ const CANTIDADES = ['0', '1', '2', '3', '4', '5']
 
 const DATOS_SERVICIO = {
   cuotaInstalacion:'', hogar:'', paquete:'', predio:'', tec:'', full:'', cantDecos:'0', cantMesh:'', plano:'', obs:'', adicionales:[],
-  biometria:'', biometriaTipo:'', regionWin:'', winTipoPlan:'', winServicio:'',
+  biometria:'', biometriaTipo:'', sot:'', regionWin:'', winTipoPlan:'', winServicio:'',
 }
 const VACIO = {
   operador:'',
@@ -133,6 +133,7 @@ function faltantes(paso, f) {
     if (claro) {
       pedir(f.biometria, '¿Venta con biometría?')
       if (f.biometria === 'SI') pedir(f.biometriaTipo, 'Tipo de biometría')
+      if (f.biometria === 'SI' && f.biometriaTipo === 'BIOMETRIA') pedir(f.sot, 'SOT')
       if (f.biometria === 'NO') {
         pedir(f.padre, 'Nombre del padre')
         pedir(f.madre, 'Nombre de la madre')
@@ -731,7 +732,7 @@ export default function VentaClaro() {
     setErrorEnvio('')
     try {
       const venta = esTipoWin
-        ? { ...f, fechaNac: '', lugarNac: '', padre: '', madre: '', hogar: '', tec: '', full: '', plano: '', biometria: '', biometriaTipo: '',
+        ? { ...f, fechaNac: '', lugarNac: '', padre: '', madre: '', hogar: '', tec: '', full: '', plano: '', biometria: '', biometriaTipo: '', sot: '',
             cuotaInstalacion: esWin && esRuc20(f.paquete) ? f.cuotaInstalacion : '',
             ...(esPeruFibra ? { cantDecos: '0', adicionales: [], predio: '' } : {}) }
         : { ...f, adicionales: [] }
@@ -825,6 +826,7 @@ export default function VentaClaro() {
       ['Tecnología', f.tec], ['Full Claro', f.full],
       ['Venta con biometría', f.biometria === 'SI' ? 'Sí' : f.biometria === 'NO' ? 'No' : ''],
       ...(f.biometria === 'SI' ? [['Tipo de biometría', f.biometriaTipo === 'BIOMETRIA AISLADA' ? 'Biometría aislada' : 'Biometría']] : []),
+      ...(f.biometria === 'SI' && f.biometriaTipo === 'BIOMETRIA' ? [['SOT', f.sot]] : []),
       ['Decos', f.cantDecos], ['Mesh', f.cantMesh], ['Plano', f.plano],
     ] : [
       ...(esWin ? [['Región', region]] : []),
@@ -954,9 +956,12 @@ export default function VentaClaro() {
               <Campo label="Tipo de documento"><Opciones valor={f.tipoDoc} opciones={TIPOS_DOC} onChange={v => set('tipoDoc', v)} /></Campo>
               <Campo label="Número de documento"><input inputMode="numeric" value={f.dni} onChange={e => set('dni', e.target.value.replace(/\D/g, '').slice(0, 15))} autoComplete="off" /></Campo>
               {esClaro && (<>
-                <Campo label="¿Venta con biometría?"><Opciones valor={f.biometria} opciones={[['SI', 'Sí'], ['NO', 'No']]} onChange={v => { set('biometria', v); if (v !== 'SI') set('biometriaTipo', ''); if (v === 'SI') { set('padre', ''); set('madre', '') } }} /></Campo>
+                <Campo label="¿Venta con biometría?"><Opciones valor={f.biometria} opciones={[['SI', 'Sí'], ['NO', 'No']]} onChange={v => { set('biometria', v); if (v !== 'SI') { set('biometriaTipo', ''); set('sot', '') } if (v === 'SI') { set('padre', ''); set('madre', '') } }} /></Campo>
                 {f.biometria === 'SI' && (
-                  <Campo label="Tipo de biometría"><Opciones valor={f.biometriaTipo} opciones={[['BIOMETRIA', 'Biometría'], ['BIOMETRIA AISLADA', 'Biometría aislada']]} onChange={v => set('biometriaTipo', v)} /></Campo>
+                  <Campo label="Tipo de biometría"><Opciones valor={f.biometriaTipo} opciones={[['BIOMETRIA', 'Biometría'], ['BIOMETRIA AISLADA', 'Biometría aislada']]} onChange={v => { set('biometriaTipo', v); if (v !== 'BIOMETRIA') set('sot', '') }} /></Campo>
+                )}
+                {f.biometria === 'SI' && f.biometriaTipo === 'BIOMETRIA' && (
+                  <Campo label="SOT"><input inputMode="numeric" value={f.sot} onChange={e => set('sot', e.target.value.trim().slice(0, 100))} placeholder="Número de SOT" autoComplete="off" /></Campo>
                 )}
               </>)}
               {esClaro && f.biometria === 'NO' && (<>
