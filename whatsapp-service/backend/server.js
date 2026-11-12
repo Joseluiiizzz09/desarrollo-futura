@@ -35,6 +35,7 @@ class MultiAgentServer {
         this.onDeleteAccount = options.onDeleteAccount || (async () => ({ ok: false }));
         this.onRenameAccount = options.onRenameAccount || (async () => ({ ok: false }));
         this.onUpdateChatStage = options.onUpdateChatStage || (async () => ({ ok: false }));
+        this.onCrmMensaje = options.onCrmMensaje || (async () => ({ ok: false, error: 'CRM no conectado' }));
 
         this.app = express();
         this.server = null;
@@ -173,6 +174,17 @@ class MultiAgentServer {
 
             // ==================== ENDPOINTS DE AUTENTICACIÓN ====================
             // El login lo hace Krono; aqui solo se valida su JWT (ver auth.js).
+            // Mensajes del CRM WhatsApp (linea virtual CRM WHATSAPP). Solo con la clave interna.
+            this.app.post('/interno/crm/mensaje', async (req, res) => {
+                const clave = process.env.CRM_INTERNAL_KEY;
+                if (!clave || req.get('X-Internal-Key') !== clave) return res.status(401).json({ ok: false, error: 'No autorizado' });
+                try {
+                    res.json(await this.onCrmMensaje(req.body || {}));
+                } catch (err) {
+                    res.status(500).json({ ok: false, error: err.message });
+                }
+            });
+
             this.app.get('/api/auth/me', (req, res) => {
                 const token = this.extractToken(req);
                 const session = this.auth.getSession(token);

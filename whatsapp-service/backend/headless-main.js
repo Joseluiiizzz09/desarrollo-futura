@@ -39,6 +39,11 @@ const CHATS_FILE = path.join(DATA_DIR, 'baileys-chats.json'); // formato antiguo
 const ALIAS_CAMPANAS_FILE = path.join(DATA_DIR, 'campanas-alias.json'); // linea de WhatsApp -> nombre de campana en Krono
 const APAGAR_BIENVENIDA_FILE = path.join(DATA_DIR, 'auto-bienvenida.off');
 const DESVINCULADAS_FILE = path.join(DATA_DIR, 'desvinculadas.json'); // lineas que se desvincularon solas (alerta para Jefatura) // si existe este archivo, la bienvenida automatica se detiene al instante
+// Linea virtual del CRM WhatsApp (crm.grupofutura.net.pe, API oficial de Meta). No usa Baileys:
+// el CRM avisa cada mensaje por POST /interno/crm/mensaje y las respuestas salen por el CRM.
+// Se activa con CRM_INTERNAL_KEY (la misma clave va en el .env del CRM como VEXA_WA_KEY).
+const CRM_TAB_ID = 'crm_whatsapp';
+const crmConectado = () => Boolean(process.env.CRM_INTERNAL_KEY);
 const CHATS_DIR = path.join(DATA_DIR, 'chats');
 const CHATS_META_FILE = path.join(CHATS_DIR, '__meta.json');
 const chatFile = accountId => path.join(CHATS_DIR, `${String(accountId).replace(/[^A-Za-z0-9_-]/g, '_')}.json`);
@@ -446,6 +451,10 @@ class WhatsAppConnector {
     }
 
     async createClient(tab) {
+        if (tab.externo === 'crm') {
+            this.states.set(tab.id, { status: crmConectado() ? 'connected' : 'error', error: crmConectado() ? undefined : 'Falta CRM_INTERNAL_KEY', qrData: null });
+            return null;
+        }
         if (this.sockets.has(tab.id)) return this.sockets.get(tab.id);
         this.states.set(tab.id, { status: 'connecting', qrData: null });
 
@@ -781,7 +790,7 @@ class WhatsAppConnector {
         return {
             n1: localPhone(chat.phone) || '',
             usuario_whatsapp: usuario ? String(usuario).replace(/^@+/, '') : '',
-            campana: this.campanaDeLinea(accountId)
+            campana: chat.campanaCrm || this.campanaDeLinea(accountId)
         };
     }
 
@@ -928,6 +937,17 @@ class WhatsAppConnector {
             delete chat.leadEsperaUsuario;
             this.saveChats(accountId);
             console.log(`[BASE] chat=${key} ${json.ya_existia ? 'ya estaba en la Base' : 'registrado'} (id ${json.id}) campana=${datos.campana} n1=${datos.n1 || '-'} usuario=${datos.usuario_whatsapp || '-'}`);
+            // CRM: el contacto NUEVO, una vez en la Base, pasa a Atendidos. Si despues vuelve a
+            // escribir regresa a "Nuevos / Sin responder" y ahi se queda hasta que lo respondan.
+            if (accountId === CRM_TAB_ID && !chat.crmPrimeraAlta) {
+                chat.crmPrimeraAlta = Date.now();
+                if (chat.stage === 'unanswered') {
+                    chat.stage = 'attended';
+                    chat.attendedBy = 'Back Data';
+                }
+                this.saveChats(accountId);
+                this.scheduleBroadcastQueue(false, true);
+            }
         } catch (e) {
             console.warn(`[BASE] chat=${key} intento ${intento} fallo: ${e.message}`);
             if (intento < 3) {
@@ -1575,7 +1595,131 @@ class WhatsAppConnector {
         return { phone: localPhone(phone), name: chat?.name, messages: list.slice(-limit), mismatch: false };
     }
 
+    // ==================== LINEA DEL CRM WHATSAPP ====================
+    // Mensaje que avisa el CRM (entrante del cliente o respuesta hecha desde el panel del CRM).
+    async recibirMensajeCrm(p = {}) {
+        const accountId = CRM_TAB_ID;
+        const telefono = localPhone(p.telefono);
+        const usuario = String(p.username || '').replace(/^@+/, '').trim();
+        const leadId = Number(p.lead_id) || null;
+        const fromMe = Boolean(p.fromMe);
+        const time = Number(p.time) || Date.now();
+        const text = String(p.texto || '').slice(0, 4000) || (p.media_url ? '[Archivo]' : '');
+        if (!text || (!telefono && !usuario && !leadId)) return { ok: false, error: 'mensaje sin contenido o sin contacto' };
+
+        let chatsMap = this.chats.get(accountId);
+        if (!chatsMap) { chatsMap = new Map(); this.chats.set(accountId, chatsMap); }
+        let key = `${accountId}:${telefono || (usuario ? `@${usuario}` : `lead${leadId}`)}`;
+        let prev = chatsMap.get(key);
+        if (!prev && leadId) {
+            for (const [k, c] of chatsMap.entries()) {
+                if (c.crmLeadId === leadId) { key = k; prev = c; break; }
+            }
+        }
+        prev = prev || { count: 0, time: 0 };
+        const isNewer = time >= (prev.time || 0);
+        // Nuevo o que vuelve a escribir => "Nuevos / Sin responder"; respuesta => Atendido. Black List se respeta.
+        let stage = prev.stage;
+        if (!fromMe && stage !== 'blacklist' && isNewer) stage = 'unanswered';
+        if (fromMe && stage !== 'blacklist') stage = 'attended';
+        const agente = String(p.agente || 'CRM').trim();
+        const nombre = String(p.nombre || '').trim() || prev.name || (usuario ? `@${usuario}` : telefono) || 'Usuario WhatsApp';
+        const chat = {
+            ...prev,
+            accountId,
+            jid: null,
+            name: nombre,
+            phone: telefono || prev.phone || '',
+            username: usuario ? `@${usuario}` : prev.username,
+            crmLeadId: leadId || prev.crmLeadId,
+            campanaCrm: String(p.campana || '').trim() || prev.campanaCrm || '',
+            preview: isNewer ? (fromMe ? `${agente}: ${text}` : text) : prev.preview,
+            time: Math.max(time, prev.time || 0),
+            count: fromMe ? 0 : (prev.count || 0) + 1,
+            stage,
+            attendedBy: fromMe ? agente : prev.attendedBy
+        };
+        chatsMap.set(key, chat);
+
+        let msgsMap = this.chatMessages.get(accountId);
+        if (!msgsMap) { msgsMap = new Map(); this.chatMessages.set(accountId, msgsMap); }
+        const list = msgsMap.get(key) || [];
+        const msgId = String(p.id || `crm_${time}_${Math.random().toString(36).slice(2, 8)}`);
+        if (!list.some(m => m.id === msgId)) {
+            const newMsg = {
+                id: msgId,
+                fromAgent: fromMe,
+                text,
+                mediaUrl: p.media_url || undefined,
+                sender: fromMe ? agente : nombre,
+                groupSender: null,
+                time,
+                status: 'sent'
+            };
+            list.push(newMsg);
+            list.sort((a, b) => a.time - b.time);
+            while (list.length > 200) list.shift();
+            msgsMap.set(key, list);
+            this.server?.broadcast({ type: 'MESSAGE_ADDED', chatKey: key, message: newMsg });
+        }
+        this.saveChats(accountId);
+        this.scheduleBroadcastQueue(false, true);
+
+        // Cliente que escribe: se registra en la Base de Back Data con la campaña del CRM
+        // (una vez por dia; registrarEnBase deduplica).
+        if (!fromMe && stage !== 'blacklist') {
+            const t = setTimeout(() => this.registrarEnBase(accountId, key).catch(() => {}), Number(process.env.WA_ALTA_RETARDO_MS || 4000));
+            if (t.unref) t.unref();
+        }
+        return { ok: true, chatKey: key };
+    }
+
+    // Respuesta escrita en el panel de VEXA a un chat del CRM: sale por el numero del CRM.
+    async enviarPorCrm({ chatKey, phone, name, text, agentName }) {
+        const accountId = CRM_TAB_ID;
+        const key = this.resolveChatKey(accountId, chatKey, phone, name);
+        const chat = key ? this.chats.get(accountId)?.get(key) : null;
+        if (!chat || !chat.crmLeadId) return { ok: false, reason: 'chat-del-crm-no-encontrado' };
+        const url = `${process.env.CRM_API_URL || 'http://127.0.0.1:4000'}/api/interno/enviar-texto`;
+        try {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 20000);
+            let res;
+            try {
+                res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Internal-Key': process.env.CRM_INTERNAL_KEY || '' },
+                    body: JSON.stringify({ lead_id: chat.crmLeadId, texto: text, agente: agentName || 'VEXA' }),
+                    signal: ctrl.signal
+                });
+            } finally {
+                clearTimeout(t);
+            }
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.ok) return { ok: false, reason: json.error || `CRM respondio ${res.status}` };
+        } catch (error) {
+            return { ok: false, reason: `No se pudo contactar al CRM: ${error.message}` };
+        }
+        const time = Date.now();
+        const agente = agentName || 'Tú';
+        let msgsMap = this.chatMessages.get(accountId);
+        if (!msgsMap) { msgsMap = new Map(); this.chatMessages.set(accountId, msgsMap); }
+        const list = msgsMap.get(key) || [];
+        list.push({ id: `crm_out_${time}`, fromAgent: true, text, sender: agente, groupSender: null, time, status: 'sent' });
+        while (list.length > 200) list.shift();
+        msgsMap.set(key, list);
+        chat.stage = chat.stage === 'blacklist' ? 'blacklist' : 'attended';
+        chat.attendedBy = agente;
+        chat.count = 0;
+        chat.preview = `${agente}: ${text}`;
+        chat.time = time;
+        this.saveChats(accountId);
+        this.scheduleBroadcastQueue(false, true);
+        return { ok: true };
+    }
+
     async sendMessage({ accountId, chatKey, phone, name, text, agentName }) {
+        if (accountId === CRM_TAB_ID) return this.enviarPorCrm({ chatKey, phone, name, text, agentName });
         const sock = this.sockets.get(accountId);
         if (!sock) return { ok: false, reason: 'cuenta-no-conectada' };
         // Preferir el jid real del chat (funciona con contactos @lid, que no
@@ -1786,7 +1930,12 @@ class WhatsAppConnector {
         }
         this.applyKnownUsernames();
         try { this.completarNumeros(); } catch (e) { console.warn('[NUMEROS]', e.message); }
+        if (crmConectado() && !this.tabs.some(t => t.id === CRM_TAB_ID)) {
+            this.tabs.push({ id: CRM_TAB_ID, title: 'CRM WHATSAPP', module: 'bandeja', externo: 'crm' });
+            this.saveTabs();
+        }
         this.server = new MultiAgentServer({
+            onCrmMensaje: payload => this.recibirMensajeCrm(payload),
             // PORT pertenece a la API principal de FUTURA. El panel de
             // WhatsApp usa su propio puerto para no competir con ella.
             port: Number(process.env.WA_PORT || 4010),
