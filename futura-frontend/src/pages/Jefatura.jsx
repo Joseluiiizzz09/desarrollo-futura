@@ -534,14 +534,12 @@ export default function Jefatura() {
 
   /* nav */
   const [seccion, setSeccion] = useState(() => {
-    try { return sessionStorage.getItem(JEF_APARTADO_KEY) || 'dashboard' } catch { return 'dashboard' }
+    try { const g = sessionStorage.getItem(JEF_APARTADO_KEY); return g && g !== 'crm' ? g : 'dashboard' } catch { return 'dashboard' }
   })
   // El panel se conserva montado después de abrirlo por primera vez para no
   // reiniciar las conversaciones al alternar entre apartados.
   const [whatsappMontado, setWhatsappMontado] = useState(() => seccion === 'whatsapp')
   useEffect(() => { if (seccion === 'whatsapp') setWhatsappMontado(true) }, [seccion])
-  const [crmMontado, setCrmMontado] = useState(() => seccion === 'crm')
-  useEffect(() => { if (seccion === 'crm') setCrmMontado(true) }, [seccion])
 
   /* data */
   const [usuarios,    setUsuarios]    = useState([])
@@ -2376,7 +2374,6 @@ export default function Jefatura() {
           <button className={`nav-btn${seccion==='reclutados-generales'?' active':''}`} onClick={()=>irSeccion('reclutados-generales')}><span className="nav-dot"></span> Reclutados generales</button>
           <div className="sidebar-sep">Comunicación</div>
           <button className={`nav-btn${seccion==='whatsapp'?' active':''}`} onClick={()=>irSeccion('whatsapp')}><span className="nav-dot"></span> WhatsApp</button>
-          <button className={`nav-btn${seccion==='crm'?' active':''}`} onClick={()=>irSeccion('crm')}><span className="nav-dot"></span> CRM WhatsApp</button>
           <div className="sidebar-sep">Gestión</div>
           <button className={`nav-btn${seccion==='usuarios'?'   active':''}`} onClick={()=>irSeccion('usuarios')}><span className="nav-dot"></span> Usuarios</button>
           <button className={`nav-btn${seccion==='reportes'?'   active':''}`} onClick={()=>irSeccion('reportes')}><span className="nav-dot"></span> Reportes</button>
@@ -3774,21 +3771,6 @@ export default function Jefatura() {
             )}
           </section>
 
-          {/* CRM WhatsApp (crm.grupofutura.net.pe): leads de anuncios de Meta y
-              plantillas. Es otro sistema con su propio login; se muestra aquí
-              para no salir de VEXA. */}
-          <section className={`section${seccion==='crm'?' active':''}`}>
-            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}>
-              <a href="https://crm.grupofutura.net.pe/panel.html" target="_blank" rel="noopener noreferrer" style={{fontSize:12,fontWeight:700,color:'#2563eb'}}>Abrir CRM en otra pestaña ↗</a>
-            </div>
-            {crmMontado && (
-              <iframe
-                title="CRM WhatsApp"
-                src="https://crm.grupofutura.net.pe/login.html"
-                style={{display:'block',width:'100%',height:'calc(100vh - 175px)',minHeight:520,border:0,background:'#fff',borderRadius:12}}
-              />
-            )}
-          </section>
 
         </main>
       </div>
