@@ -855,7 +855,7 @@ export default function VentaClaro() {
             <div className="icono">✓</div>
             <h2>¡Venta enviada!</h2>
             <p className="vc-ayuda" style={{ fontSize: 19 }}>
-              La venta <b>{f.operador}</b> de <b>{f.nombre}</b> quedó registrada a nombre de <b>{vendedor?.nombre}</b>
+              La venta <b>{f.operador}</b> de <b>{f.nombre}</b>{f.dni ? <> con <b>{f.tipoDoc || 'DNI'} {f.dni}</b></> : null} quedó registrada a nombre de <b>{vendedor?.nombre}</b>
               {esClaro ? ' y pasó a Validación.' : '.'}
             </p>
             {paseFotos && (
