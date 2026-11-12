@@ -869,7 +869,17 @@ class WhatsAppConnector {
         }
 
         const sock = this.sockets.get(accountId);
-        if (plantilla && sock && chat.jid) {
+        if (accountId === CRM_TAB_ID && plantilla) {
+            // Linea del CRM: la bienvenida sale por el numero del CRM (API de Meta)
+            const r = await this.enviarPorCrm({ chatKey: key, text: plantilla.text, agentName: 'Bienvenida automática' });
+            if (r.ok) {
+                chat.bienvenidaEnviada = Date.now();
+                this.saveChats(accountId);
+                console.log(`[BIENVENIDA] linea=${linea} chat=${key} enviada por el CRM`);
+            } else {
+                console.error(`[BIENVENIDA] linea=${linea} chat=${key} no se pudo enviar por el CRM: ${r.reason}`);
+            }
+        } else if (plantilla && sock && chat.jid) {
             try {
                 const sent = await sock.sendMessage(chat.jid, { text: plantilla.text });
                 if (sent?.key?.id) this.sentByAgent.set(sent.key.id, 'Bienvenida automática');
@@ -1666,9 +1676,13 @@ class WhatsAppConnector {
         this.saveChats(accountId);
         this.scheduleBroadcastQueue(false, true);
 
-        // Cliente que escribe: se registra en la Base de Back Data con la campaña del CRM
-        // (una vez por dia; registrarEnBase deduplica).
-        if (!fromMe && stage !== 'blacklist') {
+        // Cliente NUEVO escribiendo en vivo: bienvenida automatica (sale por el CRM) y despues el
+        // alta en la Base, igual que las lineas QR. Si la bienvenida esta apagada, o es un cliente
+        // que vuelve a escribir, solo se registra en la Base (una vez por dia; registrarEnBase deduplica).
+        const nuevoEnVivo = !fromMe && !prev.stage && !prev.bienvenidaEnviada && (Date.now() - time) < 30 * 60 * 1000;
+        if (nuevoEnVivo && this.modoBienvenida(accountId) === 'on') {
+            this.programarBienvenida(accountId, key);
+        } else if (!fromMe && stage !== 'blacklist') {
             const t = setTimeout(() => this.registrarEnBase(accountId, key).catch(() => {}), Number(process.env.WA_ALTA_RETARDO_MS || 4000));
             if (t.unref) t.unref();
         }
