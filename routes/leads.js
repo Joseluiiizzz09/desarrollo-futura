@@ -343,8 +343,21 @@ async function nombreUsuario(id) {
   return rows[0]?.nombre || 'Usuario Back Data';
 }
 
+// Usuarios de sistemas externos que cargan leads solos en Back Data. El lead
+// se reparte entre los backoffice activos y queda registrado su origen.
+const CARGAS_AUTOMATICAS = {
+  'sistema-prizma': 'Sistema Prizma',
+  'sistema_prizma': 'Sistema Prizma',
+  'sistema-crm':    'CRM WhatsApp',
+  'sistema_crm':    'CRM WhatsApp',
+};
+
+function origenCargaAutomatica(usuario) {
+  return CARGAS_AUTOMATICAS[String(usuario || '').trim().toLowerCase()] || '';
+}
+
 function esCargaAutomaticaPrizma(usuario) {
-  return ['sistema-prizma', 'sistema_prizma'].includes(String(usuario || '').trim().toLowerCase());
+  return Boolean(origenCargaAutomatica(usuario));
 }
 
 async function obtenerResponsablesBackActivos() {
@@ -354,7 +367,8 @@ async function obtenerResponsablesBackActivos() {
     WHERE cargo = 'backoffice' AND activo = 1
     ORDER BY id
   `);
-  return rows;
+  // Los usuarios de sistema (sistema-prizma, sistema-crm) cargan, no atienden.
+  return rows.filter(r => !origenCargaAutomatica(r.usuario));
 }
 
 function elegirAleatorio(items) {
@@ -1290,13 +1304,13 @@ router.post('/', auth(ROLES_BO), async (req, res) => {
       };
       const nombreCargador = autorCarga.nombre;
       const datosOrigenAutomatico = cargaAutomaticaPrizma ? {
-        origenCarga: 'Sistema Prizma',
-        origenUsuario: req.user.usuario || 'sistema-prizma',
+        origenCarga: origenCargaAutomatica(req.user.usuario),
+        origenUsuario: req.user.usuario,
         asignacionAutomatica: true,
       } : {};
       const historial  = asesorId
         ? JSON.stringify([{ asesor: asesorNombre, hora: horaFinal, fecha: fechaLead, asignadoPor: nombreCargador, cargadoPor: nombreCargador, cargadoPorUsuario: autorCarga.usuario, motivo: 'Asignacion inicial', obsBackPersonal:obsBackInicial, tipifBackOriginal:tipifBackInicial, tipifBackSlot:1, ...datosOrigenAutomatico }])
-        : JSON.stringify([{ tipo: 'CARGA', cargadoPor: nombreCargador, cargadoPorUsuario: autorCarga.usuario, hora: horaPeruAhora(), fecha: fechaLead, motivo: cargaAutomaticaPrizma ? 'Carga automatica Prizma' : 'Carga inicial', ...datosOrigenAutomatico }]);
+        : JSON.stringify([{ tipo: 'CARGA', cargadoPor: nombreCargador, cargadoPorUsuario: autorCarga.usuario, hora: horaPeruAhora(), fecha: fechaLead, motivo: cargaAutomaticaPrizma ? `Carga automatica ${origenCargaAutomatica(req.user.usuario)}` : 'Carga inicial', ...datosOrigenAutomatico }]);
 
       const tipifBack = tipifBackInicial;
       const registraAutor = tipifBack === 'DERIVADO' || tipifBack === 'LLAMANDO';
