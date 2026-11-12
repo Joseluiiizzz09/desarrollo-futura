@@ -71,6 +71,11 @@ function agendaCorta(fecha) {
 function nowLabel() { return new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 // Venta con biometría (BIOMETRÍA o BIOMETRÍA AISLADA): del formulario de
 // venta, de la tipificación de Validación o de Grabaciones
+// Tipo de predio de la venta: HORIZONTAL / VERTICAL ('' si no se indicó)
+function predioVenta(v) {
+  const p = String(v?.predio || '').trim().toUpperCase()
+  return p.startsWith('VERT') ? 'VERTICAL' : p.startsWith('HORIZ') ? 'HORIZONTAL' : ''
+}
 function esVentaBiometria(v) {
   return String(v?.biometria || '').trim().toUpperCase() === 'SI'
     || /BIOMETRIA/i.test(String(v?.biometria_tipo || ''))
@@ -563,6 +568,7 @@ export default function Validacion() {
                   <th className="th-estado">ESTADO VENTA</th>
                   <th>CANAL</th>
                   <th>BIOMETRÍA</th>
+                  <th>PREDIO</th>
                   <th className="th-fecha">FECHA INGRESO</th>
                   <th className="th-nombre">NOMBRE Y APELLIDOS</th>
                   <th className="th-dni">DNI / DOC.</th>
@@ -588,7 +594,7 @@ export default function Validacion() {
               </thead>
               <tbody>
                 {paginaVentas.length === 0
-                  ? <tr className="tabla-empty"><td colSpan={25}>Sin registros.</td></tr>
+                  ? <tr className="tabla-empty"><td colSpan={26}>Sin registros.</td></tr>
                   : paginaVentas.map(v => {
                       const mostrar  = v.estadoVal
                       const eObj     = estadoObj(mostrar)
@@ -623,6 +629,14 @@ export default function Validacion() {
                             {esVentaBiometria(v)
                               ? <span style={{display:'inline-block',padding:'2px 10px',borderRadius:999,fontSize:10,fontWeight:800,background:'#dcfce7',color:'#166534',border:'1px solid #86efac'}}>SÍ</span>
                               : <span style={{display:'inline-block',padding:'2px 10px',borderRadius:999,fontSize:10,fontWeight:800,background:'#f3f4f6',color:'#6b7280',border:'1px solid #e5e7eb'}}>NO</span>}
+                          </td>
+                          <td style={{textAlign:'center'}}>
+                            {predioVenta(v)
+                              ? <span style={{display:'inline-block',padding:'2px 10px',borderRadius:999,fontSize:10,fontWeight:800,whiteSpace:'nowrap',
+                                  ...(predioVenta(v) === 'VERTICAL'
+                                    ? {background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}
+                                    : {background:'#e0f2fe',color:'#075985',border:'1px solid #7dd3fc'})}}>{predioVenta(v)}</span>
+                              : <span style={{color:'#9ca3af'}}>—</span>}
                           </td>
                           <td style={{color:'#185FA5',fontWeight:700,fontFamily:'monospace',fontSize:10,whiteSpace:'nowrap'}}>
                             {formatF(v.fechaIngreso)}<br />
