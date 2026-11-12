@@ -680,10 +680,17 @@ export default function VentaClaro() {
     setF(p => ({ ...p, adicionales: p.adicionales.includes(id) ? p.adicionales.filter(a => a !== id) : [...p.adicionales, id] }))
   }
 
+  // Ventana de aviso: muchos vendedores no veían el cuadro rojo y creían
+  // que el formulario no funcionaba.
+  function avisar(req) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setTimeout(() => window.alert('No se puede continuar. Revisa:\n\n• ' + req.join('\n• ')), 50)
+  }
+
   function siguiente() {
     const req = faltantes(paso, f)
     setFaltan(req)
-    if (req.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return }
+    if (req.length) { avisar(req); return }
     setPaso(p => p + 1)
   }
   function atras() { setFaltan([]); setErrorEnvio(''); setPaso(p => Math.max(P.OPERADOR, p - 1)) }
@@ -729,7 +736,7 @@ export default function VentaClaro() {
     if (enviando) return
     for (const p of [P.OPERADOR, P.CLIENTE, P.DIRECCION, P.SERVICIO]) {
       const req = faltantes(p, f)
-      if (req.length) { setPaso(p); setFaltan(req); return }
+      if (req.length) { setPaso(p); setFaltan(req); avisar(req); return }
     }
     setEnviando(true)
     setErrorEnvio('')
@@ -759,7 +766,9 @@ export default function VentaClaro() {
         subirFotos(d.paseFotos, fotos)
       }
     } catch (e) {
-      setErrorEnvio(e.message === 'Failed to fetch' ? 'No hay conexión a internet. Revisa tu señal e intenta de nuevo.' : e.message)
+      const msg = e.message === 'Failed to fetch' ? 'No hay conexión a internet. Revisa tu señal e intenta de nuevo.' : e.message
+      setErrorEnvio(msg)
+      setTimeout(() => window.alert('La venta NO se envió.\n\n' + msg), 50)
     } finally {
       setEnviando(false)
     }
@@ -895,7 +904,7 @@ export default function VentaClaro() {
 
           {faltan.length > 0 && (
             <div className="vc-error">
-              <b>Falta completar:</b>
+              <b>Revisa estos datos para continuar:</b>
               <ul>{faltan.map(x => <li key={x}>{x}</li>)}</ul>
             </div>
           )}
