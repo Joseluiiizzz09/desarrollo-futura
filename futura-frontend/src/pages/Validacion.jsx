@@ -69,6 +69,15 @@ function agendaCorta(fecha) {
   return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]}` : ''
 }
 function nowLabel() { return new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
+// Venta con biometría (BIOMETRÍA o BIOMETRÍA AISLADA): del formulario de
+// venta, de la tipificación de Validación o de Grabaciones
+function esVentaBiometria(v) {
+  return String(v?.biometria || '').trim().toUpperCase() === 'SI'
+    || /BIOMETRIA/i.test(String(v?.biometria_tipo || ''))
+    || /^biometria/i.test(String(v?.tipo_grabacion || ''))
+    || /^biometria/.test(String(v?.estadoVal || ''))
+}
+
 function formatF(f) { if(!f)return'—'; const d=(f.split('T')[0]||f); const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:f }
 
 function estadoObj(id) { return ESTADOS_TODOS.find(e=>e.id===(id||'').toLowerCase()) || { id:'venta', label:'VENTA', cls:'be-venta' } }
@@ -553,6 +562,7 @@ export default function Validacion() {
                   <th className="th-accion">ACCIÓN</th>
                   <th className="th-estado">ESTADO VENTA</th>
                   <th>CANAL</th>
+                  <th>BIOMETRÍA</th>
                   <th className="th-fecha">FECHA INGRESO</th>
                   <th className="th-nombre">NOMBRE Y APELLIDOS</th>
                   <th className="th-dni">DNI / DOC.</th>
@@ -578,7 +588,7 @@ export default function Validacion() {
               </thead>
               <tbody>
                 {paginaVentas.length === 0
-                  ? <tr className="tabla-empty"><td colSpan={24}>Sin registros.</td></tr>
+                  ? <tr className="tabla-empty"><td colSpan={25}>Sin registros.</td></tr>
                   : paginaVentas.map(v => {
                       const mostrar  = v.estadoVal
                       const eObj     = estadoObj(mostrar)
@@ -609,6 +619,11 @@ export default function Validacion() {
                             )}
                           </td>
                           <td style={{textAlign:'center'}}><CanalBadge canal={v.canal} /></td>
+                          <td style={{textAlign:'center'}}>
+                            {esVentaBiometria(v)
+                              ? <span style={{display:'inline-block',padding:'2px 10px',borderRadius:999,fontSize:10,fontWeight:800,background:'#dcfce7',color:'#166534',border:'1px solid #86efac'}}>SÍ</span>
+                              : <span style={{display:'inline-block',padding:'2px 10px',borderRadius:999,fontSize:10,fontWeight:800,background:'#f3f4f6',color:'#6b7280',border:'1px solid #e5e7eb'}}>NO</span>}
+                          </td>
                           <td style={{color:'#185FA5',fontWeight:700,fontFamily:'monospace',fontSize:10,whiteSpace:'nowrap'}}>
                             {formatF(v.fechaIngreso)}<br />
                             <span style={{color:'#9ca3af',fontWeight:400}}>{v.horaIngreso||''}</span>
