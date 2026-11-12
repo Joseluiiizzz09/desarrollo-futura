@@ -790,8 +790,8 @@ class WhatsAppConnector {
         return {
             n1: localPhone(chat.phone) || '',
             usuario_whatsapp: usuario ? String(usuario).replace(/^@+/, '') : '',
-            // Todo lo que llega del CRM entra a la Base con una sola campaña: CRM WHATSAPP
-            campana: accountId === CRM_TAB_ID ? 'CRM WHATSAPP' : this.campanaDeLinea(accountId)
+            // Todo lo que llega del CRM entra a la Base con una sola campaña: L1
+            campana: accountId === CRM_TAB_ID ? 'L1' : this.campanaDeLinea(accountId)
         };
     }
 
