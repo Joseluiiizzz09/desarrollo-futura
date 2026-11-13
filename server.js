@@ -80,6 +80,8 @@ app.use('/api/ventas-reclutamiento', require('./routes/ventas-reclutamiento'));
 app.use('/api/eliminaciones', require('./routes/eliminaciones'));
 app.use('/api/paquetes', require('./routes/paquetes'));
 app.use('/api/campanas', require('./routes/campanas'));
+// Gestión desde Grupo Futura de sus ventas CLARO (clave interna)
+app.use('/api/interno/gf', require('./routes/internoGrupoFutura'));
 app.use('/api/interno', require('./routes/interno'));
 // Formulario público de ventas CLARO (sin sesión)
 app.use('/api/publico', require('./routes/publico'));
