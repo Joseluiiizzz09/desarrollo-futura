@@ -101,9 +101,13 @@ async function comprimirFoto(archivo) {
 // el vendedor elige cuál en el paso del servicio (por defecto Lima).
 // Filtros del paquete WIN: tipo (Gamer / XGSPON / estándar) y Mono / Dúo,
 // deducidos del nombre del paquete ("+" = viene con TV, fono, DGO...)
-const tipoPlanWin = n => /gamer/i.test(n) ? 'GAMER' : /xgspon/i.test(n) ? 'XGSPON' : 'ESTANDAR'
 const servicioWin = n => String(n).includes('+') ? 'DUO' : 'MONO'
-const TIPOS_PLAN_WIN = [['ESTANDAR', 'Estándar'], ['GAMER', 'Gamer'], ['XGSPON', 'XGSPON']]
+// Plan WIN que elige el vendedor. Sale del nombre del paquete ("RUC20 …",
+// "Gamer …", "XGSPON …") y de la lista de donde viene (la de Provincia).
+const PLANES_WIN = [['REGULAR', 'Regular'], ['PROVINCIA', 'Provincia'], ['XGSPON', 'XGSPON'], ['RUC', 'RUC'], ['GAMER', 'Gamer']]
+const planWin = (n, lista) => /^RUC\s*20/i.test(String(n || '').trim()) ? 'RUC'
+  : /gamer/i.test(n) ? 'GAMER' : /xgspon/i.test(n) ? 'XGSPON'
+  : lista === 'PROVINCIA' ? 'PROVINCIA' : 'REGULAR'
 const SERVICIOS_WIN = [['MONO', 'Mono (solo internet)'], ['DUO', 'Dúo (internet + TV/fono)']]
 const DISTRITOS_LIMA_Y_PROVINCIA = ['LURIN', 'PUNTA NEGRA', 'PUNTA HERMOSA', 'SAN BARTOLO']
 const esDistritoDoble = (dpto, distrito) => String(dpto || '').trim().toUpperCase() === 'LIMA' && DISTRITOS_LIMA_Y_PROVINCIA.includes(String(distrito || '').trim().toUpperCase())
@@ -165,6 +169,7 @@ function faltantes(paso, f) {
       pedir(f.plano, 'Plano')
     } else {
       if (f.operador !== 'PERU FIBRA') pedir(f.predio, 'Tipo de vivienda')
+      if (f.operador === 'WIN') pedir(f.winTipoPlan, 'Plan')
       pedir(f.paquete, 'Paquete')
       if (esRuc20(f.paquete)) pedir(f.cuotaInstalacion, 'Costo de instalación')
       pedir(f.cantMesh, 'Cantidad de mesh')
@@ -570,17 +575,44 @@ export default function VentaClaro() {
     return predio === 'VERTICAL' && vertical.length ? vertical : (catalogoWin?.paquetes?.[region] || [])
   }
   const paquetesWinTodos = paquetesWinDe(f.predio)
-  const tiposPlanDisp = TIPOS_PLAN_WIN.filter(([v]) => paquetesWinTodos.some(n => tipoPlanWin(n) === v))
-  const tipoPlanAct = tiposPlanDisp.some(([v]) => v === f.winTipoPlan) ? f.winTipoPlan : ''
-  const serviciosDisp = SERVICIOS_WIN.filter(([v]) => paquetesWinTodos.some(n => servicioWin(n) === v && (!tipoPlanAct || tipoPlanWin(n) === tipoPlanAct)))
+  // Lista de donde salen los paquetes: VERTICAL, LIMA o PROVINCIA
+  const usaVertical = f.predio === 'VERTICAL' && (catalogoWin?.paquetes?.VERTICAL || []).length > 0
+  const listaWin = esPeruFibra ? 'PERUFIBRA' : usaVertical ? 'VERTICAL' : region
+  // Planes que se pueden vender aquí. En Lurín, Punta Negra, Punta Hermosa y
+  // San Bartolo valen los de Lima y también Provincia (el plan decide la lista).
+  const planesWinDisp = (() => {
+    if (esPeruFibra || !catalogoWin) return []
+    const hay = new Set(paquetesWinTodos.map(n => planWin(n, listaWin)))
+    if (regionDoble && !usaVertical) {
+      ;(catalogoWin.paquetes?.LIMA || []).forEach(n => hay.add(planWin(n, 'LIMA')))
+      if ((catalogoWin.paquetes?.PROVINCIA || []).length) hay.add('PROVINCIA')
+    }
+    return PLANES_WIN.filter(([v]) => hay.has(v))
+  })()
+  const tipoPlanAct = planesWinDisp.some(([v]) => v === f.winTipoPlan) ? f.winTipoPlan : ''
+  const enPlan = n => !tipoPlanAct || planWin(n, listaWin) === tipoPlanAct
+  const serviciosDisp = SERVICIOS_WIN.filter(([v]) => paquetesWinTodos.some(n => servicioWin(n) === v && enPlan(n)))
   const servicioAct = serviciosDisp.some(([v]) => v === f.winServicio) ? f.winServicio : ''
-  const paquetesWin = paquetesWinTodos.filter(n => (!tipoPlanAct || tipoPlanWin(n) === tipoPlanAct) && (!servicioAct || servicioWin(n) === servicioAct))
+  const paquetesWin = esPeruFibra ? paquetesWinTodos
+    : !tipoPlanAct ? [] : paquetesWinTodos.filter(n => enPlan(n) && (!servicioAct || servicioWin(n) === servicioAct))
   // Al cambiar un filtro, si el paquete elegido ya no está en la lista se limpia
   const filtrarWin = cambio => setF(p => {
     const q = { ...p, ...cambio }
-    const sigue = !q.paquete || ((!q.winTipoPlan || tipoPlanWin(q.paquete) === q.winTipoPlan) && (!q.winServicio || servicioWin(q.paquete) === q.winServicio))
+    const sigue = !q.paquete || ((!q.winTipoPlan || planWin(q.paquete, listaWin) === q.winTipoPlan) && (!q.winServicio || servicioWin(q.paquete) === q.winServicio))
     return sigue ? q : { ...q, paquete: '', cuotaInstalacion: '' }
   })
+  // Elegir el plan. En los distritos que permiten Lima y Provincia, el plan
+  // Provincia usa la lista de Provincia y los demás la de Lima.
+  function elegirPlanWin(v) {
+    if (regionDoble && !usaVertical) {
+      const r = v === 'PROVINCIA' ? 'PROVINCIA' : 'LIMA'
+      if (r !== region) {
+        setF(p => ({ ...p, regionWin: r, winTipoPlan: v, winServicio: '', paquete: '', adicionales: [], cuotaInstalacion: '' }))
+        return
+      }
+    }
+    filtrarWin({ winTipoPlan: v, winServicio: '' })
+  }
   const adicionalesWin = esPeruFibra ? [] : (catalogoWin?.adicionales?.[region] || [])
 
   async function ingresar(e) {
@@ -659,7 +691,7 @@ export default function VentaClaro() {
   function elegirDepartamento(dpto) {
     setF(p => {
       const cambiaRegion = p.operador === 'WIN' && regionWin(p.departamento, p.distrito, p.regionWin) !== regionWin(dpto)
-      return { ...p, departamento: dpto, provincia: '', distrito: '', regionWin: '', ...(cambiaRegion ? { paquete: '', adicionales: [], cuotaInstalacion: '' } : {}) }
+      return { ...p, departamento: dpto, provincia: '', distrito: '', regionWin: '', ...(cambiaRegion ? { paquete: '', adicionales: [], cuotaInstalacion: '', winTipoPlan: '', winServicio: '' } : {}) }
     })
   }
 
@@ -668,12 +700,8 @@ export default function VentaClaro() {
   function elegirDistrito(distrito) {
     setF(p => {
       const cambiaRegion = p.operador === 'WIN' && regionWin(p.departamento, p.distrito, p.regionWin) !== regionWin(p.departamento, distrito)
-      return { ...p, distrito, regionWin: '', ...(cambiaRegion ? { paquete: '', adicionales: [], cuotaInstalacion: '' } : {}) }
+      return { ...p, distrito, regionWin: '', ...(cambiaRegion ? { paquete: '', adicionales: [], cuotaInstalacion: '', winTipoPlan: '', winServicio: '' } : {}) }
     })
-  }
-
-  function elegirRegionWin(r) {
-    setF(p => regionWin(p.departamento, p.distrito, p.regionWin) === r ? p : { ...p, regionWin: r, paquete: '', adicionales: [], cuotaInstalacion: '' })
   }
 
   function alternarAdicional(id) {
@@ -842,7 +870,8 @@ export default function VentaClaro() {
       ['Decos', f.cantDecos], ['Mesh', f.cantMesh], ['Plano', f.plano],
     ] : [
       ...(esWin ? [['Región', region]] : []),
-      ...(esWin ? [['Tipo de vivienda', VIVIENDAS.find(x => x[0] === f.predio)?.[1] || f.predio]] : []), ['Paquete', f.paquete],
+      ...(esWin ? [['Tipo de vivienda', VIVIENDAS.find(x => x[0] === f.predio)?.[1] || f.predio]] : []),
+      ...(esWin ? [['Plan', PLANES_WIN.find(x => x[0] === f.winTipoPlan)?.[1] || '—']] : []), ['Paquete', f.paquete],
       ...(esWin && esRuc20(f.paquete) ? [['Costo de instalación', `S/ ${f.cuotaInstalacion}`]] : []),
       ...(esWin ? [['Winbox', f.cantDecos]] : []), ['Mesh', f.cantMesh],
       ...(esWin ? [['Adicionales', f.adicionales.join(', ') || '—']] : []),
@@ -1074,7 +1103,6 @@ export default function VentaClaro() {
                 <div><h2>{esPeruFibra ? 'Servicio Perú Fibra' : 'Servicio WIN'}</h2><p className="vc-ayuda">Lo que contrató el cliente.</p></div>
               </div>
               {esWin && !regionDoble && <div className="vc-region">Región: <b>{region === 'LIMA' ? 'Lima' : 'Provincia'}</b></div>}
-              {esWin && regionDoble && <Campo label={`Planes para ${f.distrito}`}><Opciones valor={region} opciones={[['LIMA', 'Planes Lima'], ['PROVINCIA', 'Planes Provincia']]} onChange={elegirRegionWin} /></Campo>}
               {errorWin ? (
                 <div className="vc-error">{errorWin}<div style={{ marginTop: 10 }}><button className="vc-btn vc-btn-pri" onClick={cargarCatalogoWin}>Intentar de nuevo</button></div></div>
               ) : !catalogoWin ? (
@@ -1082,11 +1110,11 @@ export default function VentaClaro() {
               ) : (<>
                 {esWin && <Campo label="Tipo de vivienda"><Opciones valor={f.predio} opciones={VIVIENDAS}
                   onChange={v => setF(p => ({ ...p, predio: v, ...(paquetesWinDe(v).includes(p.paquete) ? {} : { paquete: '', cuotaInstalacion: '' }) }))} /></Campo>}
-                {tiposPlanDisp.length > 1 && <Campo label="Tipo de plan"><Opciones valor={tipoPlanAct} opciones={tiposPlanDisp} onChange={v => filtrarWin({ winTipoPlan: v, winServicio: '' })} /></Campo>}
+                {esWin && <Campo label="Plan"><Opciones valor={tipoPlanAct} opciones={planesWinDisp} onChange={elegirPlanWin} /></Campo>}
                 {serviciosDisp.length > 1 && <Campo label="Mono o Dúo"><Opciones valor={servicioAct} opciones={serviciosDisp} onChange={v => filtrarWin({ winServicio: v })} /></Campo>}
                 <Campo label="Paquete">
                   <select value={f.paquete} onChange={e => setF(p => ({ ...p, paquete: e.target.value, cuotaInstalacion: esRuc20(e.target.value) ? p.cuotaInstalacion : '' }))}>
-                    <option value="">Elegir paquete</option>
+                    <option value="">{esWin && !tipoPlanAct ? 'Primero elige el plan' : 'Elegir paquete'}</option>
                     {paquetesWin.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </Campo>
