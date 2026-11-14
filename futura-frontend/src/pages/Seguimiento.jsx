@@ -11,6 +11,7 @@ import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/seguimiento.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 const ESTADOS = [
   { id: 'ejecucion', label: 'EN EJECUCION',    cls: 'bs-ejec',    fila: 'fila-ejec'    },
@@ -771,7 +772,7 @@ export default function Seguimiento() {
                       </td>
                       <td className="td-wrap" style={{ fontSize: '10px', background: 'rgba(255,255,200,.4)' }}>{v._comentario || '--'}</td>
                       <td style={{ fontWeight: 600 }}>{v.nombreApellidos || '--'}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '10px' }}>{v.dni || '--'}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '10px' }}><ValorConAlerta tipo="dni" valor={v.dni} vacio="--" /></td>
                       <td style={{ fontSize: '10px' }}>{v.distrito || '--'}</td>
                       <td className="td-wrap" style={{ fontSize: '10px' }}>{v.direccion || '--'}</td>
                       <td style={{ fontSize: '9px', color: '#6b7280' }}>{v.coordenadas || '--'}</td>
@@ -780,7 +781,7 @@ export default function Seguimiento() {
                       <td style={{ fontSize: '10px' }}>{v.claro_hogar || '--'}</td>
                       <td style={{ fontSize: '10px' }}>{v.tecnologia || '--'}</td>
                       <td className="td-wrap" style={{ fontSize: '10px' }}>{v.paquete || '--'}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '10px' }}>{v.telefonoContacto || '--'}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '10px' }}><ValorConAlerta tipo="tel" valor={v.telefonoContacto} vacio="--" /></td>
                       <td>
                         {motCls
                           ? <span className={`badge-motivo ${motCls}`} title={v._motivoRech}>{v._motivoRech}</span>

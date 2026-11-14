@@ -11,6 +11,7 @@ import { API, NC_API, ncHeaders, ncHeadersFile } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import { usuarioTieneCargo } from '../utils/roles'
 import '../styles/supervisor.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 // â”€â”€ Constantes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ESTADOS_VENTA = [
@@ -864,8 +865,8 @@ export default function Supervisor({ area = 'supervisor' }) {
                           <td><ProgramacionInfoCell fecha={(v.estado_supgrab||'').toLowerCase()==='conforme' ? v.fecha_programada : ''} soloFecha /></td>
                           <td style={{fontWeight:700,color:'#185FA5',fontSize:11}}>{formatF(v._fecha)}</td>
                           <td style={{fontWeight:600,minWidth:140}}>{v.nombre||'—'}</td>
-                          <td style={{fontFamily:'monospace',fontSize:11}}>{v.dni||'—'}</td>
-                          <td style={{fontFamily:'monospace',fontWeight:700,color:'#111827'}}>{v.n1||'—'}</td>
+                          <td style={{fontFamily:'monospace',fontSize:11}}><ValorConAlerta tipo="dni" valor={v.dni} /></td>
+                          <td style={{fontFamily:'monospace',fontWeight:700,color:'#111827'}}><ValorConAlerta tipo="tel" valor={v.n1} /></td>
                           <td style={{fontFamily:'monospace',color:'#6b7280'}}>{v.n2||'—'}</td>
                           <td style={{fontSize:11}}>{v.departamento||'—'}</td>
                           <td style={{fontSize:11}}>{v.distrito||'—'}</td>
@@ -1119,8 +1120,8 @@ export default function Supervisor({ area = 'supervisor' }) {
                             <tr key={v.id||i}>
                               <td style={{fontSize:11,color:'#185FA5',fontWeight:700}}>{formatF(v._fecha)}</td>
                               <td style={{fontWeight:600}}>{v.nombre||'—'}</td>
-                              <td style={{fontFamily:'monospace',fontSize:11}}>{v.dni||'—'}</td>
-                              <td style={{fontFamily:'monospace',fontWeight:700}}>{v.n1||'—'}</td>
+                              <td style={{fontFamily:'monospace',fontSize:11}}><ValorConAlerta tipo="dni" valor={v.dni} /></td>
+                              <td style={{fontFamily:'monospace',fontWeight:700}}><ValorConAlerta tipo="tel" valor={v.n1} /></td>
                               <td><div className="asesor-cell"><div className="av-circle" style={{background:colorFor(v.asesor||'X'),width:22,height:22,fontSize:9}}>{iniciales(v.asesor||'?')}</div><span style={{fontSize:11}} title={v.asesor||''}>{primerNombre(v.asesor)||'—'}</span></div></td>
                               <td><BadgeEstado id={v._estado} grabandoPorNombre={v.grabando_por_nombre} fraudeProgramacion={(v.estado_supgrab||'').toLowerCase()==='aprobado'} /></td>
                               <td style={{fontSize:11,color:'#6b7280'}}>{v.obs_validacion||v.obs_backoffice||v.observacion||'—'}</td>

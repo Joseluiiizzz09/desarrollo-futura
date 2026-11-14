@@ -23,6 +23,7 @@ import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../ut
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
 import '../styles/jefatura.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 /* ── constantes ── */
 const JEF_APARTADO_KEY     = 'nc_jefatura_apartado'
@@ -2607,7 +2608,7 @@ export default function Jefatura() {
                               <td><ProgramacionInfoCell sot={v.sot} fecha={v.fecha_programada} /></td>
                               <td style={{fontSize:'11px',color:'#185FA5',fontWeight:700,whiteSpace:'nowrap'}}>{formatF(v._fecha)}</td>
                               <td style={{fontWeight:600,fontSize:'12px'}}>{v.nombre||'—'}</td>
-                              <td style={{fontFamily:'monospace',fontSize:'11px'}}>{v.dni||'—'}</td>
+                              <td style={{fontFamily:'monospace',fontSize:'11px'}}><ValorConAlerta tipo="dni" valor={v.dni} /></td>
                               <td style={{fontSize:'11px'}}>{v.distrito||'—'}</td>
                               <td style={{fontWeight:600,color:'#7C3AED',fontSize:'11px'}}>{v.asesor_nombre||'—'}</td>
                               <td style={{fontSize:'11px',color:'#9ca3af'}}>{v.sala||'—'}</td>
@@ -3306,13 +3307,13 @@ export default function Jefatura() {
                           </td>
                           <td>{formatF(v._fecha || v.fecha_ingreso || v.fecha || v.created_at)}</td>
                           <td>{soloFecha(v.fecha_instalado) ? formatF(soloFecha(v.fecha_instalado)) : '—'}</td>
-                          <td>{v.dni || v.documento || '—'}</td>
+                          <td><ValorConAlerta tipo="dni" valor={v.dni || v.documento} /></td>
                           <td style={{textAlign:'center',fontWeight:700}}>{altaVenta(v)}</td>
                           <td>{v.sot || '—'}</td>
                           <td>{supervisorDeVenta(v) || '—'}</td>
                           <td title={String(v.asesor_nombre || v.asesor || v.vendedor || '').toLocaleUpperCase('es-PE')}>{String(v.asesor_nombre || v.asesor || v.vendedor || '—').toLocaleUpperCase('es-PE')}</td>
                           <td className="flujo-cliente">{v.nombre || v.nombre_apellidos || v.cliente || '—'}</td>
-                          <td>{v.telefono1 || '—'}</td>
+                          <td><ValorConAlerta tipo="tel" valor={v.telefono1} /></td>
                           <td>{v.telefono2 || '—'}</td>
                           <td title={v.email || ''}>{v.email || '—'}</td>
                           <td>{v.departamento || '—'}</td>

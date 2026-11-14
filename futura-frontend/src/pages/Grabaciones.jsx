@@ -10,6 +10,7 @@ import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, NC_API, ncHeaders, ncHeadersFile } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/grabaciones.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 // ── Constantes ────────────────────────────────────────────────────────────
 // Back que grabó la venta: quien la marcó GRABADO; si aún no, quien la tomó (GRABANDO)
@@ -849,8 +850,8 @@ export default function Grabaciones() {
                             {esAnterior && <span className="badge-anterior">ANTERIOR</span>}
                           </td>
                           <td style={{fontWeight:600}}>{v.nombreApellidos||'—'}</td>
-                          <td style={{fontFamily:'monospace',fontSize:11}}>{v.dni||'—'}</td>
-                          <td style={{fontFamily:'monospace',color:'#185FA5',fontWeight:700}}>{v.telefonoContacto||'—'}</td>
+                          <td style={{fontFamily:'monospace',fontSize:11}}><ValorConAlerta tipo="dni" valor={v.dni} /></td>
+                          <td style={{fontFamily:'monospace',color:'#185FA5',fontWeight:700}}><ValorConAlerta tipo="tel" valor={v.telefonoContacto} /></td>
                           <td>{v.distrito||'—'}</td>
                           <td className="grab-texto-ajustable" title={v.direccion||''}>{v.direccion||'—'}</td>
                           <td style={{fontWeight:600}}>{v.sala||'—'}</td>

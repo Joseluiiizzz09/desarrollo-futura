@@ -1400,6 +1400,29 @@ router.get('/grabaciones-rendimiento', auth(['jefatura']), async (req, res) => {
 
 // Listado ligero exclusivo de Validación. Evita las subconsultas operativas de
 // Programación, Seguimiento, WhatsApp y Grabaciones que esta pantalla no usa.
+// ===== GET /api/ventas/duplicados =====
+// Documentos y teléfonos de contacto que aparecen en más de una venta. Solo es
+// una alerta para revisar si se duplicó: no bloquea nada. Caché de 1 minuto.
+const normDocDup = d => String(d || '').trim().toUpperCase().replace(/[^0-9A-Z]/g, '');
+const normTelDup = t => { const n = String(t || '').replace(/\D/g, ''); return n.length > 9 ? n.slice(-9) : n; };
+let cacheDuplicados = { en: 0, data: null };
+router.get('/duplicados', auth(ROLES_VENTAS), async (req, res) => {
+  try {
+    if (cacheDuplicados.data && Date.now() - cacheDuplicados.en < 60 * 1000) return res.json(cacheDuplicados.data);
+    const [filas] = await db.query('SELECT dni, telefono1 FROM ventas');
+    const dni = new Map(), tel = new Map();
+    const sumar = (mapa, clave) => { if (clave && clave.length >= 6) mapa.set(clave, (mapa.get(clave) || 0) + 1); };
+    for (const v of filas) { sumar(dni, normDocDup(v.dni)); sumar(tel, normTelDup(v.telefono1)); }
+    const repetidos = m => Object.fromEntries([...m].filter(([, n]) => n > 1));
+    const data = { ok: true, dni: repetidos(dni), tel: repetidos(tel) };
+    cacheDuplicados = { en: Date.now(), data };
+    res.json(data);
+  } catch (e) {
+    console.error('[GET /ventas/duplicados]', e.message || e);
+    res.status(500).json({ ok: false, mensaje: 'Error al revisar duplicados' });
+  }
+});
+
 router.get('/validacion-listado', auth(['validacion','jefatura']), async (req, res) => {
   try {
     // Resolver el último estado en bloque. La subconsulta correlacionada anterior

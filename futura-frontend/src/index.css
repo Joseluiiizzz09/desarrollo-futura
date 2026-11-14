@@ -439,3 +439,7 @@ body .bo-root .logo-circle:hover {
 .base-tabla-wrap .bs-noval{
   animation:none!important;
 }
+
+/* Alerta de documento / teléfono repetido entre ventas */
+.alerta-dup { display: inline-flex; align-items: center; gap: 4px; cursor: help; }
+.alerta-dup-icono { color: #f59e0b; font-size: 12px; line-height: 1; font-family: system-ui, sans-serif; }

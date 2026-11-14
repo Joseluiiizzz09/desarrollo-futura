@@ -8,6 +8,7 @@ import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/programacion.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 const BADGE_CLS = {
   GRABADO:          'b-grabado-prog',
@@ -435,7 +436,7 @@ export default function Programacion() {
                       <td style={{ color: '#9ca3af', fontSize: '10px' }}>{i + 1}</td>
                       <td style={{ fontSize: '11px', color: '#374151', whiteSpace: 'nowrap' }}>{fecha}</td>
                       <td style={{ fontWeight: 700, fontSize: '12px' }}>{v.nombre || '—'}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{v.dni || '—'}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '12px' }}><ValorConAlerta tipo="dni" valor={v.dni} /></td>
                       <td style={{ fontSize: '12px' }}>{v.asesor_nombre || '—'}</td>
                       <td style={{ fontSize: '11px', color: '#9ca3af' }}>{v.sala || '—'}</td>
                       <td style={{ fontSize: '11px' }}>{v.distrito || '—'}</td>

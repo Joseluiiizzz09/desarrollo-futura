@@ -9,6 +9,7 @@ import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, NC_API, ncHeaders, ncHeadersFile } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/grabaciones.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 const BADGE_MAP = {
   aprobado:     { cls: 'bg-grabado',  label: 'APROBADO'     },
@@ -513,8 +514,8 @@ export default function SupGrabaciones() {
                       <td style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: '#374151' }}>{v.sot || '—'}</td>
                       <td><span style={{ color: '#185FA5', fontWeight: 700, fontSize: '11px' }}>{formatF(v.fechaIngreso)}</span></td>
                       <td style={{ fontWeight: 600 }}>{v.nombreApellidos || '--'}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '11px' }}>{v.dni || '--'}</td>
-                      <td style={{ fontFamily: 'monospace', color: '#185FA5', fontWeight: 700 }}>{v.telefonoContacto || '--'}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '11px' }}><ValorConAlerta tipo="dni" valor={v.dni} vacio="--" /></td>
+                      <td style={{ fontFamily: 'monospace', color: '#185FA5', fontWeight: 700 }}><ValorConAlerta tipo="tel" valor={v.telefonoContacto} vacio="--" /></td>
                       <td style={{ maxWidth: '190px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.email || ''}>{v.email || '—'}</td>
                       <td style={{ fontWeight: 600, color: '#7C3AED' }}>{v.vendedor || '--'}</td>
                       <td style={{ fontWeight: 600 }}>{v.sala || '--'}</td>

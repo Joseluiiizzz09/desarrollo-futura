@@ -11,6 +11,7 @@ import CambiarAreaMenu from '../components/CambiarAreaMenu'
 import { usePaquetesPorPlan } from '../utils/paquetes'
 import { errorTelefonoReferencia } from '../utils/telefono'
 import '../styles/dashboard.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
 const META_DIARIA = 5
@@ -1357,8 +1358,8 @@ export default function Dashboard({ area = 'asesor' }) {
                   <td style={{fontSize:'11px',color:'#185FA5',fontWeight:700}}>{normalizarFecha(v.created_at) || '-'}</td>
                   <td style={{fontWeight:600,minWidth:'160px'}}>{v.nombre||'-'}</td>
                   <td style={{fontSize:'11px'}}>{v.tipo_doc||'DNI'}</td>
-                  <td style={{fontFamily:'monospace',fontSize:'11px'}}>{v.dni||'-'}</td>
-                  <td style={{fontFamily:'monospace',color:'#185FA5',fontWeight:700}}>{v.telefono1||'-'}</td>
+                  <td style={{fontFamily:'monospace',fontSize:'11px'}}><ValorConAlerta tipo="dni" valor={v.dni} vacio="-" /></td>
+                  <td style={{fontFamily:'monospace',color:'#185FA5',fontWeight:700}}><ValorConAlerta tipo="tel" valor={v.telefono1} vacio="-" /></td>
                   <td style={{fontFamily:'monospace',fontSize:'11px'}}>{v.telefono2||'-'}</td>
                   <td style={{fontSize:'11px'}}>{v.departamento||'-'}</td>
                   <td style={{fontSize:'11px'}}>{v.provincia||'-'}</td>

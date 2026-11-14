@@ -11,6 +11,7 @@ import RangoFechasPicker from '../components/RangoFechasPicker'
 import { API, ncHeaders } from '../services/api'
 import { responseChanged, setVisibleInterval, clearVisibleInterval } from '../utils/polling'
 import '../styles/validacion.css'
+import { ValorConAlerta } from '../utils/duplicados'
 
 // ── Constantes ────────────────────────────────────────────────────────────
 const ESTADOS_TODOS = [
@@ -643,8 +644,8 @@ export default function Validacion() {
                             <span style={{color:'#9ca3af',fontWeight:400}}>{v.horaIngreso||''}</span>
                           </td>
                           <td style={{fontWeight:600}}>{v.nombreApellidos||'—'}</td>
-                          <td style={{fontFamily:'monospace',fontSize:11}}>{v.dni||'—'}</td>
-                          <td style={{fontFamily:'monospace',color:'#185FA5',fontWeight:700}}>{v.telefonoContacto||'—'}</td>
+                          <td style={{fontFamily:'monospace',fontSize:11}}><ValorConAlerta tipo="dni" valor={v.dni} /></td>
+                          <td style={{fontFamily:'monospace',color:'#185FA5',fontWeight:700}}><ValorConAlerta tipo="tel" valor={v.telefonoContacto} /></td>
                           <td style={{fontFamily:'monospace',color:'#6b7280'}}>{v.telefonoReferencia||'—'}</td>
                           <td>{v.departamento||'—'}</td>
                           <td>{v.provincia||'—'}</td>
