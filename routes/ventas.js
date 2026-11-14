@@ -12,6 +12,7 @@ const ROLES_VENTAS       = ['asesor','campo','supervisor','supcampo','backoffice
 const esCargoAsesor = cargo => ['asesor', 'campo'].includes(String(cargo || '').trim().toLowerCase());
 const CACHE_VENTAS_TTL = 5000;
 const cacheVentas = new Map();
+let cacheDuplicados = { en: 0, data: null };   // alerta ⚠ de repetidos
 
 function cacheVentasGet(clave) {
   const item = cacheVentas.get(clave);
@@ -25,6 +26,7 @@ function cacheVentasSet(clave, payload) {
 }
 function limpiarCacheVentas() {
   cacheVentas.clear();
+  cacheDuplicados = { en: 0, data: null };
 }
 // Cualquier cambio (guardar estado, subir audio, tipificar...) invalida la
 // caché de la lista: si no, las pantallas seguían viendo el estado anterior
@@ -1405,7 +1407,6 @@ router.get('/grabaciones-rendimiento', auth(['jefatura']), async (req, res) => {
 // una alerta para revisar si se duplicó: no bloquea nada. Caché de 1 minuto.
 const normDocDup = d => String(d || '').trim().toUpperCase().replace(/[^0-9A-Z]/g, '');
 const normTelDup = t => { const n = String(t || '').replace(/\D/g, ''); return n.length > 9 ? n.slice(-9) : n; };
-let cacheDuplicados = { en: 0, data: null };
 router.get('/duplicados', auth(ROLES_VENTAS), async (req, res) => {
   try {
     if (cacheDuplicados.data && Date.now() - cacheDuplicados.en < 60 * 1000) return res.json(cacheDuplicados.data);

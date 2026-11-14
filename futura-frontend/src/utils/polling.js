@@ -34,7 +34,7 @@ async function revisarCambios() {
 
 function alVolverVisible() { if (document.visibilityState === 'visible') revisarCambios() }
 
-function suscribirCambios(fn) {
+export function suscribirCambios(fn) {
   suscriptores.add(fn)
   if (suscriptores.size === 1) {
     revisarCambios()

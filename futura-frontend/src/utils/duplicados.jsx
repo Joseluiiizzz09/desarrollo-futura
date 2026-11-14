@@ -3,6 +3,7 @@
 // se comparten entre todas las tablas (un solo pedido por minuto).
 import { useEffect, useState } from 'react'
 import { API, ncHeaders } from '../services/api'
+import { suscribirCambios } from './polling'
 
 const normDoc = d => String(d || '').trim().toUpperCase().replace(/[^0-9A-Z]/g, '')
 const normTel = t => { const n = String(t || '').replace(/\D/g, ''); return n.length > 9 ? n.slice(-9) : n }
@@ -12,8 +13,8 @@ let pedidoEn = 0
 let promesa = null
 const oyentes = new Set()
 
-function cargar() {
-  if (promesa || Date.now() - pedidoEn < 60 * 1000) return promesa
+function cargar(forzar = false) {
+  if (promesa || (!forzar && Date.now() - pedidoEn < 60 * 1000)) return promesa
   promesa = fetch(`${API}/ventas/duplicados`, { headers: ncHeaders() })
     .then(r => r.json())
     .then(d => { if (d?.ok) { pedidoEn = Date.now(); datos = { dni: d.dni || {}, tel: d.tel || {} }; oyentes.forEach(f => f(datos)) } })
@@ -22,13 +23,28 @@ function cargar() {
   return promesa
 }
 
+// Un solo temporizador y una sola suscripción para todas las celdas
+let timer = 0
+let quitarCambios = null
+function activar() {
+  timer = setInterval(cargar, 60 * 1000)
+  // Si alguien elimina, edita o registra una venta, se recalcula al momento
+  quitarCambios = suscribirCambios(() => cargar(true))
+}
+function desactivar() {
+  clearInterval(timer)
+  if (quitarCambios) quitarCambios()
+  quitarCambios = null
+}
+
 export function useDuplicados() {
   const [d, setD] = useState(datos)
   useEffect(() => {
     oyentes.add(setD)
+    if (oyentes.size === 1) activar()
+    setD(datos)
     cargar()
-    const t = setInterval(cargar, 60 * 1000)
-    return () => { oyentes.delete(setD); clearInterval(t) }
+    return () => { oyentes.delete(setD); if (oyentes.size === 0) desactivar() }
   }, [])
   return d
 }
