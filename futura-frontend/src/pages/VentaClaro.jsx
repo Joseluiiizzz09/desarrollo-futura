@@ -109,8 +109,9 @@ const planWin = (n, lista) => /^RUC\s*20/i.test(String(n || '').trim()) ? 'RUC'
   : /gamer/i.test(n) ? 'GAMER' : /xgspon/i.test(n) ? 'XGSPON'
   : lista === 'PROVINCIA' ? 'PROVINCIA' : 'REGULAR'
 const SERVICIOS_WIN = [['MONO', 'Mono (solo internet)'], ['DUO', 'Dúo (internet + TV/fono)']]
-const DISTRITOS_LIMA_Y_PROVINCIA = ['LURIN', 'PUNTA NEGRA', 'PUNTA HERMOSA', 'SAN BARTOLO']
-const esDistritoDoble = (dpto, distrito) => String(dpto || '').trim().toUpperCase() === 'LIMA' && DISTRITOS_LIMA_Y_PROVINCIA.includes(String(distrito || '').trim().toUpperCase())
+// En Lima y Callao se venden los planes de Lima y también el plan Provincia
+// (el plan elegido decide la lista de paquetes)
+const esDistritoDoble = dpto => ['LIMA', 'CALLAO'].includes(String(dpto || '').trim().toUpperCase())
 const regionWin = (dpto, distrito, elegida) => {
   if (!dpto) return ''
   if (esDistritoDoble(dpto, distrito)) return elegida === 'PROVINCIA' ? 'PROVINCIA' : 'LIMA'
