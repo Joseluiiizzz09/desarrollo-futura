@@ -1110,7 +1110,15 @@ export default function VentaClaro() {
               ) : (<>
                 {esWin && <Campo label="Tipo de vivienda"><Opciones valor={f.predio} opciones={VIVIENDAS}
                   onChange={v => setF(p => ({ ...p, predio: v, ...(paquetesWinDe(v).includes(p.paquete) ? {} : { paquete: '', cuotaInstalacion: '' }) }))} /></Campo>}
-                {esWin && <Campo label="Plan"><Opciones valor={tipoPlanAct} opciones={planesWinDisp} onChange={elegirPlanWin} /></Campo>}
+                {esWin && <Campo label="Plan">
+                  <select value={tipoPlanAct} onChange={e => elegirPlanWin(e.target.value)}>
+                    <option value="">Elegir plan</option>
+                    {PLANES_WIN.map(([v, t]) => {
+                      const ok = planesWinDisp.some(([d]) => d === v)
+                      return <option key={v} value={v} disabled={!ok}>{ok ? t : `${t} (no disponible aquí)`}</option>
+                    })}
+                  </select>
+                </Campo>}
                 {serviciosDisp.length > 1 && <Campo label="Mono o Dúo"><Opciones valor={servicioAct} opciones={serviciosDisp} onChange={v => filtrarWin({ winServicio: v })} /></Campo>}
                 <Campo label="Paquete">
                   <select value={f.paquete} onChange={e => setF(p => ({ ...p, paquete: e.target.value, cuotaInstalacion: esRuc20(e.target.value) ? p.cuotaInstalacion : '' }))}>
