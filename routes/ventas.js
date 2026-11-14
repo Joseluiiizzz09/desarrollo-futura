@@ -2295,6 +2295,29 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
     }
     const cargoEfectivo = areaSolicitada || req.user.cargo;
 
+    // Venta que quedó en la bandeja de Grabaciones como PROGRAMADO pero que ya
+    // avanzó (está en Seguimiento, instalada, caída…). CONFORME solo cierra la
+    // revisión de Grabaciones: no toca el estado de la venta ni la regresa.
+    const estadoActualVenta = String(rows[0].estado || '').trim().toUpperCase();
+    if (cargoEfectivo === 'grabaciones'
+        && String(rows[0].estado_supgrab || '').trim().toLowerCase() === 'programado'
+        && String(estado_supgrab || '').trim().toLowerCase() === 'conforme'
+        && (rows[0].seguimiento_ingresado_at || !['VALIDADO', 'PROGRAMADO'].includes(estadoActualVenta))) {
+      await conn.beginTransaction();
+      await conn.query(
+        `UPDATE ventas SET estado_supgrab = 'conforme'${obs_supgrab !== undefined ? ', obs_supgrab = ?' : ''} WHERE id = ?`,
+        obs_supgrab !== undefined ? [obs_supgrab, req.params.id] : [req.params.id]
+      );
+      const actor = await obtenerActor(conn, req.user.id);
+      await registrarHistorial(conn, req.params.id, actor ? { ...actor, cargo: 'grabaciones' } : actor, {
+        tipo: 'ACTUALIZACION', campo: 'estado_supgrab', etiqueta: 'Revisión de Grabaciones',
+        valorAnterior: 'programado', valorNuevo: 'conforme',
+        descripcion: `CONFORME (la venta ya estaba en ${estadoActualVenta || 'Seguimiento'}; no cambia su estado)`,
+      });
+      await conn.commit();
+      return res.json({ ok: true, mensaje: 'Revisión cerrada: CONFORME' });
+    }
+
     const modificaFlujo = estado !== undefined || estado_supgrab !== undefined ||
       estado_grab !== undefined || fecha_programada !== undefined;
     // Una venta que volvió a VALIDADO (audio rechazado, por regrabar o por
