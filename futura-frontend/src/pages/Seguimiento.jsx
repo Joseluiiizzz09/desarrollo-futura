@@ -200,6 +200,7 @@ export default function Seguimiento() {
   const [obsResultado, setObsResultado]     = useState('')
   const [obsNueva, setObsNueva]             = useState('')
   const [obsComentario, setObsComentario]   = useState('')
+  const [comentarioVer, setComentarioVer]   = useState(null)   // comentario completo
 
   // Modal agenda
   const [modalAgenda, setModalAgenda]       = useState(null)
@@ -770,7 +771,19 @@ export default function Seguimiento() {
                       <td style={{ textAlign: 'center' }}>
                         {v._tramo ? <span className="badge-tramo">{v._tramo}</span> : '--'}
                       </td>
-                      <td className="td-wrap" style={{ fontSize: '10px', background: 'rgba(255,255,200,.4)' }}>{v._comentario || '--'}</td>
+                      <td style={{ fontSize: '10px', background: 'rgba(255,255,200,.4)' }}>
+                        {v._comentario ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }} title={v._comentario}>{v._comentario}</span>
+                            {v._comentario.length > 40 && (
+                              <button type="button" onClick={() => setComentarioVer(v)} title="Ver comentario completo"
+                                style={{ flexShrink: 0, border: '1px solid #cbd5e1', background: '#fff', color: '#185FA5', borderRadius: 6, padding: '1px 7px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
+                                Ver
+                              </button>
+                            )}
+                          </div>
+                        ) : '--'}
+                      </td>
                       <td style={{ fontWeight: 600 }}>{v.nombreApellidos || '--'}</td>
                       <td style={{ fontFamily: 'monospace', fontSize: '10px' }}><ValorConAlerta tipo="dni" valor={v.dni} vacio="--" /></td>
                       <td style={{ fontSize: '10px' }}>{v.distrito || '--'}</td>
@@ -801,6 +814,24 @@ export default function Seguimiento() {
           </div>
         </div>
       </div>
+
+      {/* COMENTARIO COMPLETO */}
+      {comentarioVer && (
+        <div className="modal-bg open" onClick={e => { if (e.target === e.currentTarget) setComentarioVer(null) }}>
+          <div className="modal-box" style={{ maxWidth: '520px' }}>
+            <div className="modal-title">Comentario</div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 10 }}>
+              {comentarioVer.nombreApellidos || '--'}{comentarioVer.sot ? ` · SOT ${comentarioVer.sot}` : ''}
+            </div>
+            <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, lineHeight: 1.5, color: '#111827', background: '#fffbea', border: '1px solid #fde68a', borderRadius: 10, padding: '12px 14px', maxHeight: '55vh', overflowY: 'auto' }}>
+              {comentarioVer._comentario}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+              <button type="button" className="btn-cancelar-m" onClick={() => setComentarioVer(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL ESTADO */}
       {modalEstado && (
