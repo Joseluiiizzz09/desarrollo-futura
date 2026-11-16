@@ -569,28 +569,17 @@ export default function VentaClaro() {
   const region = regionWin(f.departamento, f.distrito, f.regionWin)
   const regionDoble = esDistritoDoble(f.departamento, f.distrito)
   const paquetesClaro = paquetesClaroPorPlan[f.hogar] || []
-  // Vivienda VERTICAL (edificio): usa la lista "Vertical" del catálogo si tiene paquetes
-  const paquetesWinDe = predio => {
-    if (esPeruFibra) return catalogoWin?.paquetes?.PERUFIBRA || []
-    const vertical = catalogoWin?.paquetes?.VERTICAL || []
-    return predio === 'VERTICAL' && vertical.length ? vertical : (catalogoWin?.paquetes?.[region] || [])
-  }
-  const paquetesWinTodos = paquetesWinDe(f.predio)
-  // Lista de donde salen los paquetes: VERTICAL, LIMA o PROVINCIA
-  const usaVertical = f.predio === 'VERTICAL' && (catalogoWin?.paquetes?.VERTICAL || []).length > 0
-  const listaWin = esPeruFibra ? 'PERUFIBRA' : usaVertical ? 'VERTICAL' : region
-  // Planes que se pueden vender aquí. En Lurín, Punta Negra, Punta Hermosa y
-  // San Bartolo valen los de Lima y también Provincia (el plan decide la lista).
-  const planesWinDisp = (() => {
-    if (esPeruFibra || !catalogoWin) return []
-    const hay = new Set(paquetesWinTodos.map(n => planWin(n, listaWin)))
-    if (regionDoble && !usaVertical) {
-      ;(catalogoWin.paquetes?.LIMA || []).forEach(n => hay.add(planWin(n, 'LIMA')))
-      if ((catalogoWin.paquetes?.PROVINCIA || []).length) hay.add('PROVINCIA')
-    }
-    return PLANES_WIN.filter(([v]) => hay.has(v))
-  })()
+  // Plan WIN sin restricciones: se puede elegir cualquier plan en cualquier
+  // ubicación y vivienda. Cada plan toma los paquetes de la lista que los
+  // tenga, prefiriendo Vertical (edificio) y la región del cliente.
+  const ordenListas = plan => plan === 'PROVINCIA' ? ['PROVINCIA']
+    : [...new Set([f.predio === 'VERTICAL' ? 'VERTICAL' : null, region, 'LIMA', 'PROVINCIA', 'VERTICAL'].filter(Boolean))]
+  const listaDePlan = plan => !catalogoWin || !plan ? ''
+    : ordenListas(plan).find(l => (catalogoWin.paquetes?.[l] || []).some(n => planWin(n, l) === plan)) || ''
+  const planesWinDisp = esPeruFibra || !catalogoWin ? [] : PLANES_WIN.filter(([v]) => listaDePlan(v))
   const tipoPlanAct = planesWinDisp.some(([v]) => v === f.winTipoPlan) ? f.winTipoPlan : ''
+  const listaWin = esPeruFibra ? 'PERUFIBRA' : listaDePlan(tipoPlanAct)
+  const paquetesWinTodos = listaWin ? (catalogoWin?.paquetes?.[listaWin] || []) : []
   const enPlan = n => !tipoPlanAct || planWin(n, listaWin) === tipoPlanAct
   const serviciosDisp = SERVICIOS_WIN.filter(([v]) => paquetesWinTodos.some(n => servicioWin(n) === v && enPlan(n)))
   const servicioAct = serviciosDisp.some(([v]) => v === f.winServicio) ? f.winServicio : ''
@@ -602,17 +591,9 @@ export default function VentaClaro() {
     const sigue = !q.paquete || ((!q.winTipoPlan || planWin(q.paquete, listaWin) === q.winTipoPlan) && (!q.winServicio || servicioWin(q.paquete) === q.winServicio))
     return sigue ? q : { ...q, paquete: '', cuotaInstalacion: '' }
   })
-  // Elegir el plan. En los distritos que permiten Lima y Provincia, el plan
-  // Provincia usa la lista de Provincia y los demás la de Lima.
+  // Elegir el plan: cambia la lista de paquetes, así que se limpia el paquete
   function elegirPlanWin(v) {
-    if (regionDoble && !usaVertical) {
-      const r = v === 'PROVINCIA' ? 'PROVINCIA' : 'LIMA'
-      if (r !== region) {
-        setF(p => ({ ...p, regionWin: r, winTipoPlan: v, winServicio: '', paquete: '', adicionales: [], cuotaInstalacion: '' }))
-        return
-      }
-    }
-    filtrarWin({ winTipoPlan: v, winServicio: '' })
+    setF(p => ({ ...p, winTipoPlan: v, winServicio: '', regionWin: v === 'PROVINCIA' ? 'PROVINCIA' : '', paquete: '', cuotaInstalacion: '' }))
   }
   const adicionalesWin = esPeruFibra ? [] : (catalogoWin?.adicionales?.[region] || [])
 
@@ -1110,14 +1091,11 @@ export default function VentaClaro() {
                 <p className="vc-ayuda">Cargando paquetes…</p>
               ) : (<>
                 {esWin && <Campo label="Tipo de vivienda"><Opciones valor={f.predio} opciones={VIVIENDAS}
-                  onChange={v => setF(p => ({ ...p, predio: v, ...(paquetesWinDe(v).includes(p.paquete) ? {} : { paquete: '', cuotaInstalacion: '' }) }))} /></Campo>}
+                  onChange={v => setF(p => ({ ...p, predio: v, ...(p.predio === v ? {} : { paquete: '', cuotaInstalacion: '' }) }))} /></Campo>}
                 {esWin && <Campo label="Plan">
                   <select value={tipoPlanAct} onChange={e => elegirPlanWin(e.target.value)}>
                     <option value="">Elegir plan</option>
-                    {PLANES_WIN.map(([v, t]) => {
-                      const ok = planesWinDisp.some(([d]) => d === v)
-                      return <option key={v} value={v} disabled={!ok}>{ok ? t : `${t} (no disponible aquí)`}</option>
-                    })}
+                    {planesWinDisp.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
                   </select>
                 </Campo>}
                 {serviciosDisp.length > 1 && <Campo label="Mono o Dúo"><Opciones valor={servicioAct} opciones={serviciosDisp} onChange={v => filtrarWin({ winServicio: v })} /></Campo>}
