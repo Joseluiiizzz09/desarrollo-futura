@@ -121,6 +121,10 @@ const regionWin = (dpto, distrito, elegida) => {
 const esRuc20 = paquete => /^RUC\s*20/i.test(String(paquete || '').trim())
 
 // Qué falta en cada paso (mensajes simples)
+// CLARO con biometría (no la aislada): la venta ya tiene SOT. Solo se piden
+// los teléfonos y el correo; sin dirección ni servicio (plan, paquete…).
+const esBiometriaDirecta = f => f.operador === 'CLARO' && f.biometria === 'SI' && f.biometriaTipo === 'BIOMETRIA'
+
 function faltantes(paso, f) {
   const req = []
   const pedir = (valor, texto) => { if (!String(valor || '').trim()) req.push(texto) }
@@ -153,12 +157,14 @@ function faltantes(paso, f) {
     else if (f.telefono2 && f.telefono2 === f.telefono1) req.push('El teléfono de referencia debe ser distinto al de contacto')
     pedir(f.email, 'Correo electrónico')
     if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) req.push('El correo no está bien escrito')
-    pedir(f.departamento, 'Departamento')
-    pedir(f.provincia, 'Provincia')
-    pedir(f.distrito, 'Distrito')
-    pedir(f.direccion, 'Dirección')
+    if (!esBiometriaDirecta(f)) {
+      pedir(f.departamento, 'Departamento')
+      pedir(f.provincia, 'Provincia')
+      pedir(f.distrito, 'Distrito')
+      pedir(f.direccion, 'Dirección')
+    }
   }
-  if (paso === P.SERVICIO) {
+  if (paso === P.SERVICIO && !esBiometriaDirecta(f)) {
     if (claro) {
       pedir(f.cuotaInstalacion, 'Cuota de instalación')
       pedir(f.hogar, 'Claro Hogar (plan)')
@@ -755,7 +761,10 @@ export default function VentaClaro() {
         ? { ...f, fechaNac: '', lugarNac: '', padre: '', madre: '', hogar: '', tec: '', full: '', plano: '', biometria: '', biometriaTipo: '', sot: '',
             cuotaInstalacion: esWin && esRuc20(f.paquete) ? f.cuotaInstalacion : '',
             ...(esPeruFibra ? { cantDecos: '0', adicionales: [], predio: '' } : {}) }
-        : { ...f, adicionales: [] }
+        : esBiometriaDirecta(f)
+          ? { ...f, adicionales: [], departamento: '', provincia: '', distrito: '', direccion: '', coordenadas: '',
+              cuotaInstalacion: '', hogar: '', paquete: '', predio: '', tec: '', full: '', cantDecos: '0', cantMesh: '0', plano: '' }
+          : { ...f, adicionales: [] }
       const r = await fetch(`${API}/publico/venta`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operador: f.operador, sesion: vendedor?.sesion, venta, web }),
@@ -998,11 +1007,14 @@ export default function VentaClaro() {
             <div className="vc-card">
               <div className="vc-card-cab">
                 <div className="vc-icono">{paso + 1}</div>
-                <div><h2>Contacto y dirección</h2><p className="vc-ayuda">Dónde se instalará el servicio.</p></div>
+                {esBiometriaDirecta(f)
+                  ? <div><h2>Contacto</h2><p className="vc-ayuda">Venta con biometría: solo los datos de contacto.</p></div>
+                  : <div><h2>Contacto y dirección</h2><p className="vc-ayuda">Dónde se instalará el servicio.</p></div>}
               </div>
               <Campo label="Teléfono de contacto"><input type="tel" inputMode="numeric" value={f.telefono1} onChange={e => set('telefono1', e.target.value.replace(/\D/g, '').slice(0, 15))} placeholder="9XXXXXXXX" /></Campo>
               <Campo label="Teléfono de referencia" opcional><input type="tel" inputMode="numeric" value={f.telefono2} onChange={e => set('telefono2', e.target.value.replace(/\D/g, '').slice(0, 9))} placeholder="9XXXXXXXX" /></Campo>
               <Campo label="Correo electrónico"><input type="email" inputMode="email" value={f.email} onChange={e => set('email', e.target.value.trim())} placeholder="cliente@correo.com" autoCapitalize="none" /></Campo>
+              {!esBiometriaDirecta(f) && (<>
               <Campo label="Departamento">
                 <select value={f.departamento} onChange={e => elegirDepartamento(e.target.value)}>
                   <option value="">Elegir departamento</option>
@@ -1046,6 +1058,7 @@ export default function VentaClaro() {
                 {f.coordenadas && !gpsDirecto && <div className="vc-maps-ok">Ubicación lista</div>}
                 <input value={f.coordenadas} onChange={e => set('coordenadas', e.target.value)} placeholder="-12.000000, -77.000000" />
               </Campo>
+              </>)}
             </div>
           )}
 
@@ -1169,7 +1182,7 @@ export default function VentaClaro() {
         <div className="vc-barra-abajo">
           <div className="dentro">
             <button className="vc-btn vc-btn-sec" onClick={atras} disabled={enviando}>Atrás</button>
-            {paso < P.REVISAR
+            {paso < P.REVISAR && !(esBiometriaDirecta(f) && paso >= P.DIRECCION)
               ? <button className="vc-btn vc-btn-pri" onClick={siguiente}>Siguiente</button>
               : <button className="vc-btn vc-btn-pri" onClick={enviar} disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar venta'}</button>}
           </div>

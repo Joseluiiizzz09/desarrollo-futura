@@ -60,7 +60,13 @@ async function llamarGrupoFutura(ruta, opciones = {}) {
 }
 
 // Mismos campos obligatorios que el formulario de venta CLARO de FUTURA
+// Venta CLARO con biometría (no la aislada): ya tiene SOT; no se piden
+// dirección ni datos del servicio (plan, paquete…).
+const esBiometriaDirecta = v => String(v?.biometria || '').toUpperCase() === 'SI'
+  && String(v?.biometriaTipo || '').toUpperCase() === 'BIOMETRIA';
+
 function erroresVentaClaro(v) {
+  const pide = !esBiometriaDirecta(v);
   return validar([
     errorTexto(v.nombre, 'Nombres y apellidos', { requerido: true, max: 150 }),
     errorEnum(v.tipoDoc, 'Tipo de documento', TIPO_DOC_OK),
@@ -76,18 +82,18 @@ function erroresVentaClaro(v) {
     errorTexto(v.telefono2, 'Teléfono de referencia', { max: 20 }),
     errorTexto(v.email, 'Correo electrónico', { requerido: true, max: 150 }),
     errorEmail(v.email),
-    errorTexto(v.departamento, 'Departamento', { requerido: true, max: 100 }),
-    errorTexto(v.provincia, 'Provincia', { requerido: true, max: 100 }),
-    errorTexto(v.distrito, 'Distrito', { requerido: true, max: 100 }),
-    errorTexto(v.direccion, 'Dirección', { requerido: true, max: 1000 }),
+    errorTexto(v.departamento, 'Departamento', { requerido: pide, max: 100 }),
+    errorTexto(v.provincia, 'Provincia', { requerido: pide, max: 100 }),
+    errorTexto(v.distrito, 'Distrito', { requerido: pide, max: 100 }),
+    errorTexto(v.direccion, 'Dirección', { requerido: pide, max: 1000 }),
     errorTexto(v.coordenadas, 'Coordenadas', { max: 255 }),
-    errorTexto(v.cuotaInstalacion, 'Cuota de instalación', { requerido: true, max: 100 }),
-    errorTexto(v.hogar, 'Claro Hogar', { requerido: true, max: 150 }),
-    errorTexto(v.predio, 'Tipo de vivienda', { requerido: true, max: 20 }),
+    errorTexto(v.cuotaInstalacion, 'Cuota de instalación', { requerido: pide, max: 100 }),
+    errorTexto(v.hogar, 'Claro Hogar', { requerido: pide, max: 150 }),
+    errorTexto(v.predio, 'Tipo de vivienda', { requerido: pide, max: 20 }),
     errorEnum(v.predio, 'Tipo de vivienda', ['HORIZONTAL', 'VERTICAL']),
-    errorTexto(v.tec, 'Tecnología', { requerido: true, max: 100 }),
-    errorTexto(v.paquete, 'Paquete', { requerido: true, max: 255 }),
-    errorTexto(v.full, 'Full Claro', { requerido: true, max: 20 }),
+    errorTexto(v.tec, 'Tecnología', { requerido: pide, max: 100 }),
+    errorTexto(v.paquete, 'Paquete', { requerido: pide, max: 255 }),
+    errorTexto(v.full, 'Full Claro', { requerido: pide, max: 20 }),
     // Biometría: obligatoria; si es SI, también el tipo.
     errorTexto(v.biometria, '¿Venta con biometría?', { requerido: true, max: 3 }),
     errorEnum(v.biometria, '¿Venta con biometría?', ['SI', 'NO']),
@@ -96,7 +102,7 @@ function erroresVentaClaro(v) {
     // Biometría (no la aislada): la venta ya tiene SOT y es obligatoria.
     String(v.biometria || '').toUpperCase() === 'SI' && String(v.biometriaTipo || '').toUpperCase() === 'BIOMETRIA' && !String(v.sot || '').trim() ? 'SOT es obligatoria' : null,
     errorTexto(v.sot, 'SOT', { max: 100 }),
-    errorTexto(v.plano, 'Plano', { requerido: true, max: 100 }),
+    errorTexto(v.plano, 'Plano', { requerido: pide, max: 100 }),
     errorTexto(v.obs, 'Observación', { max: 1000 }),
     errorEnteroPositivo(v.cantDecos, 'Cantidad de decos', { max: 10 }),
     errorEnteroPositivo(v.cantMesh, 'Cantidad de mesh', { max: 10 }),

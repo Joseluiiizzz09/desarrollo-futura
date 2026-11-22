@@ -2258,7 +2258,7 @@ router.patch('/:id/tipificar-validacion', auth(['validacion','jefatura']), async
 router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
   const conn = await db.getConnection();
   try {
-    const {
+    let {
       estado, obs_backoffice, observacion,
       obs_programacion, sot, fecha_programada, obs_validacion,
       obs_supgrab, estado_supgrab,
@@ -2294,6 +2294,19 @@ router.patch('/:id', auth(ROLES_VENTAS), async (req, res) => {
       return res.status(403).json({ ok: false, mensaje: 'Sin permiso para operar en esta área' });
     }
     const cargoEfectivo = areaSolicitada || req.user.cargo;
+
+    // Venta con BIOMETRÍA (no la aislada): no necesita grabación ni la revisión
+    // de Grabaciones / Sup. Grabaciones. Al programarla pasa directo a
+    // Seguimiento como CONFORME (EN EJECUCIÓN).
+    const ventaConBiometriaDirecta = String(rows[0].biometria || '').toUpperCase() === 'SI'
+      && !/AISLADA/i.test(rows[0].biometria_tipo || '')
+      && String(rows[0].tipo_grabacion || 'biometria').toLowerCase() === 'biometria';
+    if (cargoEfectivo === 'programacion' && String(estado || '').toUpperCase() === 'PROGRAMADO' && ventaConBiometriaDirecta) {
+      estado = 'EN_EJECUCION';
+      estado_supgrab = 'conforme';
+      estado_grab = 'grabado';
+      if (tipo_grabacion === undefined) tipo_grabacion = 'biometria';
+    }
 
     // Venta que quedó en la bandeja de Grabaciones como PROGRAMADO pero que ya
     // avanzó (está en Seguimiento, instalada, caída…). CONFORME solo cierra la
