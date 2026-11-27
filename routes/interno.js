@@ -66,8 +66,33 @@ router.post('/lead-prizma', verificarClaveInternaPrizma, async (req, res) => {
 // en vivo: lo registra en la Base (sin tipificar, sin asignar) por numero y/o
 // @usuario, con la campana de la linea por la que escribio.
 // Protegido por X-Internal-Key. Body: { n1?, usuario_whatsapp?, campana }
+// Columnas del anuncio de Meta del que vino el lead (se crean solas)
+let columnasAnuncio = null;
+function asegurarColumnasAnuncio() {
+  if (!columnasAnuncio) {
+    columnasAnuncio = (async () => {
+      const [c] = await db.query("SHOW COLUMNS FROM leads LIKE 'anuncio_%'");
+      const hay = new Set(c.map(x => x.Field));
+      if (!hay.has('anuncio_id')) await db.query('ALTER TABLE leads ADD COLUMN anuncio_id VARCHAR(64) NULL');
+      if (!hay.has('anuncio_titulo')) await db.query('ALTER TABLE leads ADD COLUMN anuncio_titulo VARCHAR(255) NULL');
+      if (!hay.has('anuncio_url')) await db.query('ALTER TABLE leads ADD COLUMN anuncio_url VARCHAR(500) NULL');
+      if (!hay.has('anuncio_origen')) await db.query('ALTER TABLE leads ADD COLUMN anuncio_origen VARCHAR(60) NULL');
+    })().catch(e => { columnasAnuncio = null; console.error('[leads anuncio]', e.message || e); });
+  }
+  return columnasAnuncio;
+}
+asegurarColumnasAnuncio();
+
 router.post('/lead-whatsapp', verificarClaveInternaWhatsapp, async (req, res) => {
   try {
+    const anuncio = {
+      id: String(req.body?.anuncio_id || '').trim().substring(0, 64),
+      titulo: String(req.body?.anuncio_titulo || '').trim().substring(0, 255),
+      url: String(req.body?.anuncio_url || '').trim().substring(0, 500),
+      origen: String(req.body?.anuncio_origen || '').trim().substring(0, 60),
+    };
+    const hayAnuncio = Boolean(anuncio.id || anuncio.titulo || anuncio.url || anuncio.origen);
+    if (hayAnuncio) await asegurarColumnasAnuncio();
     let n1 = normalizarN1(req.body?.n1);
     // La Base guarda el celular peruano de 9 digitos: se quita el 51 del codigo de pais
     if (n1.length === 11 && n1.startsWith('51')) n1 = n1.slice(2);
@@ -94,6 +119,9 @@ router.post('/lead-whatsapp', verificarClaveInternaWhatsapp, async (req, res) =>
           LIMIT 1
         `, [usuario, fechaHoy, campana]);
     if (existentes.length) {
+      if (hayAnuncio) await db.query(`UPDATE leads SET anuncio_id = COALESCE(anuncio_id, ?), anuncio_titulo = COALESCE(anuncio_titulo, ?),
+        anuncio_url = COALESCE(anuncio_url, ?), anuncio_origen = COALESCE(anuncio_origen, ?) WHERE id = ?`,
+        [anuncio.id || null, anuncio.titulo || null, anuncio.url || null, anuncio.origen || null, existentes[0].id]).catch(() => {});
       return res.json({ ok: true, ya_existia: true, id: existentes[0].id });
     }
 
@@ -108,6 +136,8 @@ router.post('/lead-whatsapp', verificarClaveInternaWhatsapp, async (req, res) =>
                          creado_por_nombre, creado_por_usuario)
       VALUES (?, ?, ?, ?, 1, ?, 0, 'WhatsApp', 'sistema-whatsapp')
     `, [campana, n1, usuario, fechaHoy, historial]);
+    if (hayAnuncio) await db.query('UPDATE leads SET anuncio_id = ?, anuncio_titulo = ?, anuncio_url = ?, anuncio_origen = ? WHERE id = ?',
+      [anuncio.id || null, anuncio.titulo || null, anuncio.url || null, anuncio.origen || null, result.insertId]).catch(() => {});
 
     res.json({ ok: true, id: result.insertId });
   } catch (e) {

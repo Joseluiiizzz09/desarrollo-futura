@@ -161,6 +161,32 @@ function silentLogger() {
 // son trafico interno de WhatsApp (sync de claves, historial, recibos, etc.), no
 // conversaciones reales. Si el mensaje no trae ninguno de los tipos "de contenido"
 // de abajo, se descarta (devuelve null) para no crear chats fantasma.
+// Anuncio de Meta (Click to WhatsApp): el primer mensaje del cliente trae en
+// contextInfo.externalAdReply el anuncio del que vino (id, título, enlace).
+function extraerAnuncio(msg) {
+    const m = msg?.message;
+    if (!m) return null;
+    const capas = [m, m.ephemeralMessage?.message, m.viewOnceMessage?.message, m.viewOnceMessageV2?.message].filter(Boolean);
+    for (const capa of capas) {
+        for (const v of Object.values(capa)) {
+            const ctx = v && typeof v === 'object' ? v.contextInfo : null;
+            if (!ctx) continue;
+            const ad = ctx.externalAdReply || null;
+            const esAnuncio = (ad && (String(ad.sourceType || '').toLowerCase() === 'ad' || ad.sourceId || ad.ctwaClid))
+                || /fb_ads|ctwa|(^|_)ads?(_|$)/i.test(`${ctx.conversionSource || ''} ${ctx.entryPointConversionSource || ''}`);
+            if (!esAnuncio) continue;
+            return {
+                id: String(ad?.sourceId || '').slice(0, 64),
+                titulo: String(ad?.title || '').slice(0, 255),
+                url: String(ad?.sourceUrl || '').slice(0, 500),
+                origen: String(ctx.entryPointConversionSource || ctx.conversionSource || ad?.sourceApp || '').slice(0, 60),
+                at: Date.now()
+            };
+        }
+    }
+    return null;
+}
+
 function extractText(msg) {
     const m = msg.message;
     if (!m) return null;
@@ -787,11 +813,14 @@ class WhatsAppConnector {
 
     datosParaBase(accountId, chat) {
         const usuario = chat.username || (String(chat.name || '').startsWith('@') ? chat.name : '');
+        // Anuncio por el que entró (si fue en las últimas 24 h)
+        const ad = chat.anuncio && (Date.now() - (chat.anuncio.at || 0)) < 24 * 60 * 60 * 1000 ? chat.anuncio : null;
         return {
             n1: localPhone(chat.phone) || '',
             usuario_whatsapp: usuario ? String(usuario).replace(/^@+/, '') : '',
             // Todo lo que llega del CRM entra a la Base con una sola campaña: L1
-            campana: accountId === CRM_TAB_ID ? 'L1' : this.campanaDeLinea(accountId)
+            campana: accountId === CRM_TAB_ID ? 'L1' : this.campanaDeLinea(accountId),
+            ...(ad ? { anuncio_id: ad.id, anuncio_titulo: ad.titulo, anuncio_url: ad.url, anuncio_origen: ad.origen } : {})
         };
     }
 
@@ -1207,6 +1236,8 @@ class WhatsAppConnector {
             }
 
             const phone = isGroup ? '' : await this.resolvePhoneFromJid(sock, jid, msg.key.remoteJidAlt);
+            const anuncio = (!fromMe && !isGroup) ? extraerAnuncio(msg) : null;
+            if (anuncio) console.log(`[ANUNCIO] linea=${accountId} jid=${jid} id=${anuncio.id || '-'} titulo="${anuncio.titulo}" origen=${anuncio.origen || '-'}`);
 
             // En un grupo, quien escribe es msg.key.participant (la persona),
             // no msg.key.remoteJid (el grupo). Usar el jid del grupo aqui
@@ -1350,7 +1381,9 @@ class WhatsAppConnector {
                 bienvenidaEnviada: existing.bienvenidaEnviada,
                 leadRegistrado: existing.leadRegistrado,
                 leadPendiente: existing.leadPendiente,
-                leadEsperaUsuario: existing.leadEsperaUsuario
+                leadEsperaUsuario: existing.leadEsperaUsuario,
+                // Último anuncio de Meta por el que entró este cliente
+                anuncio: anuncio || existing.anuncio
             });
             if (!fromMe && !isHistory) this.dismissed.delete(key);
 
@@ -1362,8 +1395,11 @@ class WhatsAppConnector {
                 this.programarBienvenida(accountId, key);
             } else if (!fromMe && !isHistory && !isGroup && stage !== 'blacklist'
                 && (Date.now() - time) < 30 * 60 * 1000) {
-                // Cliente que YA tenia chat y vuelve a escribir: sin bienvenida, pero entra a la Base de hoy
-                this.programarAltaBase(accountId, key);
+                // Cliente que YA tenia chat y vuelve a escribir: solo entra a la Base de hoy si
+                // volvió por un anuncio de Meta (el mensaje trae el identificador del anuncio).
+                // Una simple respuesta días después (p. ej. a un mensaje nuestro) no es un lead nuevo.
+                if (anuncio) this.programarAltaBase(accountId, key);
+                else console.log(`[BASE] chat=${key} volvió a escribir sin anuncio: no entra a la Base`);
             }
 
             const mediaUrl = await extractMediaUrl(sock, msg);
@@ -1388,6 +1424,7 @@ class WhatsAppConnector {
                     // El front solo pinta esto arriba del mensaje cuando hay varios
                     // remitentes posibles (grupo); en chat 1 a 1 ya se sabe quien es.
                     groupSender: (!fromMe && isGroup) ? senderName : null,
+                    anuncio: anuncio || undefined,
                     time,
                     status: 'sent'
                 };
