@@ -25,7 +25,7 @@ const TIPOS_DOC = [['DNI', 'DNI'], ['CE', 'Carné de extranjería'], ['RUC', 'RU
 const CANTIDADES = ['0', '1', '2', '3', '4', '5']
 
 const DATOS_SERVICIO = {
-  cuotaInstalacion:'', hogar:'', paquete:'', predio:'', tec:'', full:'', cantDecos:'0', cantMesh:'', plano:'', obs:'', adicionales:[],
+  cuotaInstalacion:'', hogar:'', paquete:'', predio:'', tec:'', full:'', cantDecos:'0', cantMesh:'', meshCableado:'', plano:'', obs:'', adicionales:[],
   biometria:'', biometriaTipo:'', sot:'', regionWin:'', winTipoPlan:'', winServicio:'',
 }
 const VACIO = {
@@ -180,6 +180,7 @@ function faltantes(paso, f) {
       pedir(f.paquete, 'Paquete')
       if (esRuc20(f.paquete)) pedir(f.cuotaInstalacion, 'Costo de instalación')
       pedir(f.cantMesh, 'Cantidad de mesh')
+      if (f.operador === 'WIN' && Number(f.cantMesh) > 0) pedir(f.meshCableado, 'Mesh cableado (Sí o No)')
     }
   }
   return req
@@ -865,6 +866,7 @@ export default function VentaClaro() {
       ...(esWin ? [['Plan', PLANES_WIN.find(x => x[0] === f.winTipoPlan)?.[1] || '—']] : []), ['Paquete', f.paquete],
       ...(esWin && esRuc20(f.paquete) ? [['Costo de instalación', `S/ ${f.cuotaInstalacion}`]] : []),
       ...(esWin ? [['Winbox', f.cantDecos]] : []), ['Mesh', f.cantMesh],
+      ...(esWin && Number(f.cantMesh) > 0 ? [['Mesh cableado (S/ 55 c/u)', f.meshCableado === 'SI' ? 'Sí' : f.meshCableado === 'NO' ? 'No' : '']] : []),
       ...(esWin ? [['Adicionales', f.adicionales.join(', ') || '—']] : []),
       ['Fotos', fotos.length ? `${fotos.length} foto${fotos.length === 1 ? '' : 's'}` : 'Ninguna'],
     ]),
@@ -1125,6 +1127,9 @@ export default function VentaClaro() {
                 )}
                 {esWin && <Campo label="Cantidad de Winbox"><Opciones valor={f.cantDecos} opciones={CANTIDADES} onChange={v => set('cantDecos', v)} /></Campo>}
                 <Campo label="Cantidad de mesh"><Opciones valor={f.cantMesh} opciones={CANTIDADES} onChange={v => set('cantMesh', v)} /></Campo>
+                {esWin && Number(f.cantMesh) > 0 && (
+                  <Campo label="Mesh cableado (S/ 55 c/u)"><Opciones valor={f.meshCableado} opciones={[['SI', 'Sí'], ['NO', 'No']]} onChange={v => set('meshCableado', v)} /></Campo>
+                )}
                 {adicionalesWin.length > 0 && (
                   <Campo label="Adicionales" opcional>
                     <div className="vc-opciones">

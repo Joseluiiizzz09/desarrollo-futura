@@ -133,6 +133,7 @@ function erroresVentaWin(v, sinVivienda = false) {
     errorTexto(v.cuotaInstalacion, 'Costo de instalación', { max: 100 }),
     errorTexto(v.cantMesh, 'Cantidad de mesh', { requerido: true, max: 2 }),
     errorEnteroPositivo(v.cantDecos, 'Cantidad de Winbox', { max: 10 }),
+    errorEnum(v.meshCableado, 'Mesh cableado', ['SI', 'NO']),
     errorEnteroPositivo(v.cantMesh, 'Cantidad de mesh', { max: 10 }),
     errorTexto(v.obs, 'Observación', { max: 1000 }),
   ]);
@@ -141,7 +142,7 @@ function erroresVentaWin(v, sinVivienda = false) {
 // Solo los campos del formulario, sin espacios sobrantes
 const CAMPOS = ['nombre','tipoDoc','dni','fechaNac','lugarNac','padre','madre','telefono1','telefono2','email',
   'departamento','provincia','distrito','direccion','coordenadas','cuotaInstalacion','hogar','predio','tec',
-  'paquete','full','plano','obs','cantDecos','cantMesh','biometria','biometriaTipo','sot'];
+  'paquete','full','plano','obs','cantDecos','cantMesh','meshCableado','biometria','biometriaTipo','sot'];
 function limpiarVenta(v) {
   const out = {};
   for (const c of CAMPOS) out[c] = v?.[c] === undefined || v?.[c] === null ? '' : String(v[c]).trim();
@@ -149,6 +150,7 @@ function limpiarVenta(v) {
   out.predio = out.predio.toUpperCase();
   out.biometria = out.biometria.toUpperCase();
   out.biometriaTipo = out.biometriaTipo.toUpperCase();
+  out.meshCableado = out.meshCableado.toUpperCase();
   out.email = out.email.toLowerCase();
   out.adicionales = Array.isArray(v?.adicionales) ? v.adicionales.map(a => String(a).substring(0, 60)).slice(0, 20) : [];
   return out;
