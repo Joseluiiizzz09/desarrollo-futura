@@ -1665,7 +1665,7 @@ export default function Dashboard({ area = 'asesor' }) {
                   <label className="nv-label">Claro Hogar</label>
                   <select className="nv-select" value={nvForm.hogar} onChange={e => nvOnHogar(e.target.value)}>
                     <option value="">Seleccionar</option>
-                    {Object.keys(PAQUETES_POR_PLAN).map(h => <option key={h} value={h}>{h}</option>)}
+                    {Object.keys(PAQUETES_POR_PLAN).filter(h => PAQUETES_POR_PLAN[h]?.length || h === nvForm.hogar).map(h => <option key={h} value={h}>{h}</option>)}
                   </select>
                 </div>
                 <div className="nv-field">
